@@ -1,0 +1,26 @@
+{{define "index.html"}}{{template "head" .}}
+{{template "banner" .}}
+<main id="main" class="wrap">
+  <h1>Tools an agent can actually connect to</h1>
+  <p class="lede">Every entry lists the endpoint to call. Fetch <a href="/agents.json"><code>agents.json</code></a> for the whole directory in one request.</p>
+  {{if .Views}}
+  <ul class="entries">
+    {{range .Views}}
+    <li>
+      <a class="entry-name" href="/{{.Entry.Slug}}">{{.Entry.Name}}</a>
+      {{if .Usage}}<span class="badge" title="{{.Usage.Delivered}} deliveries recorded">{{.Usage.Delivered}} delivered</span>{{end}}
+      <p class="entry-summary">{{.Entry.Summary}}</p>
+      <p class="entry-meta">
+        <span class="tag source-{{.Entry.Source}}">{{.Entry.Source}}</span>
+        {{if .Entry.Category}}<span class="tag">{{.Entry.Category}}</span>{{end}}
+        <span class="verified">verified {{verify .Entry.LastVerified}}</span>
+      </p>
+    </li>
+    {{end}}
+  </ul>
+  {{else}}
+  <p class="empty">No entries yet.</p>
+  {{end}}
+</main>
+{{template "foot" .}}
+{{end}}

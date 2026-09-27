@@ -1,0 +1,67 @@
+{{define "head"}}<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{.Title}} — agent-ai-tool</title>
+<meta name="description" content="{{.Description}}">
+<link rel="canonical" href="{{.Canonical}}">
+<link rel="icon" href="/assets/logo.png" type="image/png">
+<link rel="stylesheet" href="/assets/styles.css">
+<meta property="og:type" content="website">
+<meta property="og:title" content="{{.Title}}">
+<meta property="og:description" content="{{.Description}}">
+<meta property="og:url" content="{{.Canonical}}">
+<meta property="og:image" content="https://{{.Site.Domain}}/assets/logo.png">
+<meta name="twitter:card" content="summary">
+<link rel="alternate" type="application/json" href="/agents.json">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="site-header">
+  <div class="wrap header-inner">
+    <a class="brand" href="/">
+      <img src="/assets/logo.svg" alt="" width="36" height="36">
+      <span>agent-ai-tool</span>
+    </a>
+    <nav aria-label="Primary">
+      <a href="/agents.json">agents.json</a>
+      <a href="/llms.txt">llms.txt</a>
+    </nav>
+  </div>
+</header>
+{{end}}
+
+{{define "banner"}}
+{{if .Site.Metrics}}
+<section class="metrics{{if .Site.MetricsStale}} degraded{{end}}" aria-label="Marketplace usage">
+  <div class="wrap">
+    <p class="metrics-lead">What agents are actually doing on vtessera</p>
+    <ul class="metrics-grid">
+      <li><b>{{.Site.Metrics.Totals.Delivered}}</b><span>delivered</span></li>
+      <li><b>{{.Site.Metrics.Totals.Consumers}}</b><span>consumers</span></li>
+      <li><b>{{.Site.Metrics.Totals.Services}}</b><span>services in use</span></li>
+      <li><b>{{.Site.Metrics.Totals.Disputed}}</b><span>disputed</span></li>
+      <li><b>{{.Site.Metrics.Totals.Cancelled}}</b><span>cancelled</span></li>
+    </ul>
+    <p class="metrics-freshness">
+      {{- if .Site.MetricsStale}}Stale: last successful fetch was {{age .Site.MetricsAge}}.
+      {{- else if .Site.MetricsFromCache}}From cache, fetched {{age .Site.MetricsAge}}.
+      {{- else}}Live from vtessera.
+      {{- end}}
+    </p>
+  </div>
+</section>
+{{end}}
+{{end}}
+
+{{define "foot"}}
+<footer class="site-footer">
+  <div class="wrap">
+    <p>Counts come from the public vtessera ledger. No analytics are collected here.</p>
+    <p><a href="/agents.json">agents.json</a> &middot; <a href="/sitemap.xml">sitemap.xml</a> &middot; <a href="https://{{.Site.Domain}}/llms.txt">llms.txt</a></p>
+  </div>
+</footer>
+</body>
+</html>
+{{end}}

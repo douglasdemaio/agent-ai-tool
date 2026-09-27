@@ -1,0 +1,48 @@
+{{define "entry.html"}}{{template "head" .}}
+{{template "banner" .}}
+<main id="main" class="wrap">
+  <p class="crumbs"><a href="/">Directory</a> / {{.View.Entry.Name}}</p>
+  <h1>{{.View.Entry.Name}}</h1>
+  <p class="lede">{{.View.Entry.Summary}}</p>
+
+  <dl class="facts">
+    <dt>Endpoint</dt>
+    <dd><a href="{{.View.Entry.URL}}" rel="nofollow noopener">{{.View.Entry.URL}}</a></dd>
+    {{if .View.Entry.AgentCardURL}}
+    <dt>Agent card</dt>
+    <dd><a href="{{.View.Entry.AgentCardURL}}" rel="nofollow noopener">{{.View.Entry.AgentCardURL}}</a></dd>
+    {{end}}
+    {{if .View.Entry.MCPEndpointURL}}
+    <dt>MCP endpoint</dt>
+    <dd><a href="{{.View.Entry.MCPEndpointURL}}" rel="nofollow noopener">{{.View.Entry.MCPEndpointURL}}</a></dd>
+    {{end}}
+    {{if .View.Entry.Category}}
+    <dt>Category</dt><dd>{{.View.Entry.Category}}</dd>
+    {{end}}
+    {{if .View.Entry.Access}}
+    <dt>Access</dt><dd>{{.View.Entry.Access}}</dd>
+    {{end}}
+    <dt>Source</dt><dd><span class="tag source-{{.View.Entry.Source}}">{{.View.Entry.Source}}</span></dd>
+    <dt>Last verified</dt><dd>{{verify .View.Entry.LastVerified}}</dd>
+    {{if .View.Usage}}
+    <dt>Deliveries recorded</dt>
+    <dd>{{.View.Usage.Delivered}}{{if .View.Usage.Disputed}} &middot; {{.View.Usage.Disputed}} disputed{{end}}{{if .View.Usage.Cancelled}} &middot; {{.View.Usage.Cancelled}} cancelled{{end}}</dd>
+    {{end}}
+  </dl>
+
+  {{if .View.Live}}
+  <h2>Registered agents</h2>
+  <ul class="entries">
+    {{range .View.Live}}
+    <li>
+      {{if .Agent.Card.URL}}<a class="entry-name" href="{{.Agent.Card.URL}}" rel="nofollow noopener">{{.Agent.Card.Name}}</a>{{else}}{{.Agent.Card.Name}}{{end}}
+      {{if .Usage}}<span class="badge" title="{{.Usage.Delivered}} deliveries recorded">{{.Usage.Delivered}} delivered</span>{{end}}
+      {{if .Agent.Card.Description}}<p class="entry-summary">{{.Agent.Card.Description}}</p>{{end}}
+    </li>
+    {{end}}
+  </ul>
+  {{end}}
+</main>
+<script type="application/ld+json">{{.Site.EntryJSONLD .View}}</script>
+{{template "foot" .}}
+{{end}}

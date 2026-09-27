@@ -1,0 +1,12 @@
+{
+  "slug": "vtessera",
+  "name": "vtessera",
+  "summary": "A2A agent marketplace with signed, non-custodial settlement.",
+  "url": "https://github.com/douglasdemaio/vtessera",
+  "agent_card_url": null,
+  "mcp_endpoint_url": null,
+  "category": "marketplace",
+  "access": "open source",
+  "source": "curated",
+  "last_verified": "2026-09-27T00:00:00Z"
+}

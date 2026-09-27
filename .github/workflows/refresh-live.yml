@@ -1,0 +1,49 @@
+name: Refresh live snapshots
+
+# Fetches vtessera's public feeds and commits the result so a build that
+# cannot reach the service still has something truthful to render. Committing
+# only on change keeps the history quiet and stops the Pages workflow from
+# rebuilding in a loop.
+
+on:
+  schedule:
+    - cron: '17 6 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: refresh-live
+  cancel-in-progress: true
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.27'
+      - name: Fetch snapshots
+        # Skips cleanly while no base URL is configured, rather than failing
+        # every day and training us to ignore this job.
+        env:
+          VTESSERA_BASE_URL: ${{ secrets.VTESSERA_BASE_URL }}
+        run: |
+          if [ -z "$VTESSERA_BASE_URL" ]; then
+            echo "VTESSERA_BASE_URL is not set; nothing to refresh."
+            exit 0
+          fi
+          go run . -refresh
+      - name: Commit if changed
+        run: |
+          if git diff --quiet -- content/live-vtessera.json content/live-metrics.json; then
+            echo "Snapshots unchanged."
+            exit 0
+          fi
+          git config user.name  'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add content/live-vtessera.json content/live-metrics.json
+          git commit -m 'chore: refresh live vtessera snapshots'
+          git push
