@@ -1,5 +1,11 @@
-TMPDIR ?= $(HOME)/.cache/go-tmp
-export TMPDIR
+# /tmp is a tmpfs on the maintainer's machine and counts against RAM, so keep
+# build scratch off it when a cache directory is available. CI has no such
+# constraint and no such directory, and pointing Go at a missing TMPDIR makes
+# it fail, so only set it when the directory really exists.
+GO_TMP ?= $(HOME)/.cache/go-tmp
+ifneq ($(wildcard $(GO_TMP)/.),)
+export TMPDIR := $(GO_TMP)
+endif
 
 DOMAIN ?= agent-ai-tool.com
 
