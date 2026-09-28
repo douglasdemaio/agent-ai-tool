@@ -1,0 +1,12 @@
+{
+  "slug": "mcp-registry",
+  "name": "MCP Registry",
+  "summary": "The official Model Context Protocol registry. Its JSON API at https://registry.modelcontextprotocol.io/v0.1/servers lists published servers, including the streamable-http and SSE remotes an agent can actually connect to.",
+  "url": "https://modelcontextprotocol.io/registry",
+  "agent_card_url": null,
+  "mcp_endpoint_url": null,
+  "category": "registry",
+  "access": "public",
+  "source": "curated",
+  "last_verified": "2026-09-28T00:00:00Z"
+}
