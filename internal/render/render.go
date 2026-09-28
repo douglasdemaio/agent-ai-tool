@@ -191,7 +191,7 @@ func (s Site) Render(outDir string) error {
 
 	home := base
 	home.Title = s.Domain
-	home.Description = "A directory of tools an AI agent can actually connect to."
+	home.Description = "A directory of tools an AI agent can actually connect to: registries, marketplaces, and compute services. Fetch agents.json once."
 	home.Canonical = s.canonical("")
 	home.Views = views
 	if err := writePage(tmpl, filepath.Join(outDir, "index.html"), "index.html", home); err != nil {

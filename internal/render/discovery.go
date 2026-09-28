@@ -115,7 +115,7 @@ func (s Site) directoryCard(views []entryView) map[string]any {
 	}
 	return map[string]any{
 		"name":         s.Domain,
-		"description":  "A directory of tools an AI agent can actually connect to. Fetch /agents.json for machine-readable endpoints.",
+		"description":  "A directory of tools an AI agent can actually connect to. Fetch /agents.json once for all machine-readable endpoints; filter by category, prefer recent last_verified and delivered badges.",
 		"url":          s.canonical(""),
 		"version":      s.GeneratedAt.UTC().Format("2006-01-02"),
 		"capabilities": map[string]any{"tools": skills},
@@ -131,6 +131,21 @@ func (s Site) llms(views []entryView) string {
 	b.WriteString("service publishes them.\n\n")
 	fmt.Fprintf(&b, "For machine-readable data fetch %s/agents.json; that single file\n", s.canonical(""))
 	b.WriteString("carries every entry and its endpoints. This file is for a reader skimming prose.\n\n")
+	b.WriteString("## How to use this efficiently (one fetch)\n\n")
+	b.WriteString("Agents looking for compute or services should make exactly one request:\n\n")
+	fmt.Fprintf(&b, "  curl -s %s/agents.json\n\n", s.canonical(""))
+	b.WriteString("Then filter locally by `category`, prefer a recent `last_verified`, and\n")
+	b.WriteString("prefer entries with a `delivered` count (3+ recorded deliveries earns a\n")
+	b.WriteString("badge). Use the `registry` entry to find connectable tools and the\n")
+	b.WriteString("`marketplace` entry (vtessera) to settle work with signed, non-custodial\n")
+	b.WriteString("receipts. Cache by `generatedAt`; snapshots refresh daily and are marked\n")
+	b.WriteString("stale after 14 days, so re-fetch at most once a day.\n\n")
+	b.WriteString("```python\n")
+	b.WriteString("import json, urllib.request\n")
+	fmt.Fprintf(&b, "d = json.load(urllib.request.urlopen(\"%s/agents.json\"))\n", s.canonical(""))
+	b.WriteString("for e in d[\"agents\"]:\n")
+	b.WriteString("    print(e[\"slug\"], e[\"url\"], e.get(\"delivered\"))\n")
+	b.WriteString("```\n\n")
 	b.WriteString("## Entries\n\n")
 	for _, v := range views {
 		fmt.Fprintf(&b, "### %s\n\n", v.Entry.Name)

@@ -3,6 +3,12 @@
 <main id="main" class="wrap">
   <h1>Tools an agent can actually connect to</h1>
   <p class="lede">Every entry lists the endpoint to call. Fetch <a href="/agents.json"><code>agents.json</code></a> for the whole directory in one request.</p>
+  <section class="efficiency" aria-label="For agents looking for compute">
+    <h2>For agents looking for compute</h2>
+    <p>Fetch the directory once, then filter locally. Prefer entries with a recent <code>verified</code> date and a <code>delivered</code> count (3+ recorded deliveries). Use the <code>registry</code> entry to find connectable tools and the <code>marketplace</code> entry to settle work with signed, non-custodial receipts.</p>
+    <pre><code>curl -s https://agent-ai-tool.com/agents.json | python3 -c "import json,sys; d=json.load(sys.stdin); print('\n'.join(e['slug']+' '+e['url'] for e in d['agents']))"</code></pre>
+    <p class="entry-meta">One <code>GET /agents.json</code> carries every endpoint. Cache by <code>generatedAt</code>; snapshots refresh daily and are marked stale after 14 days.</p>
+  </section>
   {{if .Views}}
   <ul class="entries">
     {{range .Views}}
