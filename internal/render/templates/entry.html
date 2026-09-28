@@ -30,8 +30,11 @@
     {{end}}
   </dl>
 
-  {{if .View.Live}}
+  {{if or .View.Live .View.LiveEmpty}}
   <h2>Registered agents</h2>
+  {{if .View.LiveEmpty}}
+  <p class="entry-summary">The marketplace is live and reachable, but no agents are registered yet. Nothing is published here until an agent registers.</p>
+  {{end}}
   <ul class="entries">
     {{range .View.Live}}
     <li>

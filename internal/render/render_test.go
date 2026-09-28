@@ -167,12 +167,56 @@ func TestLiveAgentsOverrideTheMachineReadableFieldsOfTheCuratedStub(t *testing.T
 	}
 }
 
-func TestLiveFeedWithNoAgentsFailsTheBuild(t *testing.T) {
+// A live marketplace with no registered agents is a real state, not a fault.
+// Failing the build would couple site availability to the service, which the
+// design rules out. But rendering nothing would let an empty marketplace look
+// identical to a working one, so the page must say so in words.
+func TestEmptyLiveFeedPublishesAndSaysSo(t *testing.T) {
 	s := site(t, entry(LiveSlug, "summary"))
 	s.LiveAgents = &live.AgentsResponse{Agents: []live.Agent{}}
 
-	if err := s.Render(filepath.Join(t.TempDir(), "public")); err == nil {
-		t.Fatal("an empty live feed should fail rather than render an empty listing")
+	dir := t.TempDir()
+	if err := s.Render(filepath.Join(dir, "public")); err != nil {
+		t.Fatalf("an empty live feed must not fail the build: %v", err)
+	}
+	page := read(t, filepath.Join(dir, "public"), LiveSlug+"/index.html")
+	if !strings.Contains(page, "no agents are registered yet") {
+		t.Error("an empty marketplace should be stated, not silently omitted")
+	}
+	if strings.Contains(page, "<h2>Registered agents</h2>") &&
+		!strings.Contains(page, "no agents are registered yet") {
+		t.Error("the heading should not imply a populated list")
+	}
+}
+
+// The curated service listing keeps its identity even when the feed is empty, so
+// the directory still tells an agent what vtessera is.
+func TestEmptyLiveFeedKeepsTheCuratedListing(t *testing.T) {
+	s := site(t, entry(LiveSlug, "summary"))
+	s.LiveAgents = &live.AgentsResponse{Agents: []live.Agent{}}
+
+	dir := t.TempDir()
+	if err := s.Render(filepath.Join(dir, "public")); err != nil {
+		t.Fatalf("render: %v", err)
+	}
+	page := read(t, filepath.Join(dir, "public"), LiveSlug+"/index.html")
+	if !strings.Contains(page, "summary") {
+		t.Error("the curated summary should survive an empty feed")
+	}
+}
+
+// With no curated listing to fall back on, an empty feed has no name, URL, or
+// summary to publish, so the entry is simply absent.
+func TestEmptyLiveFeedWithoutACuratedEntryPublishesNoListing(t *testing.T) {
+	s := site(t, entry("other", "summary"))
+	s.LiveAgents = &live.AgentsResponse{Agents: []live.Agent{}}
+
+	dir := t.TempDir()
+	if err := s.Render(filepath.Join(dir, "public")); err != nil {
+		t.Fatalf("render: %v", err)
+	}
+	if _, err := os.Stat(filepath.Join(dir, "public", LiveSlug, "index.html")); !os.IsNotExist(err) {
+		t.Error("an empty feed with no curated entry should publish no vtessera page")
 	}
 }
 

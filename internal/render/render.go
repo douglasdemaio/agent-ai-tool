@@ -3,7 +3,6 @@ package render
 import (
 	"embed"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"html/template"
 	"io"
@@ -20,8 +19,6 @@ import (
 var templates embed.FS
 
 const LiveSlug = "vtessera"
-
-var errLiveWithoutAgents = errors.New("live feed carried no agents")
 
 type Site struct {
 	Domain           string
@@ -52,6 +49,11 @@ type entryView struct {
 	Entry content.Entry
 	Usage *usage
 	Live  []liveRow
+	// LiveEmpty distinguishes a feed that answered and reported no agents from
+	// one that was never consulted. A nil Live covers both as far as the
+	// template's truthiness test is concerned, which would let an empty
+	// marketplace look like a working one.
+	LiveEmpty bool
 }
 
 type pageData struct {
@@ -119,21 +121,26 @@ func (s Site) resolve() ([]entryView, error) {
 			found = true
 			if s.LiveAgents != nil {
 				agents := s.LiveAgents.Normalized().Agents
-				if len(agents) == 0 {
-					return nil, fmt.Errorf("%w: the %s feed reported no agents", errLiveWithoutAgents, LiveSlug)
-				}
+				// An empty marketplace is a real state, not a fault. The feed
+				// still owns the entry's provenance, so it is marked live and
+				// the emptiness is rendered explicitly rather than dropped.
 				view.Entry.Source = content.SourceLive
 				view.Entry.LastVerified = s.LiveAgents.UpdatedAt()
 				view.Live = rowsFor(agents, byAgent)
+				view.LiveEmpty = len(agents) == 0
 			}
 		}
 		views = append(views, view)
 	}
 
+	// Without a curated entry there is no vetted name, URL, or summary to stand
+	// in for the marketplace, and an empty feed carries no agent card to borrow
+	// one from. So a feed-only entry exists only once the feed has something to
+	// describe; otherwise the service is simply not deployed yet.
 	if !found && s.LiveAgents != nil {
 		agents := s.LiveAgents.Normalized().Agents
 		if len(agents) == 0 {
-			return nil, fmt.Errorf("%w: the %s feed reported no agents", errLiveWithoutAgents, LiveSlug)
+			return views, nil
 		}
 		view := entryView{
 			Entry: content.Entry{
