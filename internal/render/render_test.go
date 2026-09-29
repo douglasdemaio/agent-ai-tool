@@ -615,3 +615,60 @@ func TestHumanAgePluralizes(t *testing.T) {
 		}
 	}
 }
+
+// An empty marketplace has no agent to take a date from. The listing must still
+// carry a real one, because last_verified reaches agents.json, the JSON-LD
+// dateModified, and the sitemap lastmod.
+func TestEmptyMarketplaceStillDatesTheLiveListing(t *testing.T) {
+	fetched := time.Date(2026, 9, 29, 13, 33, 17, 0, time.UTC)
+	s := site(t, content.Entry{
+		Slug:         "vtessera",
+		Name:         "vtessera",
+		Summary:      "marketplace",
+		URL:          "https://vtessera.fly.dev",
+		Source:       content.SourceCurated,
+		LastVerified: time.Date(2026, 9, 29, 0, 0, 0, 0, time.UTC),
+	})
+	s.LiveAgents = &live.AgentsResponse{}
+	s.LiveAgentsFetchedAt = fetched
+	s.GeneratedAt = fetched.Add(2 * time.Hour)
+
+	views, err := s.resolve()
+	if err != nil {
+		t.Fatal(err)
+	}
+	v := views[0]
+	if got := v.Entry.LastVerified; !got.Equal(fetched) {
+		t.Errorf("LastVerified = %s, want the feed's fetch time %s", got, fetched)
+	}
+	if v.Entry.LastVerified.IsZero() {
+		t.Error("live listing dated year 1: agents.json would publish 0001-01-01")
+	}
+	if !v.LiveEmpty {
+		t.Error("expected the empty-marketplace state to be preserved")
+	}
+}
+
+// When agents do exist, the newest agent's updatedAt is the better date, and the
+// fetch time must not override it.
+func TestLiveListingPrefersAgentTimestampOverFetch(t *testing.T) {
+	fetched := time.Date(2026, 9, 29, 13, 33, 17, 0, time.UTC)
+	agentTime := time.Date(2026, 9, 28, 9, 0, 0, 0, time.UTC)
+	s := site(t, content.Entry{
+		Slug: "vtessera", Name: "vtessera", Summary: "marketplace",
+		URL: "https://vtessera.fly.dev", Source: content.SourceCurated,
+	})
+	s.LiveAgents = &live.AgentsResponse{Agents: []live.Agent{{
+		ID: "a1", Card: live.AgentCard{Name: "a1", PublicKey: "k"}, UpdatedAt: agentTime,
+	}}}
+	s.LiveAgentsFetchedAt = fetched
+	s.GeneratedAt = fetched
+
+	views, err := s.resolve()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := views[0].Entry.LastVerified; !got.Equal(agentTime) {
+		t.Errorf("LastVerified = %s, want the agent's updatedAt %s", got, agentTime)
+	}
+}

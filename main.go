@@ -161,6 +161,7 @@ func (c config) run(ctx context.Context, client *http.Client) error {
 		}
 		merged := response.Normalized()
 		site.LiveAgents = &merged
+		site.LiveAgentsFetchedAt = agents.FetchedAt
 	}
 	if metrics.Available() {
 		var response live.MetricsResponse

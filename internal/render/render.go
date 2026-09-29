@@ -21,15 +21,18 @@ var templates embed.FS
 const LiveSlug = "vtessera"
 
 type Site struct {
-	Domain           string
-	Entries          []content.Entry
-	LiveAgents       *live.AgentsResponse
-	Metrics          *live.MetricsResponse
-	MetricsFromCache bool
-	MetricsAge       time.Duration
-	MetricsErr       error
-	GeneratedAt      time.Time
-	AssetsDir        string
+	Domain     string
+	Entries    []content.Entry
+	LiveAgents *live.AgentsResponse
+	// LiveAgentsFetchedAt is when the agent feed was fetched or read from cache.
+	// It is the fallback dating for a live listing whose feed is empty.
+	LiveAgentsFetchedAt time.Time
+	Metrics             *live.MetricsResponse
+	MetricsFromCache    bool
+	MetricsAge          time.Duration
+	MetricsErr          error
+	GeneratedAt         time.Time
+	AssetsDir           string
 	// Unreachable names entries whose advertised endpoints a recent health
 	// check could not reach. Their endpoints are withheld from every published
 	// surface rather than advertised as callable, because the directory's claim
@@ -195,7 +198,7 @@ func (s Site) resolve() ([]entryView, error) {
 				// still owns the entry's provenance, so it is marked live and
 				// the emptiness is rendered explicitly rather than dropped.
 				view.Entry.Source = content.SourceLive
-				view.Entry.LastVerified = s.LiveAgents.UpdatedAt()
+				view.Entry.LastVerified = s.liveVerified()
 				view.Live = rowsFor(agents, byAgent)
 				view.LiveEmpty = len(agents) == 0
 			}
@@ -223,7 +226,7 @@ func (s Site) resolve() ([]entryView, error) {
 				Summary:      "A2A agent marketplace with signed, non-custodial settlement.",
 				URL:          agents[0].Card.URL,
 				Source:       content.SourceLive,
-				LastVerified: s.LiveAgents.UpdatedAt(),
+				LastVerified: s.liveVerified(),
 			},
 			Live: rowsFor(agents, byAgent),
 		}
@@ -319,6 +322,26 @@ func (s Site) Render(outDir string) error {
 		return err
 	}
 	return s.copyAssets(outDir)
+}
+
+// liveVerified dates a live listing from the feed rather than by hand, so nobody
+// has to remember to re-stamp it.
+//
+// It prefers the newest agent's updatedAt. An empty marketplace has no agent to
+// take a date from, and that is a real state rather than a fault, so it falls
+// back to when the feed was fetched: we did reach the service and parse it, and
+// that is a real observation. Returning the zero time instead is the one answer
+// that is always wrong — it publishes as 0001-01-01 in agents.json, sorts the
+// sitemap as the oldest page on the site, and dates the JSON-LD a year before
+// the directory existed.
+func (s Site) liveVerified() time.Time {
+	if s.LiveAgents == nil {
+		return time.Time{}
+	}
+	if t := s.LiveAgents.UpdatedAt(); !t.IsZero() {
+		return t
+	}
+	return s.LiveAgentsFetchedAt
 }
 
 func writePage(tmpl *template.Template, path, name string, data pageData) error {
