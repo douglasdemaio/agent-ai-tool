@@ -1,0 +1,12 @@
+{
+  "slug": "openrouter",
+  "name": "OpenRouter",
+  "summary": "A single OpenAI-compatible gateway to 460 models across vendors. Its unauthenticated models endpoint returns context length, modality, and pricing per model, so an agent can compare options before it holds a key.",
+  "url": "https://openrouter.ai",
+  "agent_card_url": null,
+  "mcp_endpoint_url": "https://openrouter.ai/api/v1/models",
+  "category": "model-gateway",
+  "access": "free tier, key required for inference",
+  "source": "curated",
+  "last_verified": "2026-09-29T00:00:00Z"
+}

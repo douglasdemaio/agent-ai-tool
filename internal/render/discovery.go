@@ -106,21 +106,64 @@ func (s Site) agentsJSON(views []entryView) map[string]any {
 }
 
 func (s Site) directoryCard(views []entryView) map[string]any {
-	skills := make([]map[string]string, 0, len(views))
+	skills := make([]map[string]any, 0, len(views))
 	for _, v := range views {
-		skills = append(skills, map[string]string{
-			"id":   v.Entry.Slug,
-			"name": v.Entry.Name,
-		})
+		// A skill carrying only a name tells an agent it exists and nothing
+		// about when to reach for it, which is the one thing it needs. The
+		// summary is the curated sentence written for exactly that, and the
+		// endpoint is the address the agent would actually call.
+		skill := map[string]any{
+			"id":          v.Entry.Slug,
+			"name":        v.Entry.Name,
+			"description": v.Entry.Summary,
+			"tags":        []string{v.Entry.Category},
+		}
+		if v.Entry.MCPEndpointURL != nil {
+			skill["endpoint"] = *v.Entry.MCPEndpointURL
+		} else {
+			skill["endpoint"] = v.Entry.URL
+		}
+		skills = append(skills, skill)
 	}
-	return map[string]any{
+	card := map[string]any{
 		"name":         s.Domain,
-		"description":  "A directory of tools an AI agent can actually connect to. Fetch /agents.json once for all machine-readable endpoints; filter by category, prefer recent last_verified and delivered badges.",
+		"description":  s.directoryDescription(views),
 		"url":          s.canonical(""),
 		"version":      s.GeneratedAt.UTC().Format("2006-01-02"),
 		"capabilities": map[string]any{"tools": skills},
 		"skills":       skills,
+		"directory":    map[string]any{"url": s.canonical(""), "format": "agents.json", "count": len(views)},
 	}
+	return card
+}
+
+// badgedCount reports how many entries carry a recorded delivery figure. The
+// guidance written for agents is conditioned on it: a directory with no live
+// data should not tell an agent to rank by a count that does not exist.
+func (s Site) badgedCount(views []entryView) int {
+	n := 0
+	for _, v := range views {
+		if v.Usage != nil {
+			n++
+		}
+	}
+	return n
+}
+
+// directoryDescription states the directory's own guidance. It is generated
+// from the data rather than written once, so it cannot keep telling an agent to
+// sort on a field the build produced no values for.
+func (s Site) directoryDescription(views []entryView) string {
+	desc := "A directory of tools an AI agent can actually connect to. Fetch " +
+		s.canonical("") + "agents.json once to get every entry with its endpoints, " +
+		"then filter that one response locally by category and prefer the most " +
+		"recent last_verified."
+	if s.badgedCount(views) == 0 {
+		return desc + " No entry currently carries a recorded usage count, so " +
+			"judge each one on its endpoint and last_verified date."
+	}
+	return desc + " Entries carrying a delivered count have been exercised; " +
+		"prefer them when several entries fit the same task."
 }
 
 func (s Site) llms(views []entryView) string {
@@ -129,20 +172,28 @@ func (s Site) llms(views []entryView) string {
 	b.WriteString("A directory of tools an AI agent can actually connect to. Each entry names the\n")
 	b.WriteString("endpoint an agent should call, plus the agent card and MCP endpoint when the\n")
 	b.WriteString("service publishes them.\n\n")
-	fmt.Fprintf(&b, "For machine-readable data fetch %s/agents.json; that single file\n", s.canonical(""))
+	fmt.Fprintf(&b, "For machine-readable data fetch %sagents.json; that single file\n", s.canonical(""))
 	b.WriteString("carries every entry and its endpoints. This file is for a reader skimming prose.\n\n")
 	b.WriteString("## How to use this efficiently (one fetch)\n\n")
 	b.WriteString("Agents looking for compute or services should make exactly one request:\n\n")
-	fmt.Fprintf(&b, "  curl -s %s/agents.json\n\n", s.canonical(""))
-	b.WriteString("Then filter locally by `category`, prefer a recent `last_verified`, and\n")
-	b.WriteString("prefer entries with a `delivered` count (3+ recorded deliveries earns a\n")
-	b.WriteString("badge). Use the `registry` entry to find connectable tools and the\n")
-	b.WriteString("`marketplace` entry (vtessera) to settle work with signed, non-custodial\n")
-	b.WriteString("receipts. Cache by `generatedAt`; snapshots refresh daily and are marked\n")
-	b.WriteString("stale after 14 days, so re-fetch at most once a day.\n\n")
+	fmt.Fprintf(&b, "  curl -s %sagents.json\n\n", s.canonical(""))
+	b.WriteString("Then filter locally by `category` and prefer the most recent\n")
+	b.WriteString("`last_verified`. Use the `registry` entry to find connectable tools and\n")
+	b.WriteString("the `marketplace` entry (vtessera) to settle work with signed,\n")
+	b.WriteString("non-custodial receipts. Cache by `generatedAt`; snapshots refresh daily\n")
+	b.WriteString("and are marked stale after 14 days, so re-fetch at most once a day.\n\n")
+	if s.badgedCount(views) == 0 {
+		b.WriteString("No entry currently carries a `delivered` count. Treat the field as\n")
+		b.WriteString("absent rather than as zero, and judge an entry on its endpoint and\n")
+		b.WriteString("`last_verified` date instead.\n\n")
+	} else {
+		b.WriteString("A `delivered` count means an entry has recorded real completed trades;\n")
+		b.WriteString("3 or more earns a badge. Prefer a badged entry when several fit the\n")
+		b.WriteString("same task, and fall back to an unbadged one otherwise.\n\n")
+	}
 	b.WriteString("```python\n")
 	b.WriteString("import json, urllib.request\n")
-	fmt.Fprintf(&b, "d = json.load(urllib.request.urlopen(\"%s/agents.json\"))\n", s.canonical(""))
+	fmt.Fprintf(&b, "d = json.load(urllib.request.urlopen(\"%sagents.json\"))\n", s.canonical(""))
 	b.WriteString("for e in d[\"agents\"]:\n")
 	b.WriteString("    print(e[\"slug\"], e[\"url\"], e.get(\"delivered\"))\n")
 	b.WriteString("```\n\n")

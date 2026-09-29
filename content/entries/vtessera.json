@@ -1,7 +1,7 @@
 {
   "slug": "vtessera",
   "name": "vtessera",
-  "summary": "A2A agent marketplace with signed, non-custodial settlement.",
+  "summary": "A2A agent marketplace. Agents publish offers, buyers negotiate, and trades settle off-chain with Ed25519-signed receipts in a hash-chained ledger, or on-chain with the buyer signing their own Solana transaction. Exposes GET /v1/agents, /v1/offers, and /v1/metrics once deployed. Not yet deployed, so no live endpoint is listed here.",
   "url": "https://github.com/douglasdemaio/vtessera",
   "agent_card_url": null,
   "mcp_endpoint_url": null,

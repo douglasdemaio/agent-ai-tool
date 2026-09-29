@@ -299,7 +299,7 @@ func TestSitemapIsWellFormedXML(t *testing.T) {
 	if !strings.HasPrefix(body, `<?xml version="1.0" encoding="UTF-8"?>`) {
 		t.Error("sitemap is missing the XML declaration")
 	}
-	if !strings.Contains(body, `<loc>https://agent-ai-tool.com/vtessera</loc>`) {
+	if !strings.Contains(body, `<loc>https://agent-ai-tool.com/vtessera/</loc>`) {
 		t.Error("sitemap is missing the entry URL")
 	}
 }
@@ -344,5 +344,104 @@ func TestAgentsJSONCarriesTheEndpointPerEntry(t *testing.T) {
 	}
 	if got.LastVerify == "" {
 		t.Error("last_verified should be serialised")
+	}
+}
+
+func TestEntryCanonicalNamesTheServingURL(t *testing.T) {
+	out := renderTo(t, site(t, entry("vtessera", "A marketplace.")))
+	page := read(t, out, "vtessera/index.html")
+	if !strings.Contains(page, `<link rel="canonical" href="https://agent-ai-tool.com/vtessera/">`) {
+		t.Error("entry canonical should carry the trailing slash the host actually serves")
+	}
+}
+
+func TestAgentsJSONNamesTheServingURL(t *testing.T) {
+	body := read(t, renderTo(t, site(t, entry("vtessera", "A marketplace."))), "agents.json")
+	if !strings.Contains(body, `"page": "https://agent-ai-tool.com/vtessera/"`) {
+		t.Error("page should name the trailing-slash URL that serves 200")
+	}
+	if strings.Contains(body, "https://agent-ai-tool.com//") {
+		t.Error("canonical change produced a double slash")
+	}
+}
+
+func TestFourOhFourNamesNoCanonical(t *testing.T) {
+	page := read(t, renderTo(t, site(t, entry("vtessera", "A marketplace."))), "404.html")
+	if strings.Contains(page, `rel="canonical"`) {
+		t.Error("a 404 should not point a canonical at a page that does not exist")
+	}
+}
+
+func TestSitemapIndexLastModTracksContentNotBuildTime(t *testing.T) {
+	s := site(t, entry("vtessera", "A marketplace."))
+	first := read(t, renderTo(t, s), "sitemap.xml")
+	// A rebuild triggered by a live snapshot rather than by an edit must not
+	// make the directory look changed.
+	s.GeneratedAt = s.GeneratedAt.Add(72 * time.Hour)
+	second := read(t, renderTo(t, s), "sitemap.xml")
+	if first != second {
+		t.Error("sitemap lastmod changed on a rebuild that did not change the entries")
+	}
+}
+
+func TestSitemapIndexLastModFollowsNewestEntry(t *testing.T) {
+	e := entry("vtessera", "A marketplace.")
+	e.LastVerified = time.Date(2026, 9, 25, 0, 0, 0, 0, time.UTC)
+	body := read(t, renderTo(t, site(t, e)), "sitemap.xml")
+	if !strings.Contains(body, "<loc>https://agent-ai-tool.com/</loc>") ||
+		!strings.Contains(body, "2026-09-25T00:00:00Z") {
+		t.Error("index lastmod should be the newest entry last_verified")
+	}
+}
+
+func TestDirectoryCardSkillsCarryDescriptionsAndEndpoints(t *testing.T) {
+	e := entry("vtessera", "Settles work with signed receipts.")
+	mcp := "https://vtessera.example.com/mcp"
+	e.MCPEndpointURL = &mcp
+	var payload struct {
+		Skills []struct {
+			ID          string `json:"id"`
+			Description string `json:"description"`
+			Endpoint    string `json:"endpoint"`
+		} `json:"skills"`
+	}
+	body := read(t, renderTo(t, site(t, e)), ".well-known/agent-card.json")
+	if err := json.Unmarshal([]byte(body), &payload); err != nil {
+		t.Fatal(err)
+	}
+	if len(payload.Skills) != 1 {
+		t.Fatalf("got %d skills", len(payload.Skills))
+	}
+	if payload.Skills[0].Description != "Settles work with signed receipts." {
+		t.Errorf("skill description = %q, want the curated summary", payload.Skills[0].Description)
+	}
+	if payload.Skills[0].Endpoint != mcp {
+		t.Errorf("skill endpoint = %q, want the MCP endpoint when the entry has one", payload.Skills[0].Endpoint)
+	}
+}
+
+func TestGuidanceDoesNotRankOnAnAbsentDeliveryCount(t *testing.T) {
+	out := renderTo(t, site(t, entry("vtessera", "A marketplace.")))
+	llms := read(t, out, "llms.txt")
+	if strings.Contains(llms, "3+ recorded deliveries") || strings.Contains(llms, "badge") {
+		t.Error("llms.txt tells agents to prefer a delivered count that no entry carries")
+	}
+	if !strings.Contains(llms, "Treat the field as") {
+		t.Error("llms.txt should say what to do when the count is absent")
+	}
+	if page := read(t, out, "index.html"); !strings.Contains(page, "No entry currently carries a recorded usage count") {
+		t.Error("the index should say the same thing in prose")
+	}
+}
+
+func TestGuidanceRecommendsBadgedEntriesWhenAnyExist(t *testing.T) {
+	s := site(t, entry("vtessera", "A marketplace."))
+	s.Metrics = &live.MetricsResponse{Agents: []live.AgentUsage{{AgentID: "vtessera", Delivered: 9}}}
+	out := renderTo(t, s)
+	if !strings.Contains(read(t, out, "llms.txt"), "3 or more earns a badge") {
+		t.Error("llms.txt should recommend badged entries once one exists")
+	}
+	if !strings.Contains(read(t, out, "index.html"), "recorded completed trades") {
+		t.Error("the index should explain the badge once one exists")
 	}
 }

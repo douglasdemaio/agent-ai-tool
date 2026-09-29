@@ -22,9 +22,19 @@ func (s Site) sitemap(views []entryView) []byte {
 		Xmlns: "http://www.sitemaps.org/schemas/sitemap/0.9",
 		URLs:  make([]sitemapURL, 0, len(views)+1),
 	}
+	// The index lastmod is the newest entry last_verified, not the build time.
+	// The site is rebuilt for reasons that do not change the directory (a live
+	// snapshot refresh, a metrics cache hit), and a lastmod that moves on every
+	// rebuild tells crawlers the listing changes when it did not.
+	var newest time.Time
+	for _, v := range views {
+		if v.Entry.LastVerified.After(newest) {
+			newest = v.Entry.LastVerified
+		}
+	}
 	set.URLs = append(set.URLs, sitemapURL{
 		Loc:     s.canonical(""),
-		LastMod: s.GeneratedAt.UTC().Format(time.RFC3339),
+		LastMod: newest.UTC().Format(time.RFC3339),
 	})
 	for _, v := range views {
 		set.URLs = append(set.URLs, sitemapURL{

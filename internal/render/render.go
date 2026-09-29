@@ -63,6 +63,10 @@ type pageData struct {
 	Canonical   string
 	Views       []entryView
 	View        *entryView
+	// BadgedCount lets the templates drop the "prefer a delivered count"
+	// instruction when no entry has one, rather than telling an agent to rank
+	// on a field the build produced no values for.
+	BadgedCount int
 	Year        int
 }
 
@@ -162,12 +166,17 @@ func (s Site) resolve() ([]entryView, error) {
 	return views, nil
 }
 
+// canonical returns the one address for a page. Entry pages are written as
+// <slug>/index.html, which the host serves at /<slug>/ and redirects /<slug>
+// there, so the canonical carries the trailing slash. Naming the redirecting
+// form instead would ask crawlers to consolidate on a URL that immediately
+// redirects, which is the opposite of what a canonical is for.
 func (s Site) canonical(path string) string {
 	clean := strings.TrimPrefix(path, "/")
 	if clean == "" {
-		return "https://" + s.Domain
+		return "https://" + s.Domain + "/"
 	}
-	return "https://" + s.Domain + "/" + clean
+	return "https://" + s.Domain + "/" + strings.TrimSuffix(clean, "/") + "/"
 }
 
 func (s Site) Render(outDir string) error {
@@ -194,6 +203,7 @@ func (s Site) Render(outDir string) error {
 	home.Description = "A directory of tools an AI agent can actually connect to: registries, marketplaces, and compute services. Fetch agents.json once."
 	home.Canonical = s.canonical("")
 	home.Views = views
+	home.BadgedCount = s.badgedCount(views)
 	if err := writePage(tmpl, filepath.Join(outDir, "index.html"), "index.html", home); err != nil {
 		return err
 	}
@@ -212,7 +222,9 @@ func (s Site) Render(outDir string) error {
 	notFound := base
 	notFound.Title = "Not found"
 	notFound.Description = "No such page."
-	notFound.Canonical = s.canonical("404.html")
+	// A 404 is not a page anyone should index, so it names no canonical at all
+	// rather than pointing the checker at a path that does not exist.
+	notFound.Canonical = ""
 	if err := writePage(tmpl, filepath.Join(outDir, "404.html"), "404.html", notFound); err != nil {
 		return err
 	}

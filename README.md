@@ -64,6 +64,17 @@ ignored, duplicate slugs fail the build, and URLs must be absolute `http` or
 page. `agent_card_url` and `mcp_endpoint_url` are optional; use `null` or omit
 them. `category` and `access` are optional free text.
 
+`mcp_endpoint_url` carries the address an agent should actually call, so it
+holds the machine endpoint rather than the project's home page, and the home
+page goes in `url`. Anything an agent can only read as a human should not be
+buried in the `summary` sentence. Before adding an entry, confirm the endpoint
+answers: an entry pointing at a URL that 404s is worse than no entry, because
+the whole claim of the directory is that the endpoints work.
+
+An entry whose service is not deployed yet keeps `mcp_endpoint_url` at `null`
+and says so in its summary, rather than listing an address that will not answer.
+
+
 ## Live data
 
 The site merges a live view of [vtessera](https://github.com/douglasdemaio/vtessera)
@@ -113,3 +124,27 @@ The generator emits `robots.txt`, `sitemap.xml`, `llms.txt`, `agents.json`,
 crawlers, with each named group verified against vendor documentation. Under
 RFC 9309 a named group wins over the wildcard, so the policy is explicit rather
 than relying on the wildcard alone.
+
+### Canonicals carry a trailing slash
+
+Entry pages are written to `<slug>/index.html`, which the host serves at
+`/<slug>/` and redirects `/<slug>` there. The canonical, the sitemap, and the
+`page` field in `agents.json` all name the trailing-slash form, because naming
+the redirecting form asks a crawler to consolidate on a URL that immediately
+redirects. The 404 page names no canonical at all.
+
+### Sitemap `lastmod` tracks content, not builds
+
+The index `lastmod` is the newest entry `last_verified`. The site is also
+rebuilt for reasons that do not change the directory — a live snapshot refresh,
+a metrics cache hit — and a `lastmod` that moved on every rebuild would tell
+crawlers the listing changed when it did not.
+
+### Guidance is generated from the data
+
+The instructions to agents in `llms.txt`, on the index page, and in the agent
+card description are conditioned on the build: when no entry carries a
+`delivered` count, they say so and direct the agent to judge entries on their
+endpoint and `last_verified` date instead. Prose written once and left alone
+would keep telling agents to rank on a field the build produced no values for.
+
