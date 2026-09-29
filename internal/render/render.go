@@ -393,14 +393,24 @@ func writeFile(path string, body []byte) error {
 }
 
 func humanAge(d time.Duration) string {
-	switch {
-	case d <= 0:
+	// Anything under a minute reads as "moments". Rounding a 30-second-old
+	// snapshot down to "0 minutes ago" states a precision the data does not
+	// have, and it is the common case right after a refresh.
+	if d < time.Minute {
 		return "moments ago"
-	case d < time.Hour:
-		return fmt.Sprintf("%d minutes ago", int(d.Minutes()))
-	case d < 24*time.Hour:
-		return fmt.Sprintf("%d hours ago", int(d.Hours()))
-	default:
-		return fmt.Sprintf("%d days ago", int(d.Hours()/24))
 	}
+	var n int
+	var unit string
+	switch {
+	case d < time.Hour:
+		n, unit = int(d.Minutes()), "minute"
+	case d < 24*time.Hour:
+		n, unit = int(d.Hours()), "hour"
+	default:
+		n, unit = int(d.Hours()/24), "day"
+	}
+	if n != 1 {
+		unit += "s"
+	}
+	return fmt.Sprintf("%d %s ago", n, unit)
 }

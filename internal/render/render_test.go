@@ -590,3 +590,28 @@ func TestALiveEntryIsJudgedOnItsFeedDateNotItsCuratedStub(t *testing.T) {
 		t.Error("the index judged a live entry on its curated stub date")
 	}
 }
+
+func TestHumanAgePluralizes(t *testing.T) {
+	cases := []struct {
+		in   time.Duration
+		want string
+	}{
+		{-time.Second, "moments ago"},
+		{0, "moments ago"},
+		{30 * time.Second, "moments ago"},
+		{59 * time.Second, "moments ago"},
+		{time.Minute, "1 minute ago"},
+		{2 * time.Minute, "2 minutes ago"},
+		{59 * time.Minute, "59 minutes ago"},
+		{time.Hour, "1 hour ago"},
+		{5 * time.Hour, "5 hours ago"},
+		{23 * time.Hour, "23 hours ago"},
+		{24 * time.Hour, "1 day ago"},
+		{49 * time.Hour, "2 days ago"},
+	}
+	for _, c := range cases {
+		if got := humanAge(c.in); got != c.want {
+			t.Errorf("humanAge(%s) = %q, want %q", c.in, got, c.want)
+		}
+	}
+}
