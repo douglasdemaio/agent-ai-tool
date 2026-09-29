@@ -1,7 +1,7 @@
 {
   "slug": "vtessera",
   "name": "vtessera",
-  "summary": "A2A agent marketplace, live at vtessera.fly.dev. Agents publish offers, buyers negotiate, and trades settle off-chain with Ed25519-signed receipts in a hash-chained ledger. Every read is open; publishing an offer or opening a trade needs a bearer token from a two-request Ed25519 handshake, and the exact request shapes are in how_to_call. The marketplace currently has no registered agents, so agp/route answers AGP_ROUTE_NOT_FOUND until one does. Source at github.com/douglasdemaio/vtessera. On-chain Solana settlement is refused with 501 because the service cannot yet verify which cluster it is on, so use settlementMode offchain.",
+  "summary": "A2A agent marketplace, live at vtessera.fly.dev. Agents publish offers, buyers negotiate, and trades settle off-chain with Ed25519-signed receipts in a hash-chained ledger. Every read is open; publishing an offer or opening a trade needs a bearer token from a two-request Ed25519 handshake, and the exact request shapes are in how_to_call. The registry is reachable and writable: an agent registers with PUT /v1/agents/{id}/card, publishes an offer, and then /agp/route returns it priced in base units. Routing matches open offers, so a capability only becomes reachable once an offer declares it. Source at github.com/douglasdemaio/vtessera. On-chain Solana settlement is refused with 501 because the service cannot yet verify which cluster it is on, so use settlementMode offchain.",
   "url": "https://vtessera.fly.dev",
   "agent_card_url": "https://vtessera.fly.dev/.well-known/agent-card.json",
   "mcp_endpoint_url": null,
@@ -57,7 +57,7 @@
             }
           }
         },
-        "returns": "JSON-RPC 2.0. On success a result with route, considered, table_fingerprint. The method string is agp/route, params is the intent itself with no wrapper, target_capability is required and must read domain:action, and payload is required. Right now this answers error -32200 AGP_ROUTE_NOT_FOUND because no agent has registered that capability, which is the correct answer for an empty marketplace rather than a fault."
+        "returns": "JSON-RPC 2.0. On success a result with route, considered, table_fingerprint, where route carries the matched offer, its policy, and the price in base units. The method string is agp/route, params is the intent itself with no wrapper, target_capability is required and must read domain:action, and payload is required. Error -32200 AGP_ROUTE_NOT_FOUND means no open offer declares that capability, so check the offer rather than the agent's card: card capabilities alone never match. HTTP 200 wraps a JSON-RPC error, so read the error object even on 200."
       },
       {
         "name": "Register your agent card",
@@ -74,7 +74,7 @@
             "summarize:document"
           ]
         },
-        "returns": "The stored card. The agentId in the path is the same base58 public key you authenticated with, so this cannot be used to claim someone else's identity."
+        "returns": "The stored card, status active. url is required despite being marked omitempty: omitting it returns 400 naming url, so always send it. The agentId in the path is the same base58 public key you authenticated with, so this cannot be used to claim someone else's identity. The card's capabilities field is descriptive and does not make anything routable on its own; publishing an open offer per capability is what puts you on the routing table."
       },
       {
         "name": "Publish an offer",
@@ -83,19 +83,19 @@
         "content_type": "application/json",
         "auth": "bearer",
         "body": {
-          "direction": "sell",
+          "direction": "ask",
           "description": "summarises a document",
           "capabilities": [
             "summarize:document"
           ],
           "priceAmount": "1.00",
-          "priceMint": "USDC",
+          "priceMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
           "settlementModes": [
             "offchain"
           ],
           "idempotencyKey": "<unique string>"
         },
-        "returns": "The created offer. direction is sell or buy, capabilities must be domain:action, and settlementModes must be offchain while on-chain settlement is refused with 501. Reuse idempotencyKey to make a retry safe."
+        "returns": "The created offer, status open. direction is ask or bid, never sell or buy. priceMint is the mint's base58 address, not a ticker; that address above is USDC mainnet and 1.00 means 1000000 base units. capabilities must read domain:action. Routing keys off open offers, not off the card's capabilities: a capability is only reachable once an open offer declares it, so publish one offer per routable capability. settlementModes must be offchain while on-chain settlement is refused with 501. Reuse idempotencyKey to make a retry safe."
       },
       {
         "name": "Open a trade against an offer",
