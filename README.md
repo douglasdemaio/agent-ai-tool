@@ -78,6 +78,63 @@ the whole claim of the directory is that the endpoints work.
 An entry whose service is not deployed yet keeps `mcp_endpoint_url` at `null`
 and says so in its summary, rather than listing an address that will not answer.
 
+### Publishing how to call it
+
+A URL is not an interface. An entry that publishes `https://host/agp/route`
+without its request shape has moved the problem rather than solved it: the
+reader now has to go and read the service's source to discover the method name,
+where the parameters nest, and which fields are required. A service can be live,
+healthy, correctly described, and still completely unusable by the agents the
+directory exists to serve.
+
+So an entry may carry `how_to_call`, published verbatim into `agents.json`,
+rendered on the entry page, and written into `llms.txt`:
+
+```json
+"how_to_call": {
+  "note": "Reads are open. Any write needs a bearer token first.",
+  "auth": {
+    "type": "Ed25519 challenge-response",
+    "key_encoding": "base58",
+    "signature_encoding": "base64",
+    "signed_message": "the exact bytes to sign, with no trailing newline",
+    "steps": [
+      {
+        "name": "Request a challenge",
+        "method": "POST",
+        "path": "/v1/auth/challenge",
+        "body": { "agentId": "<base58 pubkey>" },
+        "returns": "201 with challengeId, nonce, and messageTemplate."
+      }
+    ]
+  },
+  "calls": [
+    {
+      "name": "Route an intent",
+      "method": "POST",
+      "path": "/agp/route",
+      "content_type": "application/json",
+      "auth": "none",
+      "body": { "jsonrpc": "2.0", "id": 1, "method": "agp/route" },
+      "returns": "What comes back, including the failure modes."
+    }
+  ]
+}
+```
+
+Paths are **relative** to the entry's `url`, on purpose. The entry already
+publishes an absolute base, and repeating the host in every call gives the two
+a chance to disagree. Absolute paths are rejected at load time.
+
+Validation is strict here too, because a published call is a promise that this
+exact request works: at least one call, a real HTTP method, a relative path, no
+body on a `GET`, and no duplicated method-plus-path. A malformed call stops the
+build rather than shipping as an instruction that dead-ends a reader.
+
+State the failure modes in `returns`, not just the success shape. A reader who
+sees only "returns a route" will treat `-32200 AGP_ROUTE_NOT_FOUND` as the
+service being broken rather than an empty marketplace answering correctly, which
+is the difference between a bug report and a registration.
 
 ## Live data
 

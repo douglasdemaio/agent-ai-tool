@@ -7,6 +7,8 @@ import (
 	"html/template"
 	"strings"
 	"time"
+
+	"github.com/douglasdemaio/agent-ai-tool/internal/content"
 )
 
 // jsonLD serialises a value for embedding inside a <script> block. encoding/json
@@ -57,20 +59,21 @@ func (s Site) schemaOrg(v entryView) map[string]any {
 }
 
 type jsonEntry struct {
-	Slug           string    `json:"slug"`
-	Name           string    `json:"name"`
-	Summary        string    `json:"summary"`
-	URL            string    `json:"url"`
-	AgentCardURL   *string   `json:"agent_card_url"`
-	MCPEndpointURL *string   `json:"mcp_endpoint_url"`
-	Category       string    `json:"category,omitempty"`
-	Access         string    `json:"access,omitempty"`
-	Source         string    `json:"source"`
-	LastVerified   time.Time `json:"last_verified"`
-	Page           string    `json:"page"`
-	Delivered      *int      `json:"delivered,omitempty"`
-	EndpointDown   bool      `json:"endpoint_unreachable,omitempty"`
-	EndpointReason string    `json:"endpoint_unreachable_reason,omitempty"`
+	Slug           string             `json:"slug"`
+	Name           string             `json:"name"`
+	Summary        string             `json:"summary"`
+	URL            string             `json:"url"`
+	AgentCardURL   *string            `json:"agent_card_url"`
+	MCPEndpointURL *string            `json:"mcp_endpoint_url"`
+	Category       string             `json:"category,omitempty"`
+	Access         string             `json:"access,omitempty"`
+	Source         string             `json:"source"`
+	LastVerified   time.Time          `json:"last_verified"`
+	HowToCall      *content.HowToCall `json:"how_to_call,omitempty"`
+	Page           string             `json:"page"`
+	Delivered      *int               `json:"delivered,omitempty"`
+	EndpointDown   bool               `json:"endpoint_unreachable,omitempty"`
+	EndpointReason string             `json:"endpoint_unreachable_reason,omitempty"`
 }
 
 func (s Site) jsonEntries(views []entryView) []jsonEntry {
@@ -91,6 +94,7 @@ func (s Site) jsonEntries(views []entryView) []jsonEntry {
 			Source:         v.Entry.Source,
 			LastVerified:   v.Entry.LastVerified,
 			Page:           s.canonical(v.Entry.Slug),
+			HowToCall:      v.Entry.HowToCall,
 		}
 		if v.Unreachable {
 			entry.EndpointDown = true
@@ -212,7 +216,9 @@ func (s Site) llms(views []entryView) string {
 	b.WriteString("    print(e[\"slug\"], e[\"url\"], e.get(\"delivered\"))\n")
 	b.WriteString("```\n\n")
 	b.WriteString("## Entries\n\n")
+	stepNum := 1
 	for _, v := range views {
+		i := stepNum
 		fmt.Fprintf(&b, "### %s\n\n", v.Entry.Name)
 		fmt.Fprintf(&b, "%s\n\n", v.Entry.Summary)
 		fmt.Fprintf(&b, "- URL: %s\n", v.Entry.URL)
@@ -235,7 +241,51 @@ func (s Site) llms(views []entryView) string {
 		if v.Usage != nil {
 			fmt.Fprintf(&b, "- Deliveries recorded: %d\n", v.Usage.Delivered)
 		}
-		fmt.Fprintf(&b, "- Directory page: %s\n\n", s.canonical(v.Entry.Slug))
+		if h := v.Entry.HowToCall; h != nil {
+			if h.Note != "" {
+				fmt.Fprintf(&b, "\n%s\n", h.Note)
+			}
+			// The request shapes go in llms.txt as prose and a code block
+			// because that file exists to be read by a model, and a model
+			// cannot follow a pointer to another repository's source.
+			if a := h.Auth; a != nil {
+				fmt.Fprintf(&b, "\nAuth: %s.", a.Type)
+				if a.Credential != "" {
+					fmt.Fprintf(&b, " %s.", a.Credential)
+				}
+				if a.KeyEncoding != "" {
+					fmt.Fprintf(&b, " Public key is %s-encoded, signature is %s-encoded.", a.KeyEncoding, a.SignatureEncoding)
+				}
+				for _, step := range a.Steps {
+					fmt.Fprintf(&b, "\n  %d. %s %s", i, step.Method, step.Path)
+					i++
+					if body, err := stepBody(step.Body); err == nil {
+						fmt.Fprintf(&b, " body: %s", body)
+					}
+					if step.Returns != "" {
+						fmt.Fprintf(&b, "\n     %s", step.Returns)
+					}
+				}
+				if a.SignedMessage != "" {
+					fmt.Fprintf(&b, "\n  Sign exactly: %s\n", a.SignedMessage)
+				}
+			}
+			for _, c := range h.Calls {
+				auth := "no token needed"
+				if c.Auth != "" {
+					auth = "requires a token"
+				}
+				fmt.Fprintf(&b, "\n- %s — %s %s (%s)", c.Name, c.Method, c.Path, auth)
+				if body, err := stepBody(c.Body); err == nil {
+					fmt.Fprintf(&b, "\n  body: %s", body)
+				}
+				if c.Returns != "" {
+					fmt.Fprintf(&b, "\n  %s", c.Returns)
+				}
+			}
+		}
+		fmt.Fprintf(&b, "\n- Directory page: %s\n\n", s.canonical(v.Entry.Slug))
+		stepNum = i
 	}
 	if s.Metrics != nil {
 		b.WriteString("## Marketplace usage\n\n")
@@ -243,4 +293,23 @@ func (s Site) llms(views []entryView) string {
 		fmt.Fprintf(&b, "%d cancelled, across %d distinct consumers and %d distinct services in use.\n", s.Metrics.Totals.Cancelled, s.Metrics.Totals.Consumers, s.Metrics.Totals.Services)
 	}
 	return b.String()
+}
+
+// stepBody renders a published request body as a single line, so llms.txt stays
+// readable. A pretty-printed body would be a wall of braces in a file whose
+// whole purpose is to be scanned.
+func stepBody(body map[string]any) (string, error) {
+	if len(body) == 0 {
+		return "", nil
+	}
+	// HTML escaping is off because the placeholders are angle-bracketed. Left
+	// on, "<agentId>" would reach the reader as \u003cagentId\u003e, which is
+	// valid JSON and unreadable in the one file written to be read.
+	var sb strings.Builder
+	enc := json.NewEncoder(&sb)
+	enc.SetEscapeHTML(false)
+	if err := enc.Encode(body); err != nil {
+		return "", err
+	}
+	return strings.TrimSpace(sb.String()), nil
 }

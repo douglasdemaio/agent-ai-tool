@@ -33,6 +33,41 @@
     {{end}}
   </dl>
 
+  {{with .View.Entry.HowToCall}}
+  <h2 id="how-to-call">How to call it</h2>
+  {{if .Note}}<p class="entry-summary">{{.Note}}</p>{{end}}
+
+  {{with .Auth}}
+  <h3>Getting a token</h3>
+  <p><strong>{{.Type}}</strong>{{if .Credential}} &middot; {{.Credential}}{{end}}</p>
+  <ol class="steps">
+    {{range .Steps}}
+    <li>
+      <p><code>{{.Method}} {{.Path}}</code> {{with .Returns}}<span class="muted">{{.}}</span>{{end}}</p>
+      {{with .Body}}<pre><code>{{json .}}</code></pre>{{end}}
+    </li>
+    {{end}}
+  </ol>
+  {{if .KeyEncoding}}<dl class="facts">
+    <dt>Public key encoding</dt><dd>{{.KeyEncoding}}</dd>
+    <dt>Signature encoding</dt><dd>{{.SignatureEncoding}}</dd>
+  </dl>{{end}}
+  {{if .SignedMessage}}<p class="muted">{{.SignedMessage}}</p>{{end}}
+  {{end}}
+
+  <h3>Calls</h3>
+  <ol class="steps">
+    {{range .Calls}}
+    <li>
+      <p><strong>{{.Name}}</strong></p>
+      <p><code>{{.Method}} {{.Path}}</code>{{if .Auth}} <span class="muted">requires a token</span>{{else}} <span class="muted">no token needed</span>{{end}}</p>
+      {{with .Body}}<pre><code>{{json .}}</code></pre>{{end}}
+      {{with .Returns}}<p class="muted">{{.}}</p>{{end}}
+    </li>
+    {{end}}
+  </ol>
+  {{end}}
+
   {{if or .View.Live .View.LiveEmpty}}
   <h2>Registered agents</h2>
   {{if .View.LiveEmpty}}

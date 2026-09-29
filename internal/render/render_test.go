@@ -672,3 +672,102 @@ func TestLiveListingPrefersAgentTimestampOverFetch(t *testing.T) {
 		t.Errorf("LastVerified = %s, want the agent's updatedAt %s", got, agentTime)
 	}
 }
+
+// The directory's job is to make a service callable, not merely locatable. A
+// published call must survive into every surface an agent might read.
+func TestHowToCallReachesEverySurface(t *testing.T) {
+	s := site(t, content.Entry{
+		Slug: "vtessera", Name: "vtessera", Summary: "marketplace",
+		URL: "https://vtessera.fly.dev", Source: content.SourceCurated,
+		LastVerified: time.Date(2026, 9, 29, 0, 0, 0, 0, time.UTC),
+		HowToCall: &content.HowToCall{
+			Note: "Writes need a token first.",
+			Auth: &content.AuthFlow{
+				Type: "Ed25519 challenge-response", KeyEncoding: "base58",
+				SignatureEncoding: "base64",
+				SignedMessage:     "vtessera/auth/v1\\nchallenge:<challengeId>",
+				Steps: []content.AuthStep{{
+					Name: "challenge", Method: "POST", Path: "/v1/auth/challenge",
+					Body:    map[string]any{"agentId": "<base58 pubkey>"},
+					Returns: "201 with a nonce.",
+				}},
+			},
+			Calls: []content.Call{{
+				Name: "route", Method: "POST", Path: "/agp/route",
+				ContentType: "application/json", Auth: "none",
+				Body:    map[string]any{"method": "agp/route"},
+				Returns: "-32200 while empty.",
+			}},
+		},
+	})
+	s.GeneratedAt = time.Date(2026, 9, 29, 12, 0, 0, 0, time.UTC)
+
+	dir := t.TempDir()
+	if err := s.Render(dir); err != nil {
+		t.Fatal(err)
+	}
+	page, err := os.ReadFile(filepath.Join(dir, "vtessera", "index.html"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, want := range []string{"How to call it", "Getting a token", "/v1/auth/challenge", "/agp/route", "Ed25519 challenge-response"} {
+		if !strings.Contains(string(page), want) {
+			t.Errorf("entry page missing %q", want)
+		}
+	}
+
+	llms, err := os.ReadFile(filepath.Join(dir, "llms.txt"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, want := range []string{"/v1/auth/challenge", "/agp/route", "base58-encoded", "requires a token"} {
+		if !strings.Contains(string(llms), want) {
+			t.Errorf("llms.txt missing %q", want)
+		}
+	}
+	// Angle-bracketed placeholders must survive as themselves, not as escapes.
+	if !strings.Contains(string(llms), "<base58 pubkey>") {
+		t.Error("llms.txt HTML-escaped a placeholder, making it unreadable")
+	}
+
+	var doc struct {
+		Agents []struct {
+			HowToCall *content.HowToCall `json:"how_to_call"`
+		} `json:"agents"`
+	}
+	raw, err := os.ReadFile(filepath.Join(dir, "agents.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := json.Unmarshal(raw, &doc); err != nil {
+		t.Fatal(err)
+	}
+	if len(doc.Agents) != 1 || doc.Agents[0].HowToCall == nil {
+		t.Fatal("agents.json dropped how_to_call")
+	}
+	if got := doc.Agents[0].HowToCall.Calls[0].Path; got != "/agp/route" {
+		t.Errorf("agents.json call path = %q", got)
+	}
+}
+
+// An entry with no how_to_call must omit the key entirely rather than publish
+// an empty object, which reads as "documented, and there is nothing here".
+func TestHowToCallIsOmittedWhenAbsent(t *testing.T) {
+	s := site(t, content.Entry{
+		Slug: "mcp-registry", Name: "MCP Registry", Summary: "registry",
+		URL: "https://modelcontextprotocol.io/registry", Source: content.SourceCurated,
+		LastVerified: time.Date(2026, 9, 29, 0, 0, 0, 0, time.UTC),
+	})
+	s.GeneratedAt = time.Date(2026, 9, 29, 12, 0, 0, 0, time.UTC)
+	dir := t.TempDir()
+	if err := s.Render(dir); err != nil {
+		t.Fatal(err)
+	}
+	raw, err := os.ReadFile(filepath.Join(dir, "agents.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(string(raw), "how_to_call") {
+		t.Error("agents.json published an empty how_to_call")
+	}
+}

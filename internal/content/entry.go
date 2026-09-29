@@ -4,21 +4,74 @@ import (
 	"fmt"
 	"net/url"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 )
 
 type Entry struct {
-	Slug           string    `json:"slug"`
-	Name           string    `json:"name"`
-	Summary        string    `json:"summary"`
-	URL            string    `json:"url"`
-	AgentCardURL   *string   `json:"agent_card_url"`
-	MCPEndpointURL *string   `json:"mcp_endpoint_url"`
-	Category       string    `json:"category,omitempty"`
-	Access         string    `json:"access,omitempty"`
-	Source         string    `json:"source"`
-	LastVerified   time.Time `json:"last_verified"`
+	Slug           string     `json:"slug"`
+	Name           string     `json:"name"`
+	Summary        string     `json:"summary"`
+	URL            string     `json:"url"`
+	AgentCardURL   *string    `json:"agent_card_url"`
+	MCPEndpointURL *string    `json:"mcp_endpoint_url"`
+	Category       string     `json:"category,omitempty"`
+	Access         string     `json:"access,omitempty"`
+	Source         string     `json:"source"`
+	LastVerified   time.Time  `json:"last_verified"`
+	HowToCall      *HowToCall `json:"how_to_call,omitempty"`
+}
+
+// HowToCall is what a reader needs in order to actually make a call, rather
+// than merely learn that an endpoint exists.
+//
+// A directory that publishes a URL but not its request shape has moved the
+// problem rather than solved it: the reader now has to find the schema by
+// reading someone else's source. The gap is not academic — it is why a service
+// can be live, healthy, correctly described, and still unusable by the agents
+// the directory exists to serve.
+type HowToCall struct {
+	// Note states the prerequisite in one sentence, e.g. that a caller needs a
+	// keypair before any write.
+	Note string `json:"note,omitempty"`
+	// Auth is the credential dance, when there is one. A service that returns
+	// 401 on every write with no reachable path to a token is unusable.
+	Auth *AuthFlow `json:"auth,omitempty"`
+	// Calls are the operations worth publishing, most useful first.
+	Calls []Call `json:"calls"`
+}
+
+// AuthFlow describes how to obtain a credential. It is published rather than
+// linked because a spec file in another repository is not reachable by an agent
+// that only reads this one.
+type AuthFlow struct {
+	Type              string     `json:"type"`
+	Credential        string     `json:"credential,omitempty"`
+	KeyEncoding       string     `json:"key_encoding,omitempty"`
+	SignatureEncoding string     `json:"signature_encoding,omitempty"`
+	SignedMessage     string     `json:"signed_message,omitempty"`
+	Steps             []AuthStep `json:"steps"`
+}
+
+// AuthStep is one request in the credential dance.
+type AuthStep struct {
+	Name    string         `json:"name"`
+	Method  string         `json:"method"`
+	Path    string         `json:"path"`
+	Body    map[string]any `json:"body,omitempty"`
+	Returns string         `json:"returns,omitempty"`
+}
+
+// Call is a single published operation.
+type Call struct {
+	Name        string         `json:"name"`
+	Method      string         `json:"method"`
+	Path        string         `json:"path"`
+	ContentType string         `json:"content_type,omitempty"`
+	Auth        string         `json:"auth,omitempty"`
+	Body        map[string]any `json:"body,omitempty"`
+	Returns     string         `json:"returns,omitempty"`
 }
 
 const (
@@ -87,7 +140,76 @@ func (e Entry) Validate() error {
 	if e.LastVerified.IsZero() {
 		return fmt.Errorf("last_verified is required")
 	}
+	if e.HowToCall != nil {
+		if err := e.HowToCall.validate(); err != nil {
+			return fmt.Errorf("how_to_call: %w", err)
+		}
+	}
 	return nil
+}
+
+// A published call is a promise that this exact request works. Validating it at
+// load time is what keeps that promise honest: a call with no path, or a
+// relative one, or a GET with a body, would send a reader down a dead end
+// dressed as an instruction.
+func (h *HowToCall) validate() error {
+	if len(h.Calls) == 0 {
+		return fmt.Errorf("at least one call is required")
+	}
+	if h.Auth != nil {
+		if strings.TrimSpace(h.Auth.Type) == "" {
+			return fmt.Errorf("auth.type is required")
+		}
+		if len(h.Auth.Steps) == 0 {
+			return fmt.Errorf("auth.steps must not be empty")
+		}
+		for i, s := range h.Auth.Steps {
+			if err := validateRequest("auth.steps["+strconv.Itoa(i)+"]", s.Method, s.Path); err != nil {
+				return err
+			}
+		}
+	}
+	seen := make(map[string]bool, len(h.Calls))
+	for i, c := range h.Calls {
+		label := "calls[" + strconv.Itoa(i) + "]"
+		if strings.TrimSpace(c.Name) == "" {
+			return fmt.Errorf("%s.name is required", label)
+		}
+		if err := validateRequest(label, c.Method, c.Path); err != nil {
+			return err
+		}
+		if c.Method == "GET" && c.Body != nil {
+			return fmt.Errorf("%s: a GET carries no request body", label)
+		}
+		if seen[c.Method+" "+c.Path] {
+			return fmt.Errorf("%s: %s %s is published twice", label, c.Method, c.Path)
+		}
+		seen[c.Method+" "+c.Path] = true
+	}
+	return nil
+}
+
+// validateRequest requires a real method and a service-relative path. Paths are
+// relative on purpose: the entry already publishes an absolute base URL, and
+// repeating the host in every call is a second place for the two to disagree.
+func validateRequest(label, method, path string) error {
+	if strings.TrimSpace(path) == "" {
+		return fmt.Errorf("%s.path is required", label)
+	}
+	// Checked before the prefix rule, so an absolute URL gets the error that
+	// names the actual mistake rather than complaining about a missing slash.
+	if strings.Contains(path, "://") {
+		return fmt.Errorf("%s.path %q must be relative, not absolute; the entry's url is the base", label, path)
+	}
+	if !strings.HasPrefix(path, "/") {
+		return fmt.Errorf("%s.path %q must start with / so it is relative to the entry's url", label, path)
+	}
+	switch method {
+	case "GET", "POST", "PUT", "PATCH", "DELETE":
+		return nil
+	default:
+		return fmt.Errorf("%s.method %q must be a standard HTTP method", label, method)
+	}
 }
 
 func absoluteHTTP(raw string) error {

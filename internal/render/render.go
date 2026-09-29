@@ -261,6 +261,16 @@ func (s Site) Render(outDir string) error {
 	tmpl, err := template.New("site").Funcs(template.FuncMap{
 		"age":    humanAge,
 		"verify": func(t time.Time) string { return t.UTC().Format("2006-01-02") },
+		// Bodies are published as formatted JSON so a reader can copy them
+		// directly. Indented rather than compact because this is documentation
+		// being read by a person deciding whether to paste it.
+		"json": func(v any) (string, error) {
+			b, err := json.MarshalIndent(v, "", "  ")
+			if err != nil {
+				return "", err
+			}
+			return string(b), nil
+		},
 	}).ParseFS(templates, "templates/*.html", "templates/robots.txt")
 	if err != nil {
 		return err
