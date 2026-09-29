@@ -40,7 +40,13 @@ jobs:
           go run . -refresh
       - name: Commit if changed
         run: |
-          if git diff --quiet -- content/live-vtessera.json content/live-metrics.json; then
+          # `git status --porcelain` rather than `git diff --quiet`: diff only
+          # ever sees tracked files, so a snapshot that has never been committed
+          # reads as "unchanged" and is silently discarded. That is exactly what
+          # happened for as long as these two files were untracked, which left
+          # the offline fallback with nothing to fall back to. Porcelain reports
+          # untracked files as ??, so a first snapshot commits.
+          if [ -z "$(git status --porcelain -- content/live-vtessera.json content/live-metrics.json)" ]; then
             echo "Snapshots unchanged."
             exit 0
           fi

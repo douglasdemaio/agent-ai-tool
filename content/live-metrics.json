@@ -1,0 +1,15 @@
+{
+  "fetchedAt": "2026-09-29T13:33:17.437415106Z",
+  "response": {
+    "generatedAt": "2026-09-29T13:33:17.431908081Z",
+    "asOf": null,
+    "totals": {
+      "delivered": 0,
+      "disputed": 0,
+      "cancelled": 0,
+      "consumers": 0,
+      "services": 0
+    },
+    "agents": []
+  }
+}
