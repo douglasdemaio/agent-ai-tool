@@ -1,0 +1,32 @@
+{
+  "checkedAt": "2026-09-29T10:47:03.198881639Z",
+  "endpoints": {
+    "mcp-registry https://registry.modelcontextprotocol.io/v0.1/servers": {
+      "url": "https://registry.modelcontextprotocol.io/v0.1/servers",
+      "alive": true,
+      "attempts": [
+        0,
+        0,
+        0
+      ]
+    },
+    "models-dev https://models.dev/api.json": {
+      "url": "https://models.dev/api.json",
+      "alive": true,
+      "attempts": [
+        0,
+        0,
+        0
+      ]
+    },
+    "openrouter https://openrouter.ai/api/v1/models": {
+      "url": "https://openrouter.ai/api/v1/models",
+      "alive": true,
+      "attempts": [
+        0,
+        0,
+        0
+      ]
+    }
+  }
+}

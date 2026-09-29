@@ -17,16 +17,18 @@ files and GitHub Pages serves them.
 main.go                    flags, wiring, and the degradation report
 internal/content/          curated entry schema, strict validation
 internal/live/             vtessera feeds, snapshot cache, validators
+internal/health/           endpoint probes, report, staleness rules
 internal/render/           templates, discovery artifacts, robots policy
 content/entries/*.json     curated listings, one file each
 content/live-*.json        committed snapshots of the vtessera feeds
+content/health.json        committed endpoint reachability report
 assets/                    logo and stylesheet, copied verbatim
 public/                    generated; do not edit or commit
 ```
 
-The three units are independent, which is what keeps the test suite honest:
-`content` never learns about HTTP, `live` never learns about HTML, and `main.go`
-is the only place they meet.
+The four units are independent, which is what keeps the test suite honest:
+`content` never learns about HTTP, `live` never learns about HTML, `health`
+never learns about rendering, and `main.go` is the only place they meet.
 
 ## Commands
 
@@ -34,6 +36,7 @@ is the only place they meet.
 make            # fmt, vet, test, build
 make test       # unit and end-to-end tests, including -race
 make generate   # render public/
+make check      # probe every advertised endpoint, write content/health.json
 make serve      # generate, then serve on :8080
 ```
 
@@ -114,6 +117,43 @@ are used only to join data and are never rendered.
 
 No analytics are collected here: no page views, referrers, IPs, or user agents,
 and no third-party scripts.
+
+## Endpoint health
+
+The directory's claim is that these are endpoints an agent can call, so
+`content/health.json` records whether they still answer. `check-health.yml`
+probes every `mcp_endpoint_url` and `agent_card_url` twice a day and commits the
+verdict; the build then withholds any endpoint a fresh report found dead.
+
+```bash
+make check      # probe every endpoint, write content/health.json
+```
+
+Three properties are deliberate, and each is tested:
+
+- **A check never fails the build.** A third party's outage is a fact to
+  publish, not a reason to stop publishing. `make check` exits zero with
+  endpoints down, because a check that fails on every upstream hiccup is a
+  check nobody runs.
+- **One failed probe does not demote.** Each endpoint gets three attempts and a
+  majority decides. The MCP registry intermittently answers about half the time;
+  demoting on a single sample would flap the directory nightly over a service
+  that is mostly up. A 429 counts as alive, since the service is there declining
+  this client rather than the endpoint being gone.
+- **A missing or stale report demotes nothing.** Past 48 hours, or if no report
+  has ever been committed, every endpoint is published unchecked. The site will
+  not suppress a service on the strength of a check it no longer trusts, and a
+  report stamped in the future is discarded for the same reason.
+
+Withholding is reversible and never touches the source file: the JSON keeps the
+URL the service publishes, and only the rendered surfaces omit it. An endpoint
+returns the moment the next report says it answers. Where it is withheld, the
+entry is marked `endpoint_unreachable` with the failure reason, so an agent can
+tell a service that is down from one nobody has ever checked.
+
+Entry home pages are deliberately not probed. They are human destinations, and
+a site that rejects a bare user agent would demote itself for serving exactly
+the right page.
 
 ## Discovery
 

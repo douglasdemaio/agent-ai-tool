@@ -9,7 +9,7 @@ endif
 
 DOMAIN ?= agent-ai-tool.com
 
-.PHONY: all fmt vet test build generate refresh serve clean
+.PHONY: all fmt vet test build generate refresh check serve clean
 
 all: fmt vet test build
 
@@ -34,6 +34,11 @@ generate:
 # Fetch the live feeds and commit the snapshots. Needs a running service.
 refresh:
 	go run . -domain $(DOMAIN) -refresh
+
+# Probe every advertised endpoint and write content/health.json. Exits zero
+# whether or not endpoints are down; the verdict is the output, not the status.
+check:
+	go run . -domain $(DOMAIN) -check
 
 serve: generate
 	python3 -m http.server 8080 --directory public

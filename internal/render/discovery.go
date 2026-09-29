@@ -69,23 +69,32 @@ type jsonEntry struct {
 	LastVerified   time.Time `json:"last_verified"`
 	Page           string    `json:"page"`
 	Delivered      *int      `json:"delivered,omitempty"`
+	EndpointDown   bool      `json:"endpoint_unreachable,omitempty"`
+	EndpointReason string    `json:"endpoint_unreachable_reason,omitempty"`
 }
 
 func (s Site) jsonEntries(views []entryView) []jsonEntry {
 	out := make([]jsonEntry, 0, len(views))
 	for _, v := range views {
 		entry := jsonEntry{
-			Slug:           v.Entry.Slug,
-			Name:           v.Entry.Name,
-			Summary:        v.Entry.Summary,
-			URL:            v.Entry.URL,
-			AgentCardURL:   v.Entry.AgentCardURL,
-			MCPEndpointURL: v.Entry.MCPEndpointURL,
+			Slug:         v.Entry.Slug,
+			Name:         v.Entry.Name,
+			Summary:      v.Entry.Summary,
+			URL:          v.Entry.URL,
+			AgentCardURL: v.Entry.AgentCardURL,
+			// The endpoint as rendered, not as filed. An agent reading this
+			// file must not be handed a URL the site itself has just failed to
+			// reach.
+			MCPEndpointURL: v.Endpoint,
 			Category:       v.Entry.Category,
 			Access:         v.Entry.Access,
 			Source:         v.Entry.Source,
 			LastVerified:   v.Entry.LastVerified,
 			Page:           s.canonical(v.Entry.Slug),
+		}
+		if v.Unreachable {
+			entry.EndpointDown = true
+			entry.EndpointReason = v.EndpointDetail
 		}
 		if v.Usage != nil {
 			delivered := v.Usage.Delivered
@@ -118,8 +127,13 @@ func (s Site) directoryCard(views []entryView) map[string]any {
 			"description": v.Entry.Summary,
 			"tags":        []string{v.Entry.Category},
 		}
-		if v.Entry.MCPEndpointURL != nil {
-			skill["endpoint"] = *v.Entry.MCPEndpointURL
+		if v.Endpoint != nil {
+			skill["endpoint"] = *v.Endpoint
+		} else if v.Unreachable {
+			// A withheld endpoint is recorded as withheld rather than pointed
+			// at the home page, so an agent never mistakes a browsing URL for
+			// something it can call.
+			skill["endpointUnavailable"] = true
 		} else {
 			skill["endpoint"] = v.Entry.URL
 		}
@@ -205,8 +219,14 @@ func (s Site) llms(views []entryView) string {
 		if v.Entry.AgentCardURL != nil {
 			fmt.Fprintf(&b, "- Agent card: %s\n", *v.Entry.AgentCardURL)
 		}
-		if v.Entry.MCPEndpointURL != nil {
-			fmt.Fprintf(&b, "- MCP endpoint: %s\n", *v.Entry.MCPEndpointURL)
+		if v.Endpoint != nil {
+			fmt.Fprintf(&b, "- MCP endpoint: %s\n", *v.Endpoint)
+		}
+		if v.Unreachable {
+			b.WriteString("- MCP endpoint: withheld, it did not answer a recent health check\n")
+			if v.EndpointDetail != "" {
+				fmt.Fprintf(&b, "  (%s)\n", v.EndpointDetail)
+			}
 		}
 		if v.Entry.Category != "" {
 			fmt.Fprintf(&b, "- Category: %s\n", v.Entry.Category)

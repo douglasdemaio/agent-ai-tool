@@ -84,12 +84,17 @@ func generate(t *testing.T, dir string, client *http.Client, baseURL string, ext
 		cacheDir:   filepath.Join(dir, "content"),
 		outDir:     filepath.Join(dir, "public"),
 		assetsDir:  filepath.Join(dir, "assets"),
+		healthPath: filepath.Join(dir, "content", "health.json"),
+		attempts:   1,
 		timeout:    5 * time.Second,
 		now:        time.Date(2026, 9, 27, 22, 30, 0, 0, time.UTC),
 	}
 	for _, arg := range extra {
-		if arg == "-refresh" {
+		switch arg {
+		case "-refresh":
 			cfg.refresh = true
+		case "-check":
+			cfg.check = true
 		}
 	}
 	if client == nil {
@@ -252,5 +257,107 @@ func TestCachedSnapshotAgeIsCarriedIntoThePage(t *testing.T) {
 	}
 	if !strings.Contains(string(home), "30 days ago") {
 		t.Error("the page should report the recorded age")
+	}
+}
+
+// withEndpoint adds a machine endpoint to the workspace's curated entry and
+// returns the URL, so a test can point it at a server that answers or not.
+func withEndpoint(t *testing.T, dir, endpoint string) {
+	t.Helper()
+	path := filepath.Join(dir, "content", "entries", "vtessera.json")
+	raw, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	patched := strings.Replace(string(raw), `"url": "https://vtessera.example",`,
+		`"url": "https://vtessera.example", "mcp_endpoint_url": "`+endpoint+`",`, 1)
+	if patched == string(raw) {
+		t.Fatal("could not patch the curated entry with an endpoint")
+	}
+	if err := os.WriteFile(path, []byte(patched), 0o644); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func readFile(t *testing.T, dir, rel string) string {
+	t.Helper()
+	body, err := os.ReadFile(filepath.Join(dir, rel))
+	if err != nil {
+		t.Fatal(err)
+	}
+	return string(body)
+}
+
+func TestCheckWritesAReportAndABuildWithholdsWhatItFoundDead(t *testing.T) {
+	dir := workspace(t)
+	dead := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusNotFound)
+	}))
+	defer dead.Close()
+	withEndpoint(t, dir, dead.URL+"/mcp")
+
+	// A check must not fail the build even when the endpoint is gone.
+	if err := generate(t, dir, dead.Client(), "", "-check"); err != nil {
+		t.Fatalf("check should exit zero with a dead endpoint: %v", err)
+	}
+	report := readFile(t, dir, filepath.Join("content", "health.json"))
+	if !strings.Contains(report, `"alive": false`) {
+		t.Errorf("report should record the endpoint as dead: %s", report)
+	}
+
+	// A later build publishes the entry without its endpoint.
+	if err := generate(t, dir, nil, ""); err != nil {
+		t.Fatal(err)
+	}
+	agents := readFile(t, dir, filepath.Join("public", "agents.json"))
+	var payload struct {
+		Agents []struct {
+			MCPEndpointURL *string `json:"mcp_endpoint_url"`
+			EndpointDown   bool    `json:"endpoint_unreachable"`
+		} `json:"agents"`
+	}
+	if err := json.Unmarshal([]byte(agents), &payload); err != nil {
+		t.Fatal(err)
+	}
+	// The URL survives inside the quoted failure reason; what must not survive
+	// is the mcp_endpoint_url an agent would call.
+	if payload.Agents[0].MCPEndpointURL != nil {
+		t.Errorf("a dead endpoint was published as callable: %q", *payload.Agents[0].MCPEndpointURL)
+	}
+	if !strings.Contains(agents, `"endpoint_unreachable": true`) {
+		t.Errorf("agents.json should mark the entry as unreachable: %s", agents)
+	}
+}
+
+func TestCheckThenRecoveryRepublishesTheEndpoint(t *testing.T) {
+	dir := workspace(t)
+	healthy := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_, _ = w.Write([]byte(`{"servers":[]}`))
+	}))
+	defer healthy.Close()
+	withEndpoint(t, dir, healthy.URL+"/mcp")
+
+	if err := generate(t, dir, healthy.Client(), "", "-check"); err != nil {
+		t.Fatal(err)
+	}
+	if err := generate(t, dir, nil, ""); err != nil {
+		t.Fatal(err)
+	}
+	if agents := readFile(t, dir, filepath.Join("public", "agents.json")); !strings.Contains(agents, healthy.URL) {
+		t.Error("a reachable endpoint should be published")
+	}
+}
+
+// With no report committed, everything is published: the site must not suppress
+// services on the strength of a check that has never run.
+func TestNoReportMeansNoWithholding(t *testing.T) {
+	dir := workspace(t)
+	endpoint := "https://never-checked.example/mcp"
+	withEndpoint(t, dir, endpoint)
+	if err := generate(t, dir, nil, ""); err != nil {
+		t.Fatal(err)
+	}
+	if agents := readFile(t, dir, filepath.Join("public", "agents.json")); !strings.Contains(agents, endpoint) {
+		t.Error("an unchecked endpoint should still be published")
 	}
 }

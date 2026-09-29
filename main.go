@@ -16,9 +16,11 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"sort"
 	"time"
 
 	"github.com/douglasdemaio/agent-ai-tool/internal/content"
+	"github.com/douglasdemaio/agent-ai-tool/internal/health"
 	"github.com/douglasdemaio/agent-ai-tool/internal/live"
 	"github.com/douglasdemaio/agent-ai-tool/internal/render"
 )
@@ -33,6 +35,9 @@ type config struct {
 	outDir     string
 	assetsDir  string
 	refresh    bool
+	check      bool
+	healthPath string
+	attempts   int
 	timeout    time.Duration
 	now        time.Time
 }
@@ -52,6 +57,9 @@ func run() error {
 		outDir     = flag.String("out", "public", "output directory")
 		assetsDir  = flag.String("assets", "assets", "directory of static assets to copy")
 		refresh    = flag.Bool("refresh", false, "fetch the live feeds, write the snapshots, and exit")
+		check      = flag.Bool("check", false, "probe every curated entry endpoint, write the health report, and exit")
+		healthPath = flag.String("health-report", "content/health.json", "committed endpoint health report")
+		attempts   = flag.Int("attempts", health.DefaultAttempts, "probe attempts per endpoint before judging it")
 		timeout    = flag.Duration("timeout", live.DefaultTimeout, "per-request timeout for live fetches")
 		nowFlag    = flag.String("now", "", "override the generation time (RFC3339); for reproducible builds")
 	)
@@ -74,6 +82,9 @@ func run() error {
 		outDir:     *outDir,
 		assetsDir:  *assetsDir,
 		refresh:    *refresh,
+		check:      *check,
+		healthPath: *healthPath,
+		attempts:   *attempts,
 		timeout:    *timeout,
 		now:        now,
 	}
@@ -97,11 +108,22 @@ func (c config) run(ctx context.Context, client *http.Client) error {
 		return c.refreshSnapshots(ctx, client, agentsCache, metricsCache)
 	}
 
+	if c.check {
+		return c.checkEndpoints(ctx, entries, client)
+	}
+
 	agents := live.Load(ctx, c.baseURL, "/v1/agents", agentsCache, client, live.ValidateAgents)
 	report(agents, "agents")
 
 	metrics := live.Load(ctx, c.baseURL, "/v1/metrics", metricsCache, client, live.ValidateMetrics)
 	report(metrics, "metrics")
+
+	// A missing or stale report demotes nothing, so the site publishes every
+	// entry it has until a check says otherwise. Withholding endpoints on the
+	// strength of an old report would be worse than publishing a URL that
+	// happens to be up again.
+	report := health.Read(c.healthPath)
+	unreachable := report.Unreachable(c.now)
 
 	site := render.Site{
 		Domain:           c.domain,
@@ -111,6 +133,18 @@ func (c config) run(ctx context.Context, client *http.Client) error {
 		MetricsErr:       metrics.FetchErr,
 		GeneratedAt:      c.now,
 		AssetsDir:        c.assetsDir,
+		Unreachable:      unreachable,
+		EndpointDetails:  report.Details(),
+	}
+	if !report.CheckedAt.IsZero() {
+		checked := report.CheckedAt
+		site.HealthCheckedAt = &checked
+	}
+	if len(unreachable) > 0 {
+		log.Printf("health: WARNING withholding the endpoint for %d entry(s) that did not answer the last check: %v",
+			len(unreachable), keys(unreachable))
+	} else if report.CheckedAt.IsZero() {
+		log.Printf("health: no committed report at %s; every endpoint is published unchecked", c.healthPath)
 	}
 
 	if agents.Available() {
@@ -137,6 +171,32 @@ func (c config) run(ctx context.Context, client *http.Client) error {
 	return nil
 }
 
+// checkEndpoints probes every advertised endpoint and commits the verdict.
+//
+// It exits zero even when endpoints are down. A dead third-party endpoint is a
+// fact to publish, not a reason to refuse to publish, and a check that failed
+// the build on every upstream hiccup would be a check nobody runs.
+func (c config) checkEndpoints(ctx context.Context, entries []content.Entry, client *http.Client) error {
+	report := health.Check(ctx, entries, client, health.Options{
+		Attempts: c.attempts,
+		Interval: health.DefaultInterval,
+		Timeout:  c.timeout,
+	}, c.now)
+	down := 0
+	for _, endpoint := range report.Endpoints {
+		if !endpoint.Alive {
+			down++
+			log.Printf("health: %s is unreachable: %s", endpoint.URL, endpoint.Detail)
+		}
+	}
+	log.Printf("health: %d endpoint(s) probed, %d unreachable", len(report.Endpoints), down)
+	if err := report.Write(c.healthPath); err != nil {
+		return fmt.Errorf("writing %s: %w", c.healthPath, err)
+	}
+	log.Printf("wrote %s", c.healthPath)
+	return nil
+}
+
 func (c config) refreshSnapshots(ctx context.Context, client *http.Client, agentsCache, metricsCache string) error {
 	if c.baseURL == "" {
 		return fmt.Errorf("-refresh needs -base-url or VTESSERA_BASE_URL; refusing to write empty snapshots")
@@ -150,6 +210,15 @@ func (c config) refreshSnapshots(ctx context.Context, client *http.Client, agent
 	}
 	log.Printf("wrote %s", metricsCache)
 	return nil
+}
+
+func keys(m map[string]bool) []string {
+	out := make([]string, 0, len(m))
+	for k := range m {
+		out = append(out, k)
+	}
+	sort.Strings(out)
+	return out
 }
 
 // report makes the degradation path loud in the build log, so a silent

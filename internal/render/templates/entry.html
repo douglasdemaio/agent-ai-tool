@@ -8,13 +8,16 @@
   <dl class="facts">
     <dt>Endpoint</dt>
     <dd><a href="{{.View.Entry.URL}}" rel="nofollow noopener">{{.View.Entry.URL}}</a></dd>
+    {{if .View.Endpoint}}
+    <dt>MCP endpoint</dt>
+    <dd><a href="{{.View.Endpoint}}" rel="nofollow noopener">{{.View.Endpoint}}</a></dd>
+    {{else if .View.Unreachable}}
+    <dt>MCP endpoint</dt>
+    <dd class="withheld">withheld &mdash; it did not answer a recent health check{{if .View.EndpointDetail}} <span class="entry-meta">{{.View.EndpointDetail}}</span>{{end}}</dd>
+    {{end}}
     {{if .View.Entry.AgentCardURL}}
     <dt>Agent card</dt>
     <dd><a href="{{.View.Entry.AgentCardURL}}" rel="nofollow noopener">{{.View.Entry.AgentCardURL}}</a></dd>
-    {{end}}
-    {{if .View.Entry.MCPEndpointURL}}
-    <dt>MCP endpoint</dt>
-    <dd><a href="{{.View.Entry.MCPEndpointURL}}" rel="nofollow noopener">{{.View.Entry.MCPEndpointURL}}</a></dd>
     {{end}}
     {{if .View.Entry.Category}}
     <dt>Category</dt><dd>{{.View.Entry.Category}}</dd>

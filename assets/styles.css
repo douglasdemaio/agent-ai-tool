@@ -220,6 +220,17 @@ h2 {
   font-variant-numeric: tabular-nums;
   vertical-align: middle;
 }
+/* A withheld endpoint is a warning, not an error: the service may be back on
+   the next check. Reuses the existing warn tokens so it reads as a caution
+   beside the accent-coloured usage badge rather than as a second emphasis. */
+.badge.down {
+  background: var(--warn-bg);
+  color: var(--warn-line);
+  border: 1px solid var(--warn-line);
+}
+.facts .withheld {
+  color: var(--warn-line);
+}
 
 .facts {
   display: grid;

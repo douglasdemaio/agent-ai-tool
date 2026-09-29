@@ -1,0 +1,83 @@
+name: Check endpoint health
+
+# Probes every endpoint the directory advertises and commits the verdict.
+#
+# This is separate from the vtessera snapshot refresh because the two have
+# different prerequisites: the refresh needs VTESSERA_BASE_URL and does nothing
+# without it, while the health check needs no configuration and runs whatever
+# entries happen to be curated. It also runs more often, because a third-party
+# endpoint going down is not a once-a-day event.
+#
+# The check never fails. A dead endpoint is a fact to publish, not a reason to
+# stop publishing: the build withholds the dead URL, names the reason, and
+# restores it on the next run once the service answers again.
+
+on:
+  schedule:
+    # Six hours. The report is treated as stale after 48, so a couple of missed
+    # runs degrade to publishing endpoints unchecked rather than suppressing
+    # working ones.
+    - cron: '23 */6 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: check-health
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.27'
+          # No third-party modules, so there is no go.sum to key a cache on.
+          cache: false
+      - name: Probe endpoints
+        run: go run . -check
+      - name: Commit if the verdicts changed, or the report is going stale
+        run: |
+          # checkedAt moves on every run, so committing unconditionally would
+          # rebuild the site six times a day to say nothing. What matters is the
+          # verdict per endpoint. The report is also committed once it gets old
+          # enough to be treated as stale, so a directory that is quietly healthy
+          # does not eventually stop being checked at all.
+          if git diff --quiet -- content/health.json; then
+            echo "Report is byte-identical; nothing to commit."
+            exit 0
+          fi
+          changed=$(python3 -c '
+          import json, subprocess, sys
+          try:
+              old = json.loads(subprocess.run(
+                  ["git", "show", "HEAD:content/health.json"],
+                  capture_output=True, text=True, check=True).stdout)
+          except Exception:
+              print("commit"); sys.exit(0)
+          new = json.load(open("content/health.json"))
+          verdict = lambda d: {k: v.get("alive") for k, v in d.get("endpoints", {}).items()}
+          print("skip" if verdict(old) == verdict(new) else "commit")
+          ')
+          if [ "$changed" = "skip" ]; then
+            age=$(python3 -c '
+            import datetime, json, sys
+            r = json.load(open("content/health.json"))
+            checked = datetime.datetime.fromisoformat(r["checkedAt"].replace("Z", "+00:00"))
+            print((datetime.datetime.now(datetime.timezone.utc) - checked).days)
+            ')
+            if [ "$age" -lt 1 ]; then
+              echo "Verdicts unchanged and the report is only ${age}d old; not committing."
+              git checkout -- content/health.json
+              exit 0
+            fi
+            echo "Verdicts unchanged but the report is ${age}d old; refreshing it."
+          fi
+          git config user.name  'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add content/health.json
+          git commit -m 'chore: record the latest endpoint health report'
+          git push

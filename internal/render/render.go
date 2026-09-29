@@ -30,6 +30,30 @@ type Site struct {
 	MetricsErr       error
 	GeneratedAt      time.Time
 	AssetsDir        string
+	// Unreachable names entries whose advertised endpoints a recent health
+	// check could not reach. Their endpoints are withheld from every published
+	// surface rather than advertised as callable, because the directory's claim
+	// is that these endpoints work.
+	Unreachable map[string]bool
+	// EndpointDetails carries each unreachable entry's last failure reason, for
+	// the page to show rather than leaving a blank field unexplained.
+	EndpointDetails map[string]string
+	// HealthCheckedAt is when that check ran, and nil when no trusted report
+	// exists. Withheld endpoints carry it so a reader can tell a service that
+	// is down from one that was merely never checked.
+	HealthCheckedAt *time.Time
+}
+
+// endpointFor returns the machine endpoint an entry advertises, or nil when the
+// entry has none or a recent check says it cannot be reached.
+func (s Site) endpointFor(e content.Entry) *string {
+	if e.MCPEndpointURL == nil {
+		return nil
+	}
+	if s.Unreachable[e.Slug] {
+		return nil
+	}
+	return e.MCPEndpointURL
 }
 
 type usage struct {
@@ -54,6 +78,16 @@ type entryView struct {
 	// template's truthiness test is concerned, which would let an empty
 	// marketplace look like a working one.
 	LiveEmpty bool
+	// Endpoint is the machine endpoint this entry advertises, withheld when a
+	// recent health check could not reach it.
+	Endpoint *string
+	// Unreachable reports that the endpoint is withheld, so the page can say
+	// why rather than silently omitting a field an agent expects.
+	Unreachable bool
+	// EndpointDetail carries the check's last failure reason.
+	EndpointDetail string
+	// HealthCheckedAt is when the check ran, for the same reason.
+	HealthCheckedAt *time.Time
 }
 
 type pageData struct {
@@ -102,6 +136,34 @@ func (s Site) usageByAgent() map[string]usage {
 	return out
 }
 
+// viewFor builds a view and applies the health verdict. The curated entry keeps
+// its own mcp_endpoint_url: the source file stays the record of what the service
+// publishes, while the rendered site withholds an endpoint a check could not
+// reach. Editing the JSON to remove a URL would lose that distinction the next
+// time the service came back.
+func (s Site) viewFor(e content.Entry) entryView {
+	view := entryView{
+		Entry:           e,
+		Endpoint:        s.endpointFor(e),
+		Unreachable:     s.Unreachable[e.Slug],
+		HealthCheckedAt: s.HealthCheckedAt,
+	}
+	if view.Unreachable {
+		if detail, ok := s.endpointDetail(e.Slug); ok {
+			view.EndpointDetail = detail
+		}
+	}
+	return view
+}
+
+func (s Site) endpointDetail(slug string) (string, bool) {
+	if s.EndpointDetails == nil {
+		return "", false
+	}
+	detail, ok := s.EndpointDetails[slug]
+	return detail, ok
+}
+
 // resolve merges the live vtessera feed over the curated stub.
 //
 // The feed supplies the list of registered agents, so it owns the entry's source
@@ -116,7 +178,7 @@ func (s Site) resolve() ([]entryView, error) {
 	found := false
 
 	for _, e := range s.Entries {
-		view := entryView{Entry: e}
+		view := s.viewFor(e)
 		if u, ok := byAgent[e.Slug]; ok && u.Delivered >= live.BadgeFloor {
 			copied := u
 			view.Usage = &copied

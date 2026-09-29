@@ -445,3 +445,98 @@ func TestGuidanceRecommendsBadgedEntriesWhenAnyExist(t *testing.T) {
 		t.Error("the index should explain the badge once one exists")
 	}
 }
+
+func deadEndpointSite(t *testing.T) Site {
+	t.Helper()
+	e := entry("vtessera", "A marketplace.")
+	e.MCPEndpointURL = strptr("https://vtessera.example.com/mcp")
+	s := site(t, e)
+	s.Unreachable = map[string]bool{"vtessera": true}
+	s.EndpointDetails = map[string]string{"vtessera": "GET https://vtessera.example.com/mcp = 404"}
+	checked := time.Date(2026, 9, 29, 6, 0, 0, 0, time.UTC)
+	s.HealthCheckedAt = &checked
+	return s
+}
+
+func strptr(s string) *string { return &s }
+
+// A dead endpoint must not reach any surface an agent reads, or the site is
+// still telling it to call a URL the site itself could not reach.
+func TestDeadEndpointIsWithheldFromAgentsJSON(t *testing.T) {
+	body := read(t, renderTo(t, deadEndpointSite(t)), "agents.json")
+	var payload struct {
+		Agents []struct {
+			Slug           string  `json:"slug"`
+			MCPEndpointURL *string `json:"mcp_endpoint_url"`
+			EndpointDown   bool    `json:"endpoint_unreachable"`
+			Reason         string  `json:"endpoint_unreachable_reason"`
+		} `json:"agents"`
+	}
+	if err := json.Unmarshal([]byte(body), &payload); err != nil {
+		t.Fatal(err)
+	}
+	if payload.Agents[0].MCPEndpointURL != nil {
+		t.Errorf("agents.json still advertises a dead endpoint: %q", *payload.Agents[0].MCPEndpointURL)
+	}
+	if !payload.Agents[0].EndpointDown {
+		t.Error("agents.json should mark the entry so an agent can tell dead from unchecked")
+	}
+	if payload.Agents[0].Reason == "" {
+		t.Error("agents.json should carry the failure reason")
+	}
+}
+
+func TestDeadEndpointIsWithheldFromTheAgentCard(t *testing.T) {
+	body := read(t, renderTo(t, deadEndpointSite(t)), ".well-known/agent-card.json")
+	var payload struct {
+		Skills []struct {
+			ID          string `json:"id"`
+			Endpoint    string `json:"endpoint"`
+			Unavailable bool   `json:"endpointUnavailable"`
+		} `json:"skills"`
+	}
+	if err := json.Unmarshal([]byte(body), &payload); err != nil {
+		t.Fatal(err)
+	}
+	skill := payload.Skills[0]
+	if skill.Endpoint == "https://vtessera.example.com/mcp" {
+		t.Error("the agent card still hands an agent a dead endpoint")
+	}
+	if !skill.Unavailable {
+		t.Error("the agent card should record the endpoint as unavailable")
+	}
+}
+
+func TestDeadEndpointIsWithheldFromLLMsTxt(t *testing.T) {
+	llms := read(t, renderTo(t, deadEndpointSite(t)), "llms.txt")
+	if strings.Contains(llms, "MCP endpoint: https://vtessera.example.com/mcp") {
+		t.Error("llms.txt still lists a dead endpoint as callable")
+	}
+	if !strings.Contains(llms, "withheld") {
+		t.Error("llms.txt should say the endpoint was withheld rather than dropping the line")
+	}
+}
+
+func TestDeadEndpointIsExplainedOnItsPage(t *testing.T) {
+	page := read(t, renderTo(t, deadEndpointSite(t)), "vtessera/index.html")
+	// The URL may still appear inside the quoted failure reason, which is the
+	// point of the explanation. What must not survive is an anchor inviting an
+	// agent to call it.
+	if strings.Contains(page, `href="https://vtessera.example.com/mcp"`) {
+		t.Error("the entry page still links a dead endpoint")
+	}
+	if !strings.Contains(page, "withheld") {
+		t.Error("the entry page should explain the absent endpoint")
+	}
+}
+
+// Withholding is reversible: the endpoint comes back the moment the report says
+// it is reachable again, with no edit to the source file.
+func TestAHealthyReportRepublishesTheEndpoint(t *testing.T) {
+	e := entry("vtessera", "A marketplace.")
+	e.MCPEndpointURL = strptr("https://vtessera.example.com/mcp")
+	s := site(t, e)
+	if body := read(t, renderTo(t, s), "agents.json"); !strings.Contains(body, "https://vtessera.example.com/mcp") {
+		t.Error("a healthy endpoint should be published")
+	}
+}
