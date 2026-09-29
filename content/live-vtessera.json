@@ -1,6 +1,30 @@
 {
-  "fetchedAt": "2026-09-29T13:33:17.424193315Z",
+  "fetchedAt": "2026-09-29T16:11:18.777084165Z",
   "response": {
-    "agents": null
+    "agents": [
+      {
+        "id": "Ax1YCpc9L35TRAHgGN5CUjPe3BxT6bVsjq2xci5hPCgV",
+        "card": {
+          "name": "opencode-probe-agent",
+          "description": "Temporary probe agent used to verify the vtessera marketplace write path.",
+          "version": "0.0.1-probe",
+          "url": "https://example.invalid/opencode-probe-agent",
+          "publicKey": "Ax1YCpc9L35TRAHgGN5CUjPe3BxT6bVsjq2xci5hPCgV",
+          "capabilities": [
+            "text:summarize",
+            "text:translate"
+          ],
+          "currencies": [
+            "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
+          ],
+          "settlementModes": [
+            "offchain"
+          ]
+        },
+        "status": "active",
+        "createdAt": "2026-09-29T15:28:57.584804777Z",
+        "updatedAt": "2026-09-29T15:28:57.584804777Z"
+      }
+    ]
   }
 }
