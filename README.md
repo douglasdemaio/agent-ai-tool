@@ -37,6 +37,7 @@ make            # fmt, vet, test, build
 make test       # unit and end-to-end tests, including -race
 make generate   # render public/
 make check      # probe every advertised endpoint, write content/health.json
+make review     # list curated entries overdue for human review
 make serve      # generate, then serve on :8080
 ```
 
@@ -154,6 +155,54 @@ tell a service that is down from one nobody has ever checked.
 Entry home pages are deliberately not probed. They are human destinations, and
 a site that rejects a bare user agent would demote itself for serving exactly
 the right page.
+
+## Keeping the entries honest
+
+An entry can be wrong in two ways, and they need different machinery.
+
+**It stops answering.** The health check catches this automatically. Nothing to
+remember.
+
+**It stops being true.** A probe cannot tell that a service dropped a currency,
+changed its pricing, or narrowed its access terms. Only a person reading the
+entry against the service can. So each curated entry carries `last_verified`,
+and after `content.ReviewWindow` (180 days) the site marks it *due for review* on
+its page and in the index. `review-entries.yml` lists the overdue ones on the
+first of each month and opens or bumps a single issue.
+
+`make review` prints the same list, tab-separated, as `<slug>\t<last_verified>`:
+
+```bash
+make review
+```
+
+Neither check fails a build. Both are reminders, and a job that goes red every
+time an entry ages is a job that gets muted — which is worse than no reminder,
+because it looks like coverage.
+
+### The policy
+
+**Adding an entry.** Verify the endpoint yourself before adding it — `curl` it
+and confirm the response is what the summary claims. Set `last_verified` to the
+day you did that, not the day you wrote the file. Add it to `content/entries/`
+and run `make test`; the schema is strict and rejects unknown fields, so a typo
+fails the build rather than shipping.
+
+**Reviewing an entry.** Run `make review`, then for each slug confirm the
+summary, endpoint, category, access terms and pricing against the live service.
+Update anything that drifted, then set `last_verified` to today. Do not bump the
+date without checking: it is the only record that a human looked, so bumping it
+unread makes the field a lie and the whole mechanism pointless.
+
+**Retiring an entry.** Delete the file. An entry whose service has shut down is
+worse than a missing one, because the directory's value is that everything in it
+connects. If a service is only temporarily down, do nothing — the health check
+withholds the endpoint and restores it when it answers, which is exactly the
+distinction between *down* and *gone*.
+
+**Ownership.** The maintainer of this repository. The reminder exists so that
+this does not depend on anyone remembering; if the monthly issue is not being
+worked, that is the signal that the cadence is wrong, not that the mechanism is.
 
 ## Discovery
 

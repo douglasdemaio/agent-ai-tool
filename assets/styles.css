@@ -231,6 +231,17 @@ h2 {
 .facts .withheld {
   color: var(--warn-line);
 }
+/* A review date is a reminder to a human, not a fault in the entry, so it is
+   quieter than the down badge: outlined and unemphasised rather than filled, so
+   a page of healthy-but-overdue entries does not read as a page of errors. */
+.badge.due {
+  background: transparent;
+  color: var(--muted);
+  border: 1px solid currentColor;
+}
+.facts .due {
+  color: var(--muted);
+}
 
 .facts {
   display: grid;

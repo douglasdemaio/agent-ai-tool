@@ -1,0 +1,75 @@
+name: Review curated entries
+
+# The health check proves an endpoint answers. It cannot prove the summary,
+# pricing, or access terms still describe the service. This job is the human half:
+# once a month it lists the entries that have gone too long without anyone
+# confirming them, and opens or bumps one issue.
+#
+# It is deliberately not a failing check. An overdue entry is a reminder, and a
+# job that goes red every time an entry ages is a job that gets muted — which
+# would be worse than no reminder, because it would look like coverage.
+
+on:
+  schedule:
+    # First of the month, 07:10 UTC.
+    - cron: '10 7 1 * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.27'
+          # No third-party modules, so there is no go.sum to key a cache on.
+          cache: false
+      - name: List entries due for review
+        id: due
+        run: |
+          go run . -review > review.txt
+          if [ -s review.txt ]; then
+            echo "due=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "due=false" >> "$GITHUB_OUTPUT"
+            echo "Every curated entry is confirmed within the review window."
+          fi
+      - name: Open or bump the review issue
+        if: steps.due.outputs.due == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cat review.txt
+          # Build the body in a file. Passing markdown on the command line means
+          # fighting shell quoting for backticks and newlines, and an issue body
+          # that is silently mangled is worse than one that fails loudly.
+          {
+            cat <<'EOF'
+          These curated entries have not been confirmed against the service in over
+          six months. For each one, check that the summary, endpoint, category,
+          access terms and pricing still match the service, then bump
+          `last_verified` in `content/entries/<slug>.json`.
+
+          Do not bump the date without checking. The date is the only signal that
+          a human looked, so bumping it unread makes the field a lie and this
+          issue pointless.
+
+          Entries due (slug, last confirmed):
+          EOF
+            echo '```'
+            cat review.txt
+            echo '```'
+          } > body.md
+          title='Curated entries due for review'
+          number=$(gh issue list --state open --search "$title in:title" \
+            --json number --jq '.[0].number // empty')
+          if [ -n "$number" ]; then
+            gh issue comment "$number" --body-file body.md
+          else
+            gh issue create --title "$title" --body-file body.md
+          fi

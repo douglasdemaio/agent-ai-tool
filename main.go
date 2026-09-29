@@ -36,6 +36,7 @@ type config struct {
 	assetsDir  string
 	refresh    bool
 	check      bool
+	review     bool
 	healthPath string
 	attempts   int
 	timeout    time.Duration
@@ -58,6 +59,7 @@ func run() error {
 		assetsDir  = flag.String("assets", "assets", "directory of static assets to copy")
 		refresh    = flag.Bool("refresh", false, "fetch the live feeds, write the snapshots, and exit")
 		check      = flag.Bool("check", false, "probe every curated entry endpoint, write the health report, and exit")
+		review     = flag.Bool("review", false, "list curated entries overdue for human review, then exit")
 		healthPath = flag.String("health-report", "content/health.json", "committed endpoint health report")
 		attempts   = flag.Int("attempts", health.DefaultAttempts, "probe attempts per endpoint before judging it")
 		timeout    = flag.Duration("timeout", live.DefaultTimeout, "per-request timeout for live fetches")
@@ -83,6 +85,7 @@ func run() error {
 		assetsDir:  *assetsDir,
 		refresh:    *refresh,
 		check:      *check,
+		review:     *review,
 		healthPath: *healthPath,
 		attempts:   *attempts,
 		timeout:    *timeout,
@@ -110,6 +113,10 @@ func (c config) run(ctx context.Context, client *http.Client) error {
 
 	if c.check {
 		return c.checkEndpoints(ctx, entries, client)
+	}
+
+	if c.review {
+		return c.reviewDue(entries)
 	}
 
 	agents := live.Load(ctx, c.baseURL, "/v1/agents", agentsCache, client, live.ValidateAgents)
@@ -194,6 +201,32 @@ func (c config) checkEndpoints(ctx context.Context, entries []content.Entry, cli
 		return fmt.Errorf("writing %s: %w", c.healthPath, err)
 	}
 	log.Printf("wrote %s", c.healthPath)
+	return nil
+}
+
+// reviewDue lists curated entries that have gone longer than
+// content.ReviewWindow without a human confirming them.
+//
+// It exits zero whether or not anything is due. A stale entry is a reminder,
+// and a scheduled job that goes red every time an entry ages is a job that gets
+// muted; the output is the signal, not the exit status. The lines are
+// tab-separated so the caller can parse them without guessing.
+func (c config) reviewDue(entries []content.Entry) error {
+	var due []content.Entry
+	for _, e := range entries {
+		if e.ReviewDue(c.now) {
+			due = append(due, e)
+		}
+	}
+	if len(due) == 0 {
+		log.Printf("review: all %d curated entries are confirmed within the review window", len(entries))
+		return nil
+	}
+	for _, e := range due {
+		fmt.Printf("%s\t%s\n", e.Slug, e.LastVerified.UTC().Format("2006-01-02"))
+	}
+	log.Printf("review: %d of %d curated entries are overdue; each needs its summary, endpoint and terms confirmed, then last_verified bumped",
+		len(due), len(entries))
 	return nil
 }
 

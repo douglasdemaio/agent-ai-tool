@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -11,6 +12,30 @@ import (
 	"testing"
 	"time"
 )
+
+// captureStdout runs fn with stdout redirected, for the modes whose whole
+// contract is what they print. Their output is what the scheduled workflow
+// parses, so it is worth asserting rather than leaving to inspection.
+func captureStdout(t *testing.T, fn func() error) string {
+	t.Helper()
+	original := os.Stdout
+	reader, writer, err := os.Pipe()
+	if err != nil {
+		t.Fatal(err)
+	}
+	os.Stdout = writer
+	runErr := fn()
+	writer.Close()
+	os.Stdout = original
+	body, err := io.ReadAll(reader)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if runErr != nil {
+		t.Fatalf("run: %v", runErr)
+	}
+	return string(body)
+}
 
 // seed mirrors the shapes vtessera actually returns, taken from
 // internal/httpapi/server.go and internal/domain in the service repo.
@@ -95,6 +120,8 @@ func generate(t *testing.T, dir string, client *http.Client, baseURL string, ext
 			cfg.refresh = true
 		case "-check":
 			cfg.check = true
+		case "-review":
+			cfg.review = true
 		}
 	}
 	if client == nil {
@@ -359,5 +386,45 @@ func TestNoReportMeansNoWithholding(t *testing.T) {
 	}
 	if agents := readFile(t, dir, filepath.Join("public", "agents.json")); !strings.Contains(agents, endpoint) {
 		t.Error("an unchecked endpoint should still be published")
+	}
+}
+
+// The workflow parses this output, so the shape is a contract: one entry per
+// line, slug and date separated by a tab, nothing at all when nothing is due.
+func TestReviewListsOverdueEntriesAndNothingElse(t *testing.T) {
+	dir := workspace(t)
+	aged := `{
+	  "slug": "aged",
+	  "name": "Aged",
+	  "summary": "Confirmed a long time ago.",
+	  "url": "https://aged.example",
+	  "source": "curated",
+	  "last_verified": "2024-01-01T00:00:00Z"
+	}`
+	entryPath := filepath.Join(dir, "content", "entries", "aged.json")
+	if err := os.WriteFile(entryPath, []byte(aged), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	out := captureStdout(t, func() error {
+		return generate(t, dir, nil, "", "-review")
+	})
+
+	if !strings.Contains(out, "aged\t2024-01-01") {
+		t.Errorf("the overdue entry should be listed as slug<TAB>date, got: %q", out)
+	}
+	// The workspace entry was confirmed a week before the build clock.
+	if strings.Contains(out, "vtessera") {
+		t.Errorf("an entry inside the review window should not be listed, got: %q", out)
+	}
+}
+
+func TestReviewPrintsNothingWhenEverythingIsConfirmed(t *testing.T) {
+	dir := workspace(t)
+	out := captureStdout(t, func() error {
+		return generate(t, dir, nil, "", "-review")
+	})
+	if strings.TrimSpace(out) != "" {
+		t.Errorf("nothing is due, so nothing should be printed, got: %q", out)
 	}
 }

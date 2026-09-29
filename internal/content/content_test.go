@@ -143,3 +143,47 @@ func TestValidateAcceptsOptionalFieldsOmitted(t *testing.T) {
 		t.Error("omitted optional URLs should stay nil, not become empty strings")
 	}
 }
+
+func TestReviewDue(t *testing.T) {
+	now := time.Date(2026, 9, 29, 0, 0, 0, 0, time.UTC)
+
+	cases := []struct {
+		name   string
+		entry  Entry
+		expect bool
+	}{
+		{
+			name:   "confirmed yesterday",
+			entry:  Entry{Source: SourceCurated, LastVerified: now.AddDate(0, 0, -1)},
+			expect: false,
+		},
+		{
+			name:   "confirmed just inside the window",
+			entry:  Entry{Source: SourceCurated, LastVerified: now.Add(-ReviewWindow + 24*time.Hour)},
+			expect: false,
+		},
+		{
+			name:   "confirmed just outside the window",
+			entry:  Entry{Source: SourceCurated, LastVerified: now.Add(-ReviewWindow - 24*time.Hour)},
+			expect: true,
+		},
+		{
+			name:   "a live entry is never due",
+			entry:  Entry{Source: SourceLive, LastVerified: now.AddDate(-2, 0, 0)},
+			expect: false,
+		},
+		{
+			// A future date is a data error. Treating it as overdue would flag a
+			// working entry, and flags that fire on correct data get ignored.
+			name:   "a future date is not due",
+			entry:  Entry{Source: SourceCurated, LastVerified: now.AddDate(0, 6, 0)},
+			expect: false,
+		},
+	}
+
+	for _, tc := range cases {
+		if got := tc.entry.ReviewDue(now); got != tc.expect {
+			t.Errorf("%s: ReviewDue = %v, want %v", tc.name, got, tc.expect)
+		}
+	}
+}

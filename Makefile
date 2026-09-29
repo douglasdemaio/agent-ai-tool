@@ -9,7 +9,7 @@ endif
 
 DOMAIN ?= agent-ai-tool.com
 
-.PHONY: all fmt vet test build generate refresh check serve clean
+.PHONY: all fmt vet test build generate refresh check review serve clean
 
 all: fmt vet test build
 
@@ -39,6 +39,11 @@ refresh:
 # whether or not endpoints are down; the verdict is the output, not the status.
 check:
 	go run . -domain $(DOMAIN) -check
+
+# List curated entries overdue for human review, one per line. Also exits zero:
+# an overdue entry is a reminder, not a broken build.
+review:
+	go run . -domain $(DOMAIN) -review
 
 serve: generate
 	python3 -m http.server 8080 --directory public

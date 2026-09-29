@@ -540,3 +540,53 @@ func TestAHealthyReportRepublishesTheEndpoint(t *testing.T) {
 		t.Error("a healthy endpoint should be published")
 	}
 }
+
+// The health check proves an endpoint answers. It cannot prove the summary is
+// still true, so an entry that has gone too long without a human confirming it
+// has to say so on the page and in the index.
+func TestAnOverdueEntryIsMarkedForReview(t *testing.T) {
+	e := entry("old", "Confirmed a long time ago and never revisited.")
+	e.LastVerified = time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC)
+	out := renderTo(t, site(t, e))
+
+	if !strings.Contains(read(t, out, "old/index.html"), "due for review") {
+		t.Error("an entry confirmed over six months ago should be marked on its page")
+	}
+	if !strings.Contains(read(t, out, "index.html"), "review due") {
+		t.Error("the index should mark an overdue entry")
+	}
+}
+
+func TestAConfirmedEntryIsNotMarkedForReview(t *testing.T) {
+	out := renderTo(t, site(t, entry("fresh", "Confirmed last week.")))
+
+	if strings.Contains(read(t, out, "fresh/index.html"), "due for review") {
+		t.Error("an entry inside the review window should not be marked")
+	}
+	if strings.Contains(read(t, out, "index.html"), "review due") {
+		t.Error("the index should not mark an entry inside the review window")
+	}
+}
+
+// The ordering trap. viewFor builds the view from the curated stub; the live
+// merge rewrites that view's source and date afterwards. Judging review-due
+// before the rewrite would flag the marketplace as overdue on a curated date the
+// feed has already replaced, and the flag would be wrong every single time.
+func TestALiveEntryIsJudgedOnItsFeedDateNotItsCuratedStub(t *testing.T) {
+	stub := entry(LiveSlug, "A2A agent marketplace.")
+	stub.LastVerified = time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC)
+	s := site(t, stub)
+	s.LiveAgents = &live.AgentsResponse{Agents: []live.Agent{{
+		ID:        "a1",
+		Card:      live.AgentCard{Name: "alpha", URL: "https://vtessera.example/alpha"},
+		UpdatedAt: time.Date(2026, 9, 26, 0, 0, 0, 0, time.UTC),
+	}}}
+
+	out := renderTo(t, s)
+	if strings.Contains(read(t, out, "vtessera/index.html"), "due for review") {
+		t.Error("a live entry was judged on its curated stub date instead of the feed's")
+	}
+	if strings.Contains(read(t, out, "index.html"), "review due") {
+		t.Error("the index judged a live entry on its curated stub date")
+	}
+}

@@ -26,6 +26,36 @@ const (
 	SourceLive    = "live"
 )
 
+// ReviewWindow is how long a curated entry is trusted before a human is asked to
+// confirm it still describes reality.
+//
+// The health check covers one half of drift: whether an endpoint answers. It
+// cannot see the other half — whether the summary, pricing, or access terms
+// still match the service. This window is for that.
+//
+// 180 days is deliberately generous. The cost of the reminder is a moment of
+// attention; the cost of a short window is that genuine work drowns under
+// entries that are perfectly fine, and a reminder nobody reads is worse than no
+// reminder, because it looks like coverage.
+const ReviewWindow = 180 * 24 * time.Hour
+
+// ReviewDue reports whether a curated entry has outlived ReviewWindow without a
+// human confirming it.
+//
+// Live entries are exempt. Their last_verified comes from the feed, so a stale
+// date there means the refresh job is failing, which is a different problem with
+// a different remedy; flagging the entry would point the maintainer at the
+// wrong file.
+func (e Entry) ReviewDue(now time.Time) bool {
+	if e.Source != SourceCurated {
+		return false
+	}
+	// Negative ages (a date in the future) are not due. A future date is a data
+	// error, and treating it as infinitely fresh is the safer direction: the
+	// alternative flags a working entry and teaches the reader to ignore flags.
+	return now.Sub(e.LastVerified) > ReviewWindow
+}
+
 var slugPattern = regexp.MustCompile(`^[a-z0-9]+(-[a-z0-9]+)*$`)
 
 func (e Entry) Validate() error {

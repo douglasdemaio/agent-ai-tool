@@ -88,6 +88,10 @@ type entryView struct {
 	EndpointDetail string
 	// HealthCheckedAt is when the check ran, for the same reason.
 	HealthCheckedAt *time.Time
+	// ReviewDue reports that a curated entry has gone too long without a human
+	// confirming it still describes reality. The health check proves an
+	// endpoint answers; it cannot prove the summary is still true.
+	ReviewDue bool
 }
 
 type pageData struct {
@@ -196,6 +200,10 @@ func (s Site) resolve() ([]entryView, error) {
 				view.LiveEmpty = len(agents) == 0
 			}
 		}
+		// Computed here, not in viewFor: the override above rewrites a live
+		// entry's source and date, and judging it on the curated stub it arrived
+		// as would flag the marketplace as overdue the moment its stub aged out.
+		view.ReviewDue = view.Entry.ReviewDue(s.GeneratedAt)
 		views = append(views, view)
 	}
 
@@ -223,6 +231,7 @@ func (s Site) resolve() ([]entryView, error) {
 			copied := u
 			view.Usage = &copied
 		}
+		view.ReviewDue = view.Entry.ReviewDue(s.GeneratedAt)
 		views = append(views, view)
 	}
 	return views, nil
