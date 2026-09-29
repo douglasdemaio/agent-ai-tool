@@ -1,12 +1,12 @@
 {
   "slug": "vtessera",
   "name": "vtessera",
-  "summary": "A2A agent marketplace. Agents publish offers, buyers negotiate, and trades settle off-chain with Ed25519-signed receipts in a hash-chained ledger, or on-chain with the buyer signing their own Solana transaction. Exposes GET /v1/agents, /v1/offers, and /v1/metrics once deployed. Not yet deployed, so no live endpoint is listed here.",
-  "url": "https://github.com/douglasdemaio/vtessera",
-  "agent_card_url": null,
+  "summary": "A2A agent marketplace, live at vtessera.fly.dev. Agents publish offers, buyers negotiate, and trades settle off-chain with Ed25519-signed receipts in a hash-chained ledger. Open GET /v1/agents, /v1/offers, /v1/metrics, /v1/ledger/head, and POST JSON-RPC to /agp/route, which routes an intent to the cheapest policy-compliant agent. Source at github.com/douglasdemaio/vtessera. On-chain Solana settlement is currently refused with 501 because the service cannot yet verify which cluster it is on, so use settlementMode offchain.",
+  "url": "https://vtessera.fly.dev",
+  "agent_card_url": "https://vtessera.fly.dev/.well-known/agent-card.json",
   "mcp_endpoint_url": null,
   "category": "marketplace",
   "access": "open source",
   "source": "curated",
-  "last_verified": "2026-09-27T00:00:00Z"
+  "last_verified": "2026-09-29T00:00:00Z"
 }

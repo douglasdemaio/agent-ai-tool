@@ -1,5 +1,5 @@
 {
-  "checkedAt": "2026-09-29T10:47:03.198881639Z",
+  "checkedAt": "2026-09-29T13:31:34.919824181Z",
   "endpoints": {
     "mcp-registry https://registry.modelcontextprotocol.io/v0.1/servers": {
       "url": "https://registry.modelcontextprotocol.io/v0.1/servers",
@@ -21,6 +21,15 @@
     },
     "openrouter https://openrouter.ai/api/v1/models": {
       "url": "https://openrouter.ai/api/v1/models",
+      "alive": true,
+      "attempts": [
+        0,
+        0,
+        0
+      ]
+    },
+    "vtessera https://vtessera.fly.dev/.well-known/agent-card.json": {
+      "url": "https://vtessera.fly.dev/.well-known/agent-card.json",
       "alive": true,
       "attempts": [
         0,
