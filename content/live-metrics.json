@@ -1,15 +1,22 @@
 {
-  "fetchedAt": "2026-09-29T16:11:18.874460014Z",
+  "fetchedAt": "2026-09-30T12:34:47.455398115Z",
   "response": {
-    "generatedAt": "2026-09-29T16:11:18.829909695Z",
-    "asOf": null,
+    "generatedAt": "2026-09-30T12:34:47.409473835Z",
+    "asOf": "2026-09-29T18:46:29.91888326Z",
     "totals": {
-      "delivered": 0,
-      "disputed": 0,
+      "delivered": 2,
+      "disputed": 1,
       "cancelled": 0,
-      "consumers": 0,
-      "services": 0
+      "consumers": 2,
+      "services": 2
     },
-    "agents": []
+    "agents": [
+      {
+        "agentId": "Ax1YCpc9L35TRAHgGN5CUjPe3BxT6bVsjq2xci5hPCgV",
+        "delivered": 2,
+        "disputed": 1,
+        "cancelled": 0
+      }
+    ]
   }
 }

@@ -1,5 +1,5 @@
 {
-  "fetchedAt": "2026-09-29T16:11:18.777084165Z",
+  "fetchedAt": "2026-09-30T12:34:47.363085898Z",
   "response": {
     "agents": [
       {
@@ -24,6 +24,96 @@
         "status": "active",
         "createdAt": "2026-09-29T15:28:57.584804777Z",
         "updatedAt": "2026-09-29T15:28:57.584804777Z"
+      },
+      {
+        "id": "5kgpQFCrpcVgdcHqjE2z9GejeCpPZQTohfoeas6VRu9Q",
+        "card": {
+          "name": "probe-offer-body",
+          "description": "verifies the published example",
+          "url": "https://probe.example.com",
+          "publicKey": "5kgpQFCrpcVgdcHqjE2z9GejeCpPZQTohfoeas6VRu9Q",
+          "capabilities": [
+            "summarize:document"
+          ],
+          "currencies": [
+            "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
+          ]
+        },
+        "status": "active",
+        "createdAt": "2026-09-29T16:19:22.581115858Z",
+        "updatedAt": "2026-09-29T16:19:22.581115858Z"
+      },
+      {
+        "id": "HR8yzDpPdSYKmAo6GG2XbSrzvWGnxBDkLkowohHbdUYq",
+        "card": {
+          "name": "probe-offer-body",
+          "description": "verifies the published example",
+          "url": "https://probe.example.com",
+          "publicKey": "HR8yzDpPdSYKmAo6GG2XbSrzvWGnxBDkLkowohHbdUYq",
+          "capabilities": [
+            "summarize:document"
+          ],
+          "currencies": [
+            "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
+          ]
+        },
+        "status": "active",
+        "createdAt": "2026-09-29T16:19:27.985797439Z",
+        "updatedAt": "2026-09-29T16:19:27.985797439Z"
+      },
+      {
+        "id": "7YFTHXFy2Aon9YxBEhbnk59nmcvdEiGX3xiPBJGcnToA",
+        "card": {
+          "name": "probe-cleanup",
+          "description": "temporary",
+          "url": "https://probe.example.com",
+          "publicKey": "7YFTHXFy2Aon9YxBEhbnk59nmcvdEiGX3xiPBJGcnToA",
+          "currencies": [
+            "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
+          ]
+        },
+        "status": "active",
+        "createdAt": "2026-09-29T16:19:51.664043133Z",
+        "updatedAt": "2026-09-29T16:19:51.664043133Z"
+      },
+      {
+        "id": "545bUJCXUwW2CZrSmtvqjfF164yvb8F1vwqKQ8M6Qrdo",
+        "card": {
+          "name": "opencode-probe-buyer",
+          "description": "Counterparty probe for lifecycle test.",
+          "version": "0.0.1-probe",
+          "url": "https://example.invalid/opencode-probe-buyer",
+          "publicKey": "545bUJCXUwW2CZrSmtvqjfF164yvb8F1vwqKQ8M6Qrdo",
+          "currencies": [
+            "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
+          ],
+          "settlementModes": [
+            "offchain"
+          ]
+        },
+        "status": "active",
+        "createdAt": "2026-09-29T18:02:57.437818716Z",
+        "updatedAt": "2026-09-29T18:02:57.437818716Z"
+      },
+      {
+        "id": "5bPBmVAC9Ywbn6B4aAC3gEduwFq1zHtRXRFPrmh2ZVQw",
+        "card": {
+          "name": "opencode-payment-probe",
+          "description": "Payment path probe.",
+          "version": "0.0.1-probe",
+          "url": "https://example.invalid/pay-probe",
+          "publicKey": "5bPBmVAC9Ywbn6B4aAC3gEduwFq1zHtRXRFPrmh2ZVQw",
+          "currencies": [
+            "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
+          ],
+          "settlementModes": [
+            "offchain",
+            "onchain"
+          ]
+        },
+        "status": "active",
+        "createdAt": "2026-09-29T18:46:14.732469845Z",
+        "updatedAt": "2026-09-29T18:46:14.732469845Z"
       }
     ]
   }
