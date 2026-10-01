@@ -11,6 +11,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/douglasdemaio/agent-ai-tool/internal/health"
 )
 
 // captureStdout runs fn with stdout redirected, for the modes whose whole
@@ -102,8 +104,34 @@ func workspace(t *testing.T) string {
 
 func generate(t *testing.T, dir string, client *http.Client, baseURL string, extra ...string) error {
 	t.Helper()
-	cfg := config{
-		baseURL:    baseURL,
+	cfg := testConfig(t, dir)
+	cfg.baseURL = baseURL
+	for _, arg := range extra {
+		switch arg {
+		case "-refresh":
+			cfg.refresh = true
+		case "-check":
+			cfg.check = true
+		case "-review":
+			cfg.review = true
+		case "-commit-plan":
+			cfg.commitPlan = true
+		}
+	}
+	if client == nil {
+		client = &http.Client{Timeout: cfg.timeout}
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), cfg.timeout)
+	defer cancel()
+	return cfg.run(ctx, client)
+}
+
+// testConfig is the single description of a test workspace, so the modes that
+// need to run extra steps of their own cannot drift from the ones generate
+// covers.
+func testConfig(t *testing.T, dir string) config {
+	t.Helper()
+	return config{
 		domain:     "agent-ai-tool.com",
 		contentDir: filepath.Join(dir, "content", "entries"),
 		cacheDir:   filepath.Join(dir, "content"),
@@ -114,22 +142,6 @@ func generate(t *testing.T, dir string, client *http.Client, baseURL string, ext
 		timeout:    5 * time.Second,
 		now:        time.Date(2026, 9, 27, 22, 30, 0, 0, time.UTC),
 	}
-	for _, arg := range extra {
-		switch arg {
-		case "-refresh":
-			cfg.refresh = true
-		case "-check":
-			cfg.check = true
-		case "-review":
-			cfg.review = true
-		}
-	}
-	if client == nil {
-		client = &http.Client{Timeout: cfg.timeout}
-	}
-	ctx, cancel := context.WithTimeout(context.Background(), cfg.timeout)
-	defer cancel()
-	return cfg.run(ctx, client)
 }
 
 func TestEndToEndWithNoLiveServiceStillPublishes(t *testing.T) {
@@ -427,4 +439,143 @@ func TestReviewPrintsNothingWhenEverythingIsConfirmed(t *testing.T) {
 	if strings.TrimSpace(out) != "" {
 		t.Errorf("nothing is due, so nothing should be printed, got: %q", out)
 	}
+}
+
+// The workflow's entire contract with this program is one word on stdout. It
+// used to get that word from shell arithmetic over a JSON file, which is how a
+// typo could survive six scheduled runs: nothing in the suite exercised the
+// step, because the step was not Go.
+func commitPlan(t *testing.T, dir string) string {
+	t.Helper()
+	return strings.TrimSpace(captureStdout(t, func() error {
+		return generate(t, dir, nil, "", "-commit-plan")
+	}))
+}
+
+func TestCommitPlanSaysSkipWhenNothingChangedAndTheReportIsFresh(t *testing.T) {
+	dir := workspace(t)
+	healthy := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_, _ = w.Write([]byte(`{"servers":[]}`))
+	}))
+	defer healthy.Close()
+	withEndpoint(t, dir, healthy.URL+"/mcp")
+
+	// First check: nothing is committed yet, so it has to commit.
+	if err := generate(t, dir, healthy.Client(), "", "-check"); err != nil {
+		t.Fatal(err)
+	}
+	if got := commitPlan(t, dir); got != "commit" {
+		t.Fatalf("the first report must be committed, got %q", got)
+	}
+
+	// The workflow then commits it and re-runs against the new HEAD, so the
+	// previous report is the file as it stands in git.
+	previous := filepath.Join(dir, "committed-health.json")
+	copyFile(t, filepath.Join(dir, "content", "health.json"), previous)
+	if err := generate(t, dir, healthy.Client(), "", "-check"); err != nil {
+		t.Fatal(err)
+	}
+	if got := planWith(t, dir, previous); got != "skip" {
+		t.Errorf("verdicts are unchanged and the committed report is minutes old, so this should skip; got %q", got)
+	}
+}
+
+func TestCommitPlanSaysCommitWhenAnEndpointDies(t *testing.T) {
+	dir := workspace(t)
+	var dead bool
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if !dead {
+			_, _ = w.Write([]byte(`{"servers":[]}`))
+			return
+		}
+		w.WriteHeader(http.StatusNotFound)
+	}))
+	defer server.Close()
+	withEndpoint(t, dir, server.URL+"/mcp")
+
+	if err := generate(t, dir, server.Client(), "", "-check"); err != nil {
+		t.Fatal(err)
+	}
+	previous := filepath.Join(dir, "committed-health.json")
+	copyFile(t, filepath.Join(dir, "content", "health.json"), previous)
+
+	dead = true
+	if err := generate(t, dir, server.Client(), "", "-check"); err != nil {
+		t.Fatal(err)
+	}
+	if got := planWith(t, dir, previous); got != "commit" {
+		t.Errorf("a demotion is the fact the site publishes, so it must commit; got %q", got)
+	}
+}
+
+// Without this the report creeps past StaleAfter while nothing is wrong, and
+// withholding quietly switches itself off.
+func TestCommitPlanCommitsAnUnchangedReportOnceItIsOld(t *testing.T) {
+	dir := workspace(t)
+	healthy := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_, _ = w.Write([]byte(`{"servers":[]}`))
+	}))
+	defer healthy.Close()
+	withEndpoint(t, dir, healthy.URL+"/mcp")
+
+	if err := generate(t, dir, healthy.Client(), "", "-check"); err != nil {
+		t.Fatal(err)
+	}
+	previous := filepath.Join(dir, "committed-health.json")
+	copyFile(t, filepath.Join(dir, "content", "health.json"), previous)
+
+	// Age the committed copy past the refresh point without touching verdicts.
+	ageReport(t, previous, time.Date(2026, 9, 20, 0, 0, 0, 0, time.UTC))
+
+	if got := planWith(t, dir, previous); got != "commit" {
+		t.Errorf("an unchanged verdict still has to be committed once the report ages, or checkedAt stops moving; got %q", got)
+	}
+}
+
+func copyFile(t *testing.T, from, to string) {
+	t.Helper()
+	body, err := os.ReadFile(from)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(to, body, 0o644); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func ageReport(t *testing.T, path string, at time.Time) {
+	t.Helper()
+	var doc struct {
+		CheckedAt time.Time                  `json:"checkedAt"`
+		Endpoints map[string]health.Endpoint `json:"endpoints"`
+	}
+	raw, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := json.Unmarshal(raw, &doc); err != nil {
+		t.Fatal(err)
+	}
+	doc.CheckedAt = at
+	patched, err := json.MarshalIndent(doc, "", "  ")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(path, append(patched, '\n'), 0o644); err != nil {
+		t.Fatal(err)
+	}
+}
+
+// planWith runs the decision against a specific previous report, which is how
+// the workflow supplies the copy it restored from git.
+func planWith(t *testing.T, dir, previous string) string {
+	t.Helper()
+	return strings.TrimSpace(captureStdout(t, func() error {
+		cfg := testConfig(t, dir)
+		cfg.commitPlan = true
+		cfg.previous = previous
+		ctx, cancel := context.WithTimeout(context.Background(), cfg.timeout)
+		defer cancel()
+		return cfg.run(ctx, &http.Client{Timeout: cfg.timeout})
+	}))
 }

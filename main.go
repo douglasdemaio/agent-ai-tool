@@ -37,7 +37,9 @@ type config struct {
 	refresh    bool
 	check      bool
 	review     bool
+	commitPlan bool
 	healthPath string
+	previous   string
 	attempts   int
 	timeout    time.Duration
 	now        time.Time
@@ -60,7 +62,9 @@ func run() error {
 		refresh    = flag.Bool("refresh", false, "fetch the live feeds, write the snapshots, and exit")
 		check      = flag.Bool("check", false, "probe every curated entry endpoint, write the health report, and exit")
 		review     = flag.Bool("review", false, "list curated entries overdue for human review, then exit")
+		commitPlan = flag.Bool("commit-plan", false, "print commit or skip for the checked report against the committed one, then exit")
 		healthPath = flag.String("health-report", "content/health.json", "committed endpoint health report")
+		previous   = flag.String("previous-health-report", "", "the report currently in git, for -commit-plan; empty means there is none")
 		attempts   = flag.Int("attempts", health.DefaultAttempts, "probe attempts per endpoint before judging it")
 		timeout    = flag.Duration("timeout", live.DefaultTimeout, "per-request timeout for live fetches")
 		nowFlag    = flag.String("now", "", "override the generation time (RFC3339); for reproducible builds")
@@ -86,7 +90,9 @@ func run() error {
 		refresh:    *refresh,
 		check:      *check,
 		review:     *review,
+		commitPlan: *commitPlan,
 		healthPath: *healthPath,
+		previous:   *previous,
 		attempts:   *attempts,
 		timeout:    *timeout,
 		now:        now,
@@ -117,6 +123,10 @@ func (c config) run(ctx context.Context, client *http.Client) error {
 
 	if c.review {
 		return c.reviewDue(entries)
+	}
+
+	if c.commitPlan {
+		return c.planCommit()
 	}
 
 	agents := live.Load(ctx, c.baseURL, "/v1/agents", agentsCache, client, live.ValidateAgents)
@@ -228,6 +238,28 @@ func (c config) reviewDue(entries []content.Entry) error {
 	}
 	log.Printf("review: %d of %d curated entries are overdue; each needs its summary, endpoint and terms confirmed, then last_verified bumped",
 		len(due), len(entries))
+	return nil
+}
+
+// planCommit prints whether the report that -check just wrote is worth
+// committing over the one already in the repository.
+//
+// The scheduled workflow reads this single word and does the git work, so the
+// decision about what counts as a change lives here with the rest of the
+// health rules and is covered by tests. It used to be decided by shell
+// arithmetic on a JSON file, which is the kind of logic that looks like it
+// works and then fails every scheduled run without anyone reading the log.
+//
+// -check overwrites the report in place, so the committed copy has to come from
+// somewhere else: previous names the file the caller restored from git.
+func (c config) planCommit() error {
+	previous := health.Report{}
+	if c.previous != "" {
+		previous = health.Read(c.previous)
+	}
+	decision := health.Decide(previous, health.Read(c.healthPath), c.now)
+	log.Printf("commit-plan: %s", health.Explain(previous, decision, c.now))
+	fmt.Println(decision)
 	return nil
 }
 

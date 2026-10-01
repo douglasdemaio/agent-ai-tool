@@ -9,7 +9,7 @@ endif
 
 DOMAIN ?= agent-ai-tool.com
 
-.PHONY: all fmt vet test build generate refresh check review serve clean
+.PHONY: all fmt vet test build generate refresh check review commit-plan serve clean
 
 all: fmt vet test build
 
@@ -44,6 +44,14 @@ check:
 # an overdue entry is a reminder, not a broken build.
 review:
 	go run . -domain $(DOMAIN) -review
+
+# Print commit or skip for the report in content/health.json against the one in
+# git. The scheduled workflow reads this word; it is here so the decision can be
+# inspected without reading the workflow.
+#   make commit-plan PREVIOUS=previous-health.json
+PREVIOUS ?=
+commit-plan:
+	go run . -domain $(DOMAIN) -commit-plan -previous-health-report $(PREVIOUS)
 
 serve: generate
 	python3 -m http.server 8080 --directory public

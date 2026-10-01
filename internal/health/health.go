@@ -38,6 +38,12 @@ const (
 	// StaleAfter is how long a report stays trusted. Past this the directory
 	// would be demoting on memory of a check rather than on evidence.
 	StaleAfter = 48 * time.Hour
+	// RefreshAfter is how old a committed report may get before an unchanged
+	// verdict is committed again anyway, so that checkedAt keeps moving and the
+	// report never drifts past StaleAfter while nothing is actually wrong. It is
+	// half StaleAfter, so one missed run cannot push a healthy directory over
+	// the line where it stops withholding dead endpoints.
+	RefreshAfter = 24 * time.Hour
 )
 
 // Report is the committed result of a check. It records reachability only, so
@@ -229,6 +235,80 @@ func (r Report) Write(path string) error {
 		return err
 	}
 	return os.WriteFile(path, append(body, '\n'), 0o644)
+}
+
+// Decision is the answer to "is a freshly written report worth committing?".
+type Decision string
+
+const (
+	// Commit means the report should be committed: a verdict changed, or the
+	// committed one has aged enough that checkedAt needs to move.
+	Commit Decision = "commit"
+	// Skip means the verdicts are unchanged and the committed report is still
+	// fresh, so committing would rebuild the site to record a new timestamp and
+	// nothing else.
+	Skip Decision = "skip"
+)
+
+// Decide reports whether a fresh check result should replace a committed one.
+//
+// checkedAt advances on every run, so a workflow that committed unconditionally
+// would rebuild the site four times a day to say nothing. What carries meaning
+// is the verdict per endpoint. A changed verdict is always worth a commit,
+// because that is the fact the directory publishes. An unchanged verdict is
+// still committed once the committed report is older than RefreshAfter, so a
+// directory that is quietly healthy does not eventually stop being checked at
+// all: the report would otherwise creep past StaleAfter and withholding would
+// silently switch itself off while every endpoint stayed up.
+//
+// A committed report stamped in the future is treated as absent. Its age cannot
+// be trusted, and trusting it would let a clock-skewed report postpone the next
+// real check indefinitely.
+func Decide(committed, fresh Report, now time.Time) Decision {
+	age := now.Sub(committed.CheckedAt)
+	if committed.CheckedAt.IsZero() || age < 0 || age > RefreshAfter {
+		return Commit
+	}
+	if !sameVerdict(committed, fresh) {
+		return Commit
+	}
+	return Skip
+}
+
+// Explain renders the reasoning behind a decision, for the build log. The
+// workflow acts on the Decision itself; this is so a run that decides to commit
+// or skip says which rule applied rather than leaving an operator to infer it.
+func Explain(committed Report, decision Decision, now time.Time) string {
+	age := now.Sub(committed.CheckedAt)
+	switch {
+	case committed.CheckedAt.IsZero():
+		return "there is no committed report, so this run establishes one"
+	case age < 0:
+		return fmt.Sprintf("the committed report is stamped %s in the future, so its age cannot be trusted", -age)
+	case age > RefreshAfter:
+		return fmt.Sprintf("the committed report is %s old, past the %s refresh point, so it is committed to keep checkedAt moving", age.Round(time.Hour), RefreshAfter)
+	case decision == Skip:
+		return fmt.Sprintf("every verdict is unchanged and the committed report is only %s old, so committing would rebuild the site to record a timestamp", age.Round(time.Minute))
+	default:
+		return "at least one endpoint changed verdict"
+	}
+}
+
+// sameVerdict compares only whether each endpoint was judged alive. Attempt
+// counts and failure detail are deliberately excluded: a service that failed
+// one probe of three is alive either way, and a new reason string for an
+// endpoint whose verdict did not move is not a change the site acts on.
+func sameVerdict(a, b Report) bool {
+	if len(a.Endpoints) != len(b.Endpoints) {
+		return false
+	}
+	for key, left := range a.Endpoints {
+		right, found := b.Endpoints[key]
+		if !found || left.Alive != right.Alive {
+			return false
+		}
+	}
+	return true
 }
 
 // Read loads a committed report. A missing or corrupt file is not an error the

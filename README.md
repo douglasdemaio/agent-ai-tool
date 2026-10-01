@@ -38,6 +38,7 @@ make test       # unit and end-to-end tests, including -race
 make generate   # render public/
 make check      # probe every advertised endpoint, write content/health.json
 make review     # list curated entries overdue for human review
+make commit-plan # print commit or skip for the health report
 make serve      # generate, then serve on :8080
 ```
 
@@ -187,6 +188,28 @@ verdict; the build then withholds any endpoint a fresh report found dead.
 make check      # probe every endpoint, write content/health.json
 ```
 
+It probes twice a day and does not commit on every run. `checkedAt` advances
+each time, so committing unconditionally would rebuild the site four times a day
+to record a new timestamp and nothing else. `-commit-plan` decides whether the
+run is worth keeping and prints one word:
+
+```bash
+make commit-plan PREVIOUS=previous-health.json   # prints commit or skip
+```
+
+It commits when a verdict changed, and also when the committed report is older
+than 24 hours, so `checkedAt` keeps moving and a quietly healthy directory
+cannot drift past the 48-hour staleness window with the check still running. The
+second rule is the one that is easy to leave out: without it the report ages
+silently, withholding switches itself off, and nothing looks broken while the
+directory stops knowing which endpoints are dead.
+
+The decision is in Go, next to the rules it depends on, rather than in the
+workflow's shell. It used to be shell arithmetic over a JSON file, which failed
+on every scheduled run for two days: `python3` rejects an indented `-c` block,
+so both invocations died with `IndentationError`, and no test noticed because
+the step was not testable. Every step of the workflow is now `go run` or git.
+
 Three properties are deliberate, and each is tested:
 
 - **A check never fails the build.** A third party's outage is a fact to
@@ -201,7 +224,9 @@ Three properties are deliberate, and each is tested:
 - **A missing or stale report demotes nothing.** Past 48 hours, or if no report
   has ever been committed, every endpoint is published unchecked. The site will
   not suppress a service on the strength of a check it no longer trusts, and a
-  report stamped in the future is discarded for the same reason.
+  report stamped in the future is discarded for the same reason. This is why the
+  24-hour refresh above exists: the failure mode of a stale report is not a wrong
+  page, it is no page that admits it is out of date.
 
 Withholding is reversible and never touches the source file: the JSON keeps the
 URL the service publishes, and only the rendered surfaces omit it. An endpoint

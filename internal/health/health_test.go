@@ -7,6 +7,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
@@ -203,5 +204,144 @@ func TestReportSerialisesWithoutEmptyNoise(t *testing.T) {
 	}
 	if got := string(body); got != `{"url":"https://a.example/mcp","alive":true,"attempts":null}` {
 		t.Errorf("report shape changed: %s", got)
+	}
+}
+
+func verdicts(alive ...string) Report {
+	r := Report{Endpoints: map[string]Endpoint{}}
+	for _, key := range alive {
+		r.Endpoints[key] = Endpoint{URL: key, Alive: true}
+	}
+	return r
+}
+
+func TestAFirstReportIsAlwaysCommitted(t *testing.T) {
+	now := time.Date(2026, 9, 29, 12, 0, 0, 0, time.UTC)
+	if got := Decide(Report{}, verdicts("a https://a.example/mcp"), now); got != Commit {
+		t.Errorf("with nothing committed there is nothing to be unchanged from, so the first report must commit; got %q", got)
+	}
+}
+
+// This is the whole point of the decision: checkedAt moves every run, so
+// committing unconditionally rebuilds the site four times a day to say nothing.
+func TestAnUnchangedVerdictOnAFreshReportIsSkipped(t *testing.T) {
+	now := time.Date(2026, 9, 29, 12, 0, 0, 0, time.UTC)
+	committed := verdicts("a https://a.example/mcp", "b https://b.example/mcp")
+	committed.CheckedAt = now.Add(-time.Hour)
+
+	fresh := verdicts("a https://a.example/mcp", "b https://b.example/mcp")
+	fresh.CheckedAt = now
+
+	if got := Decide(committed, fresh, now); got != Skip {
+		t.Errorf("nothing changed and the committed report is an hour old, so this should be skipped; got %q", got)
+	}
+}
+
+func TestAnEndpointGoingDeadIsCommitted(t *testing.T) {
+	now := time.Date(2026, 9, 29, 12, 0, 0, 0, time.UTC)
+	committed := verdicts("a https://a.example/mcp", "b https://b.example/mcp")
+	committed.CheckedAt = now.Add(-time.Hour)
+
+	fresh := verdicts("a https://a.example/mcp")
+	fresh.Endpoints["b https://b.example/mcp"] = Endpoint{URL: "b https://b.example/mcp", Alive: false}
+
+	if got := Decide(committed, fresh, now); got != Commit {
+		t.Errorf("a demotion is the fact the directory publishes, so it must commit; got %q", got)
+	}
+}
+
+func TestARecoveredEndpointIsCommitted(t *testing.T) {
+	now := time.Date(2026, 9, 29, 12, 0, 0, 0, time.UTC)
+	committed := Report{Endpoints: map[string]Endpoint{
+		"a https://a.example/mcp": {URL: "a https://a.example/mcp", Alive: false},
+	}}
+	committed.CheckedAt = now.Add(-time.Hour)
+
+	if got := Decide(committed, verdicts("a https://a.example/mcp"), now); got != Commit {
+		t.Errorf("restoring a withheld endpoint must commit, or the directory would stay wrong; got %q", got)
+	}
+}
+
+// Without this, a directory that is quietly healthy drifts past StaleAfter and
+// withholding switches itself off while every endpoint stays up, so the check
+// that is still running stops being the check that is being read.
+func TestAnUnchangedVerdictIsCommittedOnceTheReportAges(t *testing.T) {
+	now := time.Date(2026, 9, 29, 12, 0, 0, 0, time.UTC)
+	committed := verdicts("a https://a.example/mcp")
+	committed.CheckedAt = now.Add(-RefreshAfter - time.Minute)
+
+	if got := Decide(committed, verdicts("a https://a.example/mcp"), now); got != Commit {
+		t.Errorf("a report older than %s must be committed to keep checkedAt moving; got %q", RefreshAfter, got)
+	}
+}
+
+func TestAReportStampedInTheFutureIsReplaced(t *testing.T) {
+	now := time.Date(2026, 9, 29, 12, 0, 0, 0, time.UTC)
+	committed := verdicts("a https://a.example/mcp")
+	committed.CheckedAt = now.Add(time.Hour)
+
+	if got := Decide(committed, verdicts("a https://a.example/mcp"), now); got != Commit {
+		t.Errorf("a future timestamp cannot be aged, and trusting it would postpone the next real check; got %q", got)
+	}
+}
+
+// One probe of three failing still leaves the endpoint alive, so a re-run that
+// happened to lose the same probe has not changed anything the site publishes.
+func TestAttemptNoiseIsNotAVerdictChange(t *testing.T) {
+	now := time.Date(2026, 9, 29, 12, 0, 0, 0, time.UTC)
+	committed := Report{Endpoints: map[string]Endpoint{
+		"a https://a.example/mcp": {URL: "a https://a.example/mcp", Alive: true, Attempts: []int{0, 0, 0}},
+	}}
+	committed.CheckedAt = now.Add(-time.Hour)
+
+	fresh := Report{Endpoints: map[string]Endpoint{
+		"a https://a.example/mcp": {URL: "a https://a.example/mcp", Alive: true, Attempts: []int{0, 2, 0}},
+	}}
+
+	if got := Decide(committed, fresh, now); got != Skip {
+		t.Errorf("the same verdict with different attempt codes is not a change worth a rebuild; got %q", got)
+	}
+}
+
+func TestANewlyCuratedEndpointIsCommitted(t *testing.T) {
+	now := time.Date(2026, 9, 29, 12, 0, 0, 0, time.UTC)
+	committed := verdicts("a https://a.example/mcp")
+	committed.CheckedAt = now.Add(-time.Hour)
+
+	fresh := verdicts("a https://a.example/mcp", "new https://new.example/mcp")
+	if got := Decide(committed, fresh, now); got != Commit {
+		t.Errorf("a newly advertised endpoint has never been reported on, so it must commit; got %q", got)
+	}
+}
+
+// The explanation is what an operator reads in the log, so it has to name the
+// rule rather than restate the verdict.
+func TestEveryDecisionRuleIsExplained(t *testing.T) {
+	now := time.Date(2026, 9, 29, 12, 0, 0, 0, time.UTC)
+	fresh := verdicts("a https://a.example/mcp")
+
+	none := Report{}
+	aged := verdicts("a https://a.example/mcp")
+	aged.CheckedAt = now.Add(-RefreshAfter - time.Hour)
+	future := verdicts("a https://a.example/mcp")
+	future.CheckedAt = now.Add(time.Hour)
+	unchanged := verdicts("a https://a.example/mcp")
+	unchanged.CheckedAt = now.Add(-time.Hour)
+
+	cases := []struct {
+		name      string
+		committed Report
+		want      string
+	}{
+		{"no committed report", none, "establishes one"},
+		{"aged report", aged, "keep checkedAt moving"},
+		{"future report", future, "cannot be trusted"},
+		{"unchanged", unchanged, "would rebuild the site"},
+	}
+	for _, tc := range cases {
+		got := Explain(tc.committed, Decide(tc.committed, fresh, now), now)
+		if !strings.Contains(got, tc.want) {
+			t.Errorf("%s: explanation %q does not mention %q", tc.name, got, tc.want)
+		}
 	}
 }
