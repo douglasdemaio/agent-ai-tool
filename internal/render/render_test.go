@@ -771,3 +771,78 @@ func TestHowToCallIsOmittedWhenAbsent(t *testing.T) {
 		t.Error("agents.json published an empty how_to_call")
 	}
 }
+
+// A retired agent is one the marketplace operator withdrew. vtessera drops it
+// from the feed, but this site serves committed snapshots whenever the
+// marketplace cannot be reached, so a snapshot taken before the withdrawal goes
+// on advertising a seller somebody was removed on purpose. The status the feed
+// carried is the only thing that distinguishes the two.
+func TestAnAgentTheMarketplaceWithdrewIsNotAdvertisedAsASeller(t *testing.T) {
+	stub := entry(LiveSlug, "A2A agent marketplace.")
+	s := site(t, stub)
+	updated := time.Date(2026, 10, 4, 0, 0, 0, 0, time.UTC)
+	s.LiveAgents = &live.AgentsResponse{Agents: []live.Agent{
+		{
+			ID:        "a1",
+			Status:    live.StatusActive,
+			Card:      live.AgentCard{Name: "alpha", URL: "https://vtessera.example/alpha"},
+			UpdatedAt: updated,
+		},
+		{
+			ID:        "a2",
+			Status:    "retired",
+			Card:      live.AgentCard{Name: "beta", URL: "https://vtessera.example/beta"},
+			UpdatedAt: updated,
+		},
+	}}
+
+	out := renderTo(t, s)
+	page := read(t, out, LiveSlug+"/index.html")
+
+	if !strings.Contains(page, "https://vtessera.example/alpha") {
+		t.Error("an active agent lost its link")
+	}
+	if strings.Contains(page, "https://vtessera.example/beta") {
+		t.Error("a withdrawn agent is still linked as somewhere to go and buy")
+	}
+	if !strings.Contains(page, "beta") {
+		t.Error("a withdrawn agent vanished from the page: a withdrawal is a fact worth publishing, not a deletion")
+	}
+	if !strings.Contains(page, "retired by the marketplace") {
+		t.Error("the page does not say the agent was withdrawn, so a reader cannot tell it apart from a live one")
+	}
+}
+
+// A snapshot predating status reporting carries no status at all. Treating that
+// as withdrawn would hide every agent on the site the first time an old snapshot
+// was rendered.
+func TestASnapshotWithNoStatusIsStillListed(t *testing.T) {
+	stub := entry(LiveSlug, "A2A agent marketplace.")
+	s := site(t, stub)
+	s.LiveAgents = &live.AgentsResponse{Agents: []live.Agent{{
+		ID:        "a1",
+		Card:      live.AgentCard{Name: "alpha", URL: "https://vtessera.example/alpha"},
+		UpdatedAt: time.Date(2026, 10, 4, 0, 0, 0, 0, time.UTC),
+	}}}
+
+	page := read(t, renderTo(t, s), LiveSlug+"/index.html")
+	if !strings.Contains(page, "https://vtessera.example/alpha") {
+		t.Error("an agent with no reported status was hidden")
+	}
+	if strings.Contains(page, "by the marketplace") {
+		t.Error("an agent with no reported status was marked withdrawn")
+	}
+}
+
+func TestASuspendedAgentIsMarkedTheSameWayARetiredOneIs(t *testing.T) {
+	row := liveRow{Agent: live.Agent{Status: "suspended"}}
+	if !row.Withdrawn() {
+		t.Error("a suspended agent is still advertised as a seller")
+	}
+	if got := row.WithdrawnReason(); got != "suspended by the marketplace" {
+		t.Errorf("reason = %q", got)
+	}
+	if (liveRow{}).Withdrawn() {
+		t.Error("an agent with no status counts as withdrawn")
+	}
+}

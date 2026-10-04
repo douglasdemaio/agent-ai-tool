@@ -76,8 +76,12 @@
   <ul class="entries">
     {{range .View.Live}}
     <li>
+      {{if .Withdrawn}}
+      <span class="entry-name">{{.Agent.Card.Name}}</span><span class="badge" title="{{.WithdrawnReason}}">{{.WithdrawnReason}}</span>
+      {{else}}
       {{if .Agent.Card.URL}}<a class="entry-name" href="{{.Agent.Card.URL}}" rel="nofollow noopener">{{.Agent.Card.Name}}</a>{{else}}{{.Agent.Card.Name}}{{end}}
       {{if .Usage}}<span class="badge" title="{{.Usage.Delivered}} deliveries recorded">{{.Usage.Delivered}} delivered</span>{{end}}
+      {{end}}
       {{if .Agent.Card.Description}}<p class="entry-summary">{{.Agent.Card.Description}}</p>{{end}}
     </li>
     {{end}}

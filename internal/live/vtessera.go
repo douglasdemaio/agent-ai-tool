@@ -50,6 +50,11 @@ type AgentUsage struct {
 	Cancelled int    `json:"cancelled"`
 }
 
+// StatusActive is the only status an agent is listed under. vtessera withholds
+// retired and suspended agents from the default feed; this constant is here so a
+// consumer of the feed and its renderer agree on which one that is.
+const StatusActive = "active"
+
 const BadgeFloor = 3
 
 func ValidateAgents(body []byte) error {

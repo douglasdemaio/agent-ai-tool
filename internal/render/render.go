@@ -72,6 +72,31 @@ type liveRow struct {
 	Usage *usage
 }
 
+// Withdrawn reports an agent the marketplace has taken off its listings.
+//
+// vtessera stops listing an agent it has retired or suspended, so a fresh feed
+// will not contain it at all. This exists for the other case: this site serves
+// committed snapshots when the marketplace cannot be reached, and a snapshot
+// taken before a withdrawal goes on advertising a seller somebody was removed on
+// purpose. Rendering the status the feed reported is what stops a cached page
+// from quietly selling something withdrawn.
+//
+// An empty status is treated as active. Snapshots taken before the marketplace
+// reported one carry no status, and hiding every agent in them would be a worse
+// answer than showing them.
+func (r liveRow) Withdrawn() bool {
+	return r.Agent.Status != "" && r.Agent.Status != live.StatusActive
+}
+
+// WithdrawnReason is the status as a reader would understand it, or empty when
+// the agent is listed normally.
+func (r liveRow) WithdrawnReason() string {
+	if !r.Withdrawn() {
+		return ""
+	}
+	return r.Agent.Status + " by the marketplace"
+}
+
 type entryView struct {
 	Entry content.Entry
 	Usage *usage
