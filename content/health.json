@@ -1,21 +1,20 @@
 {
-  "checkedAt": "2026-10-05T05:51:41.215644897Z",
+  "checkedAt": "2026-10-05T14:54:04.969583717Z",
   "endpoints": {
     "mcp-registry https://registry.modelcontextprotocol.io/v0.1/servers": {
       "url": "https://registry.modelcontextprotocol.io/v0.1/servers",
-      "alive": false,
+      "alive": true,
       "attempts": [
         0,
         0,
-        2
-      ],
-      "detail": "context cancelled between attempts"
+        0
+      ]
     },
     "models-dev https://models.dev/api.json": {
       "url": "https://models.dev/api.json",
       "alive": false,
       "attempts": [
-        2,
+        0,
         2
       ],
       "detail": "context cancelled between attempts"
