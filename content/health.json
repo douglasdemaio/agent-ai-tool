@@ -1,41 +1,42 @@
 {
-  "checkedAt": "2026-10-04T21:36:18.733960188Z",
+  "checkedAt": "2026-10-05T05:51:41.215644897Z",
   "endpoints": {
     "mcp-registry https://registry.modelcontextprotocol.io/v0.1/servers": {
       "url": "https://registry.modelcontextprotocol.io/v0.1/servers",
-      "alive": true,
+      "alive": false,
       "attempts": [
         0,
         0,
-        0
-      ]
+        2
+      ],
+      "detail": "context cancelled between attempts"
     },
     "models-dev https://models.dev/api.json": {
       "url": "https://models.dev/api.json",
-      "alive": true,
+      "alive": false,
       "attempts": [
-        0,
-        0,
-        0
-      ]
+        2,
+        2
+      ],
+      "detail": "context cancelled between attempts"
     },
     "openrouter https://openrouter.ai/api/v1/models": {
       "url": "https://openrouter.ai/api/v1/models",
-      "alive": true,
+      "alive": false,
       "attempts": [
-        0,
-        0,
-        0
-      ]
+        2,
+        2
+      ],
+      "detail": "context cancelled between attempts"
     },
     "vtessera https://vtessera.fly.dev/.well-known/agent-card.json": {
       "url": "https://vtessera.fly.dev/.well-known/agent-card.json",
-      "alive": true,
+      "alive": false,
       "attempts": [
-        0,
-        0,
-        0
-      ]
+        2,
+        2
+      ],
+      "detail": "context cancelled between attempts"
     }
   }
 }
