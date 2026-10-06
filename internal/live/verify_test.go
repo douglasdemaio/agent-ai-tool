@@ -12,12 +12,21 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/douglasdemaio/agent-ai-tool/internal/base58"
 )
 
 // base58Encode is here so a test can name a key it generated. Production only
 // ever decodes: the directory publishes no keys of its own, and adding an
 // encoder to the shipped binary for the convenience of a test would be the wrong
 // way round.
+//
+// Written independently of internal/base58 rather than by calling its Encode, on
+// purpose. A round trip through one implementation proves nothing about the
+// decoder that production uses, and the two disagree on nothing that matters
+// here — this one is here to produce a string, not to be trusted to read one.
+const base58Alphabet = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz"
+
 func base58Encode(in []byte) string {
 	out := []byte{}
 	for _, b := range in {
@@ -93,7 +102,7 @@ func TestABase58KeyDecodesToTheKeyThatSigned(t *testing.T) {
 			raw[i] = byte(i * 7)
 		}
 		encoded := base58Encode(raw)
-		got, err := decodeBase58(encoded)
+		got, err := base58.Decode(encoded)
 		if err != nil {
 			t.Fatalf("decoding %s: %v", encoded, err)
 		}
@@ -107,8 +116,10 @@ func TestABase58KeyDecodesToTheKeyThatSigned(t *testing.T) {
 }
 
 func TestABase58DecoderRefusesWhatIsNotBase58(t *testing.T) {
+	// The empty string is in this list now rather than tolerated: the shared
+	// decoder rejects it, and a key that decodes to nothing is not a key.
 	for _, text := range []string{"", "0OIl", "abc def", "5LRpM9wpvPfRYuQAC7oNdyaQa6sakpMcnZeR9FS5Cgj!"} {
-		if _, err := decodeBase58(text); err == nil && text != "" {
+		if _, err := base58.Decode(text); err == nil {
 			t.Errorf("%q was accepted as base58", text)
 		}
 	}

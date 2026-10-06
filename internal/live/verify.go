@@ -11,6 +11,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/douglasdemaio/agent-ai-tool/internal/base58"
 )
 
 // CanonicalForm is the byte encoding vtessera signs. It is named in every
@@ -133,40 +135,6 @@ type ProbeVerdict struct {
 	Reason  string
 	Target  string
 	Results []ProbeOutcome
-}
-
-const base58Alphabet = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz"
-
-// decodeBase58 is here because an Ed25519 public key arrives as base58 and this
-// module has no dependencies. It works on a big-endian byte array rather than an
-// integer, which sidesteps the padding trap entirely: leading '1's are counted
-// separately and each remaining digit is folded in with carry, so a key whose first
-// byte is small decodes to 32 bytes rather than 31 and a nibble.
-func decodeBase58(text string) ([]byte, error) {
-	zeros := 0
-	for zeros < len(text) && text[zeros] == base58Alphabet[0] {
-		zeros++
-	}
-	digits := make([]byte, 0, len(text)*733/1000+1)
-	for i := zeros; i < len(text); i++ {
-		digit := strings.IndexByte(base58Alphabet, text[i])
-		if digit < 0 {
-			return nil, fmt.Errorf("%q is not base58", text)
-		}
-		carry := digit
-		for j := len(digits) - 1; j >= 0; j-- {
-			carry += 58 * int(digits[j])
-			digits[j] = byte(carry % 256)
-			carry /= 256
-		}
-		for carry > 0 {
-			digits = append([]byte{byte(carry % 256)}, digits...)
-			carry /= 256
-		}
-	}
-	out := make([]byte, zeros+len(digits))
-	copy(out[zeros:], digits)
-	return out, nil
 }
 
 // encoder writes the canonical form: domain separated, length prefixed, sorted.
@@ -310,7 +278,7 @@ func verifySignature(payload []byte, sig Signature, expectedKeyID string) error 
 	if sig.KeyID != expectedKeyID {
 		return fmt.Errorf("signed by %s, expected %s", short(sig.KeyID), short(expectedKeyID))
 	}
-	key, err := decodeBase58(sig.KeyID)
+	key, err := base58.Decode(sig.KeyID)
 	if err != nil {
 		return err
 	}
