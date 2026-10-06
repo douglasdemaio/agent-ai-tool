@@ -285,6 +285,8 @@ distinction between *down* and *gone*.
 **Ownership.** The maintainer of this repository. The reminder exists so that
 this does not depend on anyone remembering; if the monthly issue is not being
 worked, that is the signal that the cadence is wrong, not that the mechanism is.
+[`docs/ownership.md`](docs/ownership.md) covers who owns which claim, how that
+changes hands, and which credential cannot be handed over at all.
 
 ## Discovery
 
