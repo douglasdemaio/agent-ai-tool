@@ -120,9 +120,11 @@ func (c config) run(ctx context.Context, client *http.Client) error {
 
 	agentsCache := filepath.Join(c.cacheDir, "live-vtessera.json")
 	metricsCache := filepath.Join(c.cacheDir, "live-metrics.json")
+	healthCache := filepath.Join(c.cacheDir, "live-health.json")
+	reportsCache := filepath.Join(c.cacheDir, "live-attestations.json")
 
 	if c.refresh {
-		return c.refreshSnapshots(ctx, client, agentsCache, metricsCache)
+		return c.refreshSnapshots(ctx, client, agentsCache, metricsCache, healthCache, reportsCache)
 	}
 
 	if c.check {
@@ -143,6 +145,23 @@ func (c config) run(ctx context.Context, client *http.Client) error {
 	metrics := live.Load(ctx, c.baseURL, "/v1/metrics", metricsCache, client, live.ValidateMetrics)
 	report(metrics, "metrics")
 
+	// The marketplace's own account of itself, including the key every signature
+	// below is checked against. Fetched before the reports for that reason: a
+	// signature checked against a key from the same response would verify anything.
+	marketplaceHealth := live.Load(ctx, c.baseURL, "/healthz", healthCache, client, live.ValidateHealth)
+	report(marketplaceHealth, "healthz")
+
+	var feed []live.Agent
+	if agents.Available() {
+		var response live.AgentsResponse
+		if err := json.Unmarshal(agents.Response, &response); err != nil {
+			return fmt.Errorf("decoding the agent feed: %w", err)
+		}
+		feed = response.Agents
+	}
+	reports := live.LoadAgentReports(ctx, c.baseURL, feed, reportsCache, client)
+	report(reports, "attestations")
+
 	// A missing or stale report demotes nothing, so the site publishes every
 	// entry it has until a check says otherwise. Withholding endpoints on the
 	// strength of an old report would be worse than publishing a URL that
@@ -154,6 +173,9 @@ func (c config) run(ctx context.Context, client *http.Client) error {
 		Domain:           c.domain,
 		Entries:          entries,
 		MetricsFromCache: metrics.FromCache,
+		ReportsFromCache: reports.FromCache,
+		ReportsFetchedAt: reports.FetchedAt,
+		ReportsErr:       prefixErr("attestation reports", reports.FetchErr),
 		MetricsAge:       metrics.Age(c.now),
 		MetricsErr:       metrics.FetchErr,
 		GeneratedAt:      c.now,
@@ -180,6 +202,22 @@ func (c config) run(ctx context.Context, client *http.Client) error {
 		merged := response.Normalized()
 		site.LiveAgents = &merged
 		site.LiveAgentsFetchedAt = agents.FetchedAt
+	}
+	if marketplaceHealth.Available() {
+		var response live.Health
+		if err := json.Unmarshal(marketplaceHealth.Response, &response); err != nil {
+			return fmt.Errorf("decoding the marketplace health: %w", err)
+		}
+		site.Marketplace = &response
+		site.MarketplaceFromCache = marketplaceHealth.FromCache
+	}
+	if reports.Available() && site.LiveAgents != nil {
+		var response live.AgentReportsResponse
+		if err := json.Unmarshal(reports.Response, &response); err != nil {
+			return fmt.Errorf("decoding the attestation feed: %w", err)
+		}
+		merged := response.Normalized()
+		site.AgentReports = &merged
 	}
 	if metrics.Available() {
 		var response live.MetricsResponse
@@ -271,7 +309,7 @@ func (c config) planCommit() error {
 	return nil
 }
 
-func (c config) refreshSnapshots(ctx context.Context, client *http.Client, agentsCache, metricsCache string) error {
+func (c config) refreshSnapshots(ctx context.Context, client *http.Client, agentsCache, metricsCache, healthCache, reportsCache string) error {
 	if c.baseURL == "" {
 		return fmt.Errorf("-refresh needs -base-url or VTESSERA_BASE_URL; refusing to write empty snapshots")
 	}
@@ -283,6 +321,23 @@ func (c config) refreshSnapshots(ctx context.Context, client *http.Client, agent
 		return fmt.Errorf("refreshing %s: %w", metricsCache, err)
 	}
 	log.Printf("wrote %s", metricsCache)
+	if err := live.Refresh(ctx, c.baseURL, "/healthz", healthCache, client, live.ValidateHealth); err != nil {
+		return fmt.Errorf("refreshing %s: %w", healthCache, err)
+	}
+	log.Printf("wrote %s", healthCache)
+
+	// The report feed is written last and from the agent feed just fetched, so a
+	// snapshot can never describe an agent the committed feed does not have. A
+	// marketplace that serves no attestations fails here rather than committing a
+	// file full of per-agent errors that would read as a broken marketplace.
+	var response live.AgentsResponse
+	if err := live.ReadSnapshot(agentsCache, &response); err != nil {
+		return err
+	}
+	if err := live.RefreshAgentReports(ctx, c.baseURL, response.Agents, reportsCache, client); err != nil {
+		return fmt.Errorf("refreshing %s: %w", reportsCache, err)
+	}
+	log.Printf("wrote %s", reportsCache)
 	return nil
 }
 
@@ -310,54 +365,12 @@ func report(result live.Result, label string) {
 	}
 }
 
-// printDraft shows what sending one drafted registration would take, and what is
-// still missing before it could be. A draft is not a submission: the identity it
-// needs is the owner's, so the request is printed with the owner's own variables
-// rather than filled in with a key this repository does not have and must not
-// have.
-func printDraft(dir, slug string) error {
-	all, err := drafts.Load(dir)
-	if err != nil {
-		return err
-	}
-	for _, d := range all {
-		if d.Slug != slug {
-			continue
-		}
-		fmt.Printf("# %s\n", d.Slug)
-		fmt.Printf("# verified %s from %s (sha256 %s…)\n",
-			d.VerifiedAt, d.Evidence.CardURL, shortSum(d.Evidence.CardSHA256))
-		fmt.Printf("# service %s answered %d\n", d.Evidence.ServiceURL, d.Evidence.ServiceSt)
-
-		ready, why := d.Ready()
-		if ready {
-			fmt.Println("# ready to send")
-		} else {
-			fmt.Printf("# NOT ready: %s\n", why)
-		}
-		for _, o := range d.Outstanding {
-			fmt.Printf("#   %s: %s\n", o.Field, o.Must)
-		}
-
-		body, err := json.MarshalIndent(map[string]any{"card": d.Card}, "", "  ")
-		if err != nil {
-			return err
-		}
-		fmt.Printf("\nPUT $VTESSERA_BASE_URL/v1/agents/$AGENT_ID/card\n")
-		fmt.Printf("Authorization: Bearer $VTESSERA_SESSION\n")
-		fmt.Printf("Content-Type: application/json\n\n%s\n", body)
+// prefixErr names the feed in a degradation message. The page lists several
+// feeds, so "no committed snapshot" on its own is a puzzle on a page that shows
+// three other snapshots working.
+func prefixErr(label string, err error) error {
+	if err == nil {
 		return nil
 	}
-	slugs := make([]string, 0, len(all))
-	for _, d := range all {
-		slugs = append(slugs, d.Slug)
-	}
-	return fmt.Errorf("no draft named %q; there are %d: %s", slug, len(slugs), strings.Join(slugs, ", "))
-}
-
-func shortSum(sum string) string {
-	if len(sum) <= 12 {
-		return sum
-	}
-	return sum[:6]
+	return fmt.Errorf("%s: %w", label, err)
 }

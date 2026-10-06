@@ -31,6 +31,9 @@
     <dt>Deliveries recorded</dt>
     <dd>{{.View.Usage.Delivered}}{{if .View.Usage.Disputed}} &middot; {{.View.Usage.Disputed}} disputed{{end}}{{if .View.Usage.Cancelled}} &middot; {{.View.Usage.Cancelled}} cancelled{{end}}</dd>
     {{end}}
+    {{$v := .View.Verification}}
+    <dt>Checked here</dt>
+    <dd><a href="#verification">{{$v.Summary}}</a>{{if $v.FromCache}} <span class="entry-meta">from the committed snapshot</span>{{end}}</dd>
   </dl>
 
   {{with .View.Entry.HowToCall}}
@@ -66,6 +69,53 @@
     </li>
     {{end}}
   </ol>
+  {{end}}
+
+  {{$v := .View.Verification}}
+  <h2 id="verification">Checked by this page</h2>
+  {{if not $v.Known}}
+  <p class="entry-summary">No marketplace answered when this page was built, so no signature on it could be checked. Read the listing above as unverified.</p>
+  {{else}}
+  <p class="entry-summary">Each verdict below was computed while this page was built, by re-deriving the signed bytes and checking them against the marketplace's published key. None of them is copied from what the marketplace says about itself.</p>
+  <dl class="facts">
+    <dt>Verification key</dt>
+    <dd><code>{{$v.Key}}</code></dd>
+    <dt>Marketplace</dt>
+    <dd>{{if $v.Status}}<span class="tag">{{$v.Status}}</span>{{end}}{{if $v.Version}} version {{$v.Version}}{{end}}{{if $v.Sandbox}} &middot; <strong>sandbox</strong>{{end}}</dd>
+    {{if $v.Cluster}}
+    <dt>Cluster</dt>
+    <dd>{{$v.Cluster}}{{if $v.SettlementTier}} &middot; settlement {{$v.SettlementTier}}{{end}}</dd>
+    {{end}}
+    <dt>Cards checked</dt>
+    <dd>{{$v.Checked}} &middot; {{$v.MarketVerified}} verified by the marketplace &middot; {{$v.AgentVerified}} verified by the agent</dd>
+    <dt>Capability lists</dt>
+    <dd>{{if $v.ProbeNone}}{{$v.ProbeNone}} never probed{{end}}{{if $v.Probed}} &middot; {{$v.ProbeVerified}} verified and passing{{if $v.ProbeFailed}}, {{$v.ProbeFailed}} verified and failing{{end}}{{if $v.ProbeUnchecked}}, {{$v.ProbeUnchecked}} signed but not checkable here{{end}}{{end}}</dd>
+    {{if not $v.FetchedAt.IsZero}}
+    <dt>Fetched</dt>
+    <dd>{{verify $v.FetchedAt}}{{if $v.FromCache}} <span class="entry-meta">committed snapshot, {{age $v.FetchedAge}}</span>{{end}}</dd>
+    {{end}}
+    {{if $v.Err}}
+    <dt>Reports</dt>
+    <dd class="withheld">{{$v.Err}}</dd>
+    {{end}}
+  </dl>
+  {{if $v.Agents}}
+  <table class="verified">
+    <caption>One row per registered agent. Both keys must agree before a card counts as verified.</caption>
+    <thead><tr><th>Agent</th><th>Marketplace signature</th><th>Agent signature</th><th>Capability list</th></tr></thead>
+    <tbody>
+    {{range $v.Agents}}
+      <tr>
+        <th scope="row">{{if .CardURL}}<a href="{{.CardURL}}" rel="nofollow noopener">{{.CardName}}</a>{{else}}{{.CardName}}{{end}}
+          <span class="entry-meta">{{.AgentID}}</span></th>
+        <td><span class="state state-{{.Marketplace.Class}}">{{.Marketplace.State}}</span>{{with .Marketplace.Detail}} <span class="entry-meta">{{.}}</span>{{end}}</td>
+        <td><span class="state state-{{.Agent.Class}}">{{.Agent.State}}</span>{{with .Agent.Detail}} <span class="entry-meta">{{.}}</span>{{end}}</td>
+        <td><span class="state state-{{.Probe.Class}}">{{.Probe.State}}</span>{{if not .Probe.CheckedAt.IsZero}} <span class="entry-meta">checked {{verify .Probe.CheckedAt}}</span>{{end}}{{with .Probe.Detail}} <span class="entry-meta">{{.}}</span>{{end}}</td>
+      </tr>
+    {{end}}
+    </tbody>
+  </table>
+  {{end}}
   {{end}}
 
   {{if or .View.Live .View.LiveEmpty}}

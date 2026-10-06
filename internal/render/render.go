@@ -45,6 +45,69 @@ type Site struct {
 	// exists. Withheld endpoints carry it so a reader can tell a service that
 	// is down from one that was merely never checked.
 	HealthCheckedAt *time.Time
+
+	// Marketplace is the marketplace's own account of itself, and the only source
+	// of the key that AgentReports is checked against. It is nil when nothing has
+	// answered, which leaves every verdict unverified rather than passing.
+	Marketplace          *live.Health
+	MarketplaceFromCache bool
+	AgentReports         *live.AgentReportsResponse
+	ReportsFromCache     bool
+	ReportsFetchedAt     time.Time
+	ReportsErr           error
+}
+
+// verificationKey is the marketplace's published key, or empty when there is
+// none. Every signature on the site is checked against exactly this string, and
+// an empty one checks nothing: the alternative would be to fall back to the key a
+// signature names, which would let any key vouch for itself.
+func (s Site) verificationKey() string {
+	if s.Marketplace == nil {
+		return ""
+	}
+	return s.Marketplace.VerificationKey
+}
+
+// VerifyAgents re-derives every signature over every agent card, using this
+// package's encoder rather than anything the marketplace reported. The verdicts
+// returned are the only ones rendered.
+func (s Site) VerifyAgents() []live.AgentVerification {
+	if s.LiveAgents == nil {
+		return nil
+	}
+	byAgent := map[string]live.AgentReport{}
+	if s.AgentReports != nil {
+		byAgent = s.AgentReports.ByAgent()
+	}
+	// When the whole feed is missing, the reason belongs on every row. Falling
+	// through to an empty report per agent would render them all as "unsigned",
+	// which says the marketplace never attested anything rather than that this
+	// build could not ask.
+	feedErr := ""
+	if s.AgentReports == nil {
+		feedErr = errText(s.ReportsErr)
+	}
+	key := s.verificationKey()
+	out := make([]live.AgentVerification, 0, len(s.LiveAgents.Agents))
+	for _, agent := range s.LiveAgents.Agents {
+		report, ok := byAgent[agent.ID]
+		reason := feedErr
+		if ok && report.Error != "" && !report.Attestation.Marketplace.Attested {
+			reason = report.Error
+		}
+		if reason != "" {
+			out = append(out, live.AgentVerification{
+				AgentID:     agent.ID,
+				CardName:    agent.Card.Name,
+				CardURL:     agent.Card.URL,
+				Marketplace: live.Verified{Reason: reason},
+				Agent:       live.Verified{Reason: reason},
+			})
+			continue
+		}
+		out = append(out, live.VerifyAgent(agent, report.Attestation, report.Probe, key))
+	}
+	return out
 }
 
 // endpointFor returns the machine endpoint an entry advertises, or nil when the
@@ -120,6 +183,70 @@ type entryView struct {
 	// confirming it still describes reality. The health check proves an
 	// endpoint answers; it cannot prove the summary is still true.
 	ReviewDue bool
+	// Verification is the marketplace's signed provenance, shown on every entry
+	// page rather than only on the marketplace's own. A reader arriving at some
+	// other service has no reason to know a marketplace exists, so a claim that
+	// only appears on one page of four is a claim most readers never see.
+	Verification verification
+}
+
+// verification is what this directory checked, and how it checked it. It exists
+// to be read by someone deciding whether to trust a line elsewhere on the page,
+// so it names the key everything was checked against instead of asking to be
+// taken on faith.
+type verification struct {
+	// Known is false when no marketplace answered. That is not the same as
+	// nothing to say: the block renders as explicitly unverified rather than
+	// disappearing, so an absent feed never reads as an absence of problems.
+	Known          bool
+	Key            string
+	Status         string
+	Version        string
+	Cluster        string
+	SettlementTier string
+	Sandbox        bool
+	FromCache      bool
+	FetchedAt      time.Time
+	// FetchedAge is how long ago that was, as a duration, because the age
+	// template function takes a duration and cannot read a clock of its own.
+	FetchedAge     time.Duration
+	Err            string
+	Agents         []live.AgentVerification
+	Checked        int
+	MarketVerified int
+	AgentVerified  int
+	Probed         int
+	ProbeVerified  int
+	ProbeFailed    int
+	ProbeNone      int
+	ProbeUnchecked int
+}
+
+// Summary is the one-line count for the index page, where the per-agent detail
+// would be a wall of text nobody came for.
+func (v verification) Summary() string {
+	switch {
+	case !v.Known:
+		return "no marketplace answered"
+	case v.Checked == 0:
+		return "no agent cards to check"
+	case v.MarketVerified == v.Checked && v.AgentVerified == v.Checked:
+		return fmt.Sprintf("%d of %d cards verified by the marketplace and the agent", v.Checked, v.Checked)
+	case v.MarketVerified > 0:
+		return fmt.Sprintf("%d of %d cards verified by the marketplace", v.MarketVerified, v.Checked)
+	default:
+		return fmt.Sprintf("none of %d cards verified", v.Checked)
+	}
+}
+
+// ClusterOrUnknown keeps an empty cluster from rendering as a blank field. A
+// marketplace with settlement off says so; one that stopped reporting it should
+// not look like a marketplace that never claimed a chain.
+func (v verification) ClusterOrUnknown() string {
+	if v.Cluster == "" {
+		return "none reported"
+	}
+	return v.Cluster
 }
 
 type pageData struct {
@@ -129,6 +256,10 @@ type pageData struct {
 	Canonical   string
 	Views       []entryView
 	View        *entryView
+	// Verification is the same block every entry page carries, hoisted here for
+	// the index. It is computed once per render, so the two surfaces cannot
+	// disagree about what was checked.
+	Verification verification
 	// BadgedCount lets the templates drop the "prefer a delivered count"
 	// instruction when no entry has one, rather than telling an agent to rank
 	// on a field the build produced no values for.
@@ -204,8 +335,64 @@ func (s Site) endpointDetail(slug string) (string, bool) {
 // names and URLs must not overwrite the curated ones. The curated summary is
 // kept for the same reason — an agent list carries no marketplace prose, and
 // inventing one would be worse than wording a human wrote.
+// verificationBlock assembles what was checked. It is built once per render and
+// shared by every view, because the verdicts are the same on each page: a
+// per-entry recomputation would make them free to disagree, and a reader
+// comparing two pages would have no way to tell which one to believe.
+func (s Site) verificationBlock() verification {
+	block := verification{Err: errText(s.ReportsErr)}
+	if s.Marketplace != nil {
+		block.Known = true
+		block.Key = s.Marketplace.VerificationKey
+		block.Status = s.Marketplace.Status
+		block.Version = s.Marketplace.Version
+		block.Cluster = s.Marketplace.Cluster
+		block.SettlementTier = s.Marketplace.SettlementTier
+		block.Sandbox = s.Marketplace.Sandbox
+		block.FromCache = s.MarketplaceFromCache
+	}
+	block.FetchedAt = s.ReportsFetchedAt
+	if !s.ReportsFetchedAt.IsZero() {
+		block.FetchedAge = s.GeneratedAt.Sub(s.ReportsFetchedAt)
+	}
+	for _, v := range s.VerifyAgents() {
+		block.Checked++
+		if v.Marketplace.Valid {
+			block.MarketVerified++
+		}
+		if v.Agent.Valid {
+			block.AgentVerified++
+		}
+		switch {
+		case !v.Probe.Probed:
+			block.ProbeNone++
+		case !v.Probe.Verified:
+			// A report exists but does not check out. Counting it as never probed
+			// would turn a broken signature into a clean bill of health.
+			block.Probed++
+			block.ProbeUnchecked++
+		case v.Probe.Passed:
+			block.Probed++
+			block.ProbeVerified++
+		default:
+			block.Probed++
+			block.ProbeFailed++
+		}
+		block.Agents = append(block.Agents, v)
+	}
+	return block
+}
+
+func errText(err error) string {
+	if err == nil {
+		return ""
+	}
+	return err.Error()
+}
+
 func (s Site) resolve() ([]entryView, error) {
 	byAgent := s.usageByAgent()
+	block := s.verificationBlock()
 	views := make([]entryView, 0, len(s.Entries))
 	found := false
 
@@ -232,6 +419,7 @@ func (s Site) resolve() ([]entryView, error) {
 		// entry's source and date, and judging it on the curated stub it arrived
 		// as would flag the marketplace as overdue the moment its stub aged out.
 		view.ReviewDue = view.Entry.ReviewDue(s.GeneratedAt)
+		view.Verification = block
 		views = append(views, view)
 	}
 
@@ -260,6 +448,8 @@ func (s Site) resolve() ([]entryView, error) {
 			view.Usage = &copied
 		}
 		view.ReviewDue = view.Entry.ReviewDue(s.GeneratedAt)
+		view.Verification = block
+		view.Verification = block
 		views = append(views, view)
 	}
 	return views, nil
@@ -305,7 +495,7 @@ func (s Site) Render(outDir string) error {
 		return err
 	}
 
-	base := pageData{Site: s, Year: s.GeneratedAt.UTC().Year()}
+	base := pageData{Site: s, Year: s.GeneratedAt.UTC().Year(), Verification: s.verificationBlock()}
 
 	home := base
 	home.Title = s.Domain
