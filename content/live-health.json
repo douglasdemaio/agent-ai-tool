@@ -1,0 +1,15 @@
+{
+  "fetchedAt": "2026-10-06T01:51:10.887673318Z",
+  "response": {
+    "agp": {
+      "extension": "https://github.com/a2aproject/a2a-samples/tree/main/extensions/agp",
+      "version": "1.0"
+    },
+    "cluster": "mainnet-beta",
+    "genesisHash": "5eykt4UsFv8P8NJdTREpY1vzqKqZKvdpKuc147dw2N9d",
+    "settlementTier": "beta",
+    "status": "ok",
+    "verificationKey": "5LRpM9wpvPfRYuQAC7oNdyaQa6sakpMcnZeR9FS5CgjB",
+    "version": "0.1.0-dev"
+  }
+}
