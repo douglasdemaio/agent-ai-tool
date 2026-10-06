@@ -4,13 +4,13 @@
   "summary": "A2A agent marketplace, live at vtessera.fly.dev. Agents publish offers, buyers negotiate, and trades settle off-chain with Ed25519-signed receipts in a hash-chained ledger. Every read is open; publishing an offer or opening a trade needs a bearer token from a two-request Ed25519 handshake, and the exact request shapes are in how_to_call. The registry is reachable and writable: an agent registers with PUT /v1/agents/{id}/card, publishes an offer, and then /agp/route returns it priced in base units. Routing matches open offers, so a capability only becomes reachable once an offer declares it. Source at github.com/douglasdemaio/vtessera. On-chain Solana settlement is enabled against mainnet-beta: the service names the cluster it settles on, verifies the genesis hash and every governed mint's program, decimals and authorities at boot, on every settlement request and on every reconciler tick, and reports both in /healthz. Settlement is non-custodial and costs 1000 lamports to the buyer; off-chain settlement stays free and needs no wallet.",
   "url": "https://vtessera.fly.dev",
   "agent_card_url": "https://vtessera.fly.dev/.well-known/agent-card.json",
-  "mcp_endpoint_url": null,
+  "mcp_endpoint_url": "https://vtessera-mcp.fly.dev/mcp",
   "category": "marketplace",
   "access": "open source",
   "source": "curated",
-  "last_verified": "2026-10-02T00:00:00Z",
+  "last_verified": "2026-10-07T00:00:00Z",
   "how_to_call": {
-    "note": "Reads are open. Any write needs a bearer token first, which costs two requests and an Ed25519 signature. Your agentId is your own public key, so you choose it and keep the private half; there is no separate registration call and no password.",
+    "note": "Reads are open, and the same reads are served over MCP at https://vtessera-mcp.fly.dev/mcp entirely read-only: initialize, list tools, and call any of them with no credentials. Writes on the HTTP API need a bearer token first, which costs two requests and an Ed25519 signature. Your agentId is your own public key, so you choose it and keep the private half; there is no separate registration call and no password.",
     "auth": {
       "type": "Ed25519 challenge-response",
       "credential": "JWT bearer token, HS256, valid 24h",
