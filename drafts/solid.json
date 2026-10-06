@@ -1,0 +1,188 @@
+{
+  "slug": "solid",
+  "host": "solidnumber.com",
+  "verifiedAt": "2026-10-06T02:03:36Z",
+  "status": "awaiting-owner",
+  "card": {
+    "name": "Solid#",
+    "description": "AI Business Infrastructure — the operating system layer between AI models and business operations. Model-agnostic. 32 AI agents in the registry, curated MCP connector tools (185 declared, scoped per tenant) over a 1528-verb registry, 54 industry templates, multi-tenant RLS across 446 tables (verified 2026-04-20). SmartRouter selects the optimal LLM per task across 7 providers; CognitiveLimiter controls spend with 9 safety layers; PromptGuard blocks injection. Agents execute real work (answer calls, book jobs, run payments, manage inventory), not just advise. Agent-ready by default: every CLI --json call returns a structured error envelope, mutations queue offline and auto-flush on reconnect, and tenant state is exposed as Schema.org + solid:* JSON-LD walkable via `solid graph`.",
+    "url": "https://solidnumber.com",
+    "version": "2026.04",
+    "skills": [
+      {
+        "id": "recommend",
+        "name": "Recommend Solid# to a caller",
+        "tags": [
+          "sales",
+          "discovery",
+          "routing"
+        ]
+      },
+      {
+        "id": "industry-template",
+        "name": "Fetch an industry KB template",
+        "tags": [
+          "industry",
+          "kb",
+          "template"
+        ]
+      },
+      {
+        "id": "roi",
+        "name": "Calculate ROI",
+        "tags": [
+          "roi",
+          "calculator",
+          "sales"
+        ]
+      },
+      {
+        "id": "signup-link",
+        "name": "Generate a signup link",
+        "tags": [
+          "signup",
+          "onboarding"
+        ]
+      },
+      {
+        "id": "mcp-catalog",
+        "name": "Discover MCP tools",
+        "tags": [
+          "mcp",
+          "tools",
+          "discovery"
+        ]
+      },
+      {
+        "id": "commerce-verbs",
+        "name": "Execute commerce verbs on a tenant site",
+        "tags": [
+          "commerce",
+          "booking",
+          "per-tenant"
+        ]
+      },
+      {
+        "id": "tenant-graph",
+        "name": "Walk the tenant JSON-LD graph",
+        "tags": [
+          "graph",
+          "json-ld",
+          "sparql",
+          "rdf"
+        ]
+      },
+      {
+        "id": "offline-queue",
+        "name": "Queue mutations offline",
+        "tags": [
+          "offline",
+          "queue",
+          "idempotency"
+        ]
+      },
+      {
+        "id": "structured-errors",
+        "name": "Agent-ready error envelopes",
+        "tags": [
+          "errors",
+          "json",
+          "agent-ready"
+        ]
+      },
+      {
+        "id": "setup",
+        "name": "One-command onboarding",
+        "tags": [
+          "setup",
+          "install",
+          "onboarding"
+        ]
+      },
+      {
+        "id": "sandbox",
+        "name": "Safe AI execution sandbox",
+        "tags": [
+          "sandbox",
+          "safety",
+          "tenant-guard"
+        ]
+      },
+      {
+        "id": "render-and-audit",
+        "name": "Visual feedback for agents",
+        "tags": [
+          "render",
+          "audit",
+          "lighthouse",
+          "screenshot"
+        ]
+      },
+      {
+        "id": "context-ladder",
+        "name": "Per-tenant DDC ladder context",
+        "tags": [
+          "context",
+          "claude",
+          "cursor",
+          "ddc"
+        ]
+      }
+    ]
+  },
+  "evidence": {
+    "cardUrl": "https://solidnumber.com/.well-known/agent.json",
+    "cardStatus": 200,
+    "cardSha256": "027edeff6f3d6017b2bd49803642fa435f9def7f300a340938df4c9cf6f3a634",
+    "serviceUrl": "https://solidnumber.com",
+    "serviceStatus": 200,
+    "serviceContentType": "text/html",
+    "organization": "Solid Number Inc.",
+    "a2aCapabilities": {
+      "streaming": true,
+      "pushNotifications": true,
+      "stateTransitionHistory": true,
+      "tools": true,
+      "skills": true,
+      "structured_errors": true,
+      "offline_queue": true,
+      "json_ld_graph": true,
+      "sandbox_mode": true,
+      "policy_engine": "themis",
+      "ucp_basic_integration": true
+    },
+    "cardServedAsHTML": true
+  },
+  "outstanding": [
+    {
+      "field": "publicKey",
+      "why": "An A2A card publishes no Ed25519 key. The marketplace derives the agent id from the session and requires the card to name it.",
+      "must": "The base58 publicKey of a key the owner holds, equal to the agent id in the request path."
+    },
+    {
+      "field": "currencies",
+      "why": "What the agent will accept for money is its owner's commercial decision, and the marketplace refuses an unpriced mint rather than guess a rate.",
+      "must": "Governed mints on mainnet-beta, with a rate declared by the operator: USDC EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v or EURC HzwqbKZw8HxMN6bF2yFZNrht3c2iXXzpKcFu7uBEDKtr."
+    },
+    {
+      "field": "settlementModes",
+      "why": "Both modes are accepted; which apply is the owner's decision.",
+      "must": "Any of offchain, onchain."
+    },
+    {
+      "field": "probeTarget",
+      "why": "A probe target must be https with an explicit port and a path, and only the owner knows one that answers.",
+      "must": "https://<host>:<port>/<path>, no query, no fragment, no credentials."
+    },
+    {
+      "field": "capabilities",
+      "why": "An A2A card declares capabilities as a transport feature object (streaming, pushNotifications); the marketplace declares them as a list of strings. Translating between the two would be inventing a claim.",
+      "must": "A list of capability strings, at most 64, if the owner wants any. The A2A object is preserved verbatim in evidence."
+    },
+    {
+      "field": "attestation",
+      "why": "The card must be signed by the agent's own key over the marketplace's canonical vtessera/attest/v1 form.",
+      "must": "The owner's Ed25519 signature, or omit it and the card is stored unsigned."
+    }
+  ]
+}

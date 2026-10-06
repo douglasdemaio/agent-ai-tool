@@ -17,9 +17,11 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strings"
 	"time"
 
 	"github.com/douglasdemaio/agent-ai-tool/internal/content"
+	"github.com/douglasdemaio/agent-ai-tool/internal/drafts"
 	"github.com/douglasdemaio/agent-ai-tool/internal/health"
 	"github.com/douglasdemaio/agent-ai-tool/internal/live"
 	"github.com/douglasdemaio/agent-ai-tool/internal/render"
@@ -68,8 +70,14 @@ func run() error {
 		attempts   = flag.Int("attempts", health.DefaultAttempts, "probe attempts per endpoint before judging it")
 		timeout    = flag.Duration("timeout", live.DefaultTimeout, "per-request timeout for live fetches")
 		nowFlag    = flag.String("now", "", "override the generation time (RFC3339); for reproducible builds")
+		draftFlag  = flag.String("draft", "", "print the registration request for one drafted agent, then exit")
+		draftDir   = flag.String("drafts", drafts.DraftDir, "directory holding the drafted registrations")
 	)
 	flag.Parse()
+
+	if *draftFlag != "" {
+		return printDraft(*draftDir, *draftFlag)
+	}
 
 	now := time.Now().UTC()
 	if *nowFlag != "" {

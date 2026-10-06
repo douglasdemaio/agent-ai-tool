@@ -1,0 +1,107 @@
+{
+  "slug": "grantagent-com",
+  "host": "grantagent.com",
+  "verifiedAt": "2026-10-06T02:03:36Z",
+  "status": "awaiting-owner",
+  "card": {
+    "name": "GrantAgent.com",
+    "description": "GrantAgent finds foundation and government grants that match your mission, breaks down each funder's requirements and drafts proposals and budgets — for nonprofits and researchers.",
+    "url": "https://grantagent.com/api/a2a",
+    "version": "2.0.0",
+    "skills": [
+      {
+        "id": "grant-prospect-list",
+        "name": "Grant prospect list",
+        "tags": [
+          "grant",
+          "finance-capital"
+        ]
+      },
+      {
+        "id": "proposal-draft",
+        "name": "Proposal draft",
+        "tags": [
+          "grant",
+          "finance-capital"
+        ]
+      },
+      {
+        "id": "budget-and-justification",
+        "name": "Budget and justification",
+        "tags": [
+          "grant",
+          "finance-capital"
+        ]
+      },
+      {
+        "id": "requirements-checklist",
+        "name": "Requirements checklist",
+        "tags": [
+          "grant",
+          "finance-capital"
+        ]
+      },
+      {
+        "id": "grant-calendar",
+        "name": "Grant calendar",
+        "tags": [
+          "grant",
+          "finance-capital"
+        ]
+      },
+      {
+        "id": "final-report-writer",
+        "name": "Final report writer",
+        "tags": [
+          "grant",
+          "finance-capital"
+        ]
+      }
+    ]
+  },
+  "evidence": {
+    "cardUrl": "https://grantagent.com/.well-known/agent-card.json",
+    "cardStatus": 200,
+    "cardSha256": "4a6e67665b4442659b96b6dd23fb76f02cdf28c17051fca5cd0c4691d6a1f49e",
+    "serviceUrl": "https://grantagent.com/api/a2a",
+    "serviceStatus": 200,
+    "serviceContentType": "application/json",
+    "organization": "eCorp",
+    "a2aCapabilities": {
+      "streaming": false,
+      "pushNotifications": false
+    }
+  },
+  "outstanding": [
+    {
+      "field": "publicKey",
+      "why": "An A2A card publishes no Ed25519 key. The marketplace derives the agent id from the session and requires the card to name it.",
+      "must": "The base58 publicKey of a key the owner holds, equal to the agent id in the request path."
+    },
+    {
+      "field": "currencies",
+      "why": "What the agent will accept for money is its owner's commercial decision, and the marketplace refuses an unpriced mint rather than guess a rate.",
+      "must": "Governed mints on mainnet-beta, with a rate declared by the operator: USDC EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v or EURC HzwqbKZw8HxMN6bF2yFZNrht3c2iXXzpKcFu7uBEDKtr."
+    },
+    {
+      "field": "settlementModes",
+      "why": "Both modes are accepted; which apply is the owner's decision.",
+      "must": "Any of offchain, onchain."
+    },
+    {
+      "field": "probeTarget",
+      "why": "A probe target must be https with an explicit port and a path, and only the owner knows one that answers.",
+      "must": "https://<host>:<port>/<path>, no query, no fragment, no credentials."
+    },
+    {
+      "field": "capabilities",
+      "why": "An A2A card declares capabilities as a transport feature object (streaming, pushNotifications); the marketplace declares them as a list of strings. Translating between the two would be inventing a claim.",
+      "must": "A list of capability strings, at most 64, if the owner wants any. The A2A object is preserved verbatim in evidence."
+    },
+    {
+      "field": "attestation",
+      "why": "The card must be signed by the agent's own key over the marketplace's canonical vtessera/attest/v1 form.",
+      "must": "The owner's Ed25519 signature, or omit it and the card is stored unsigned."
+    }
+  ]
+}

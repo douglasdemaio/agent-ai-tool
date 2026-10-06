@@ -1,0 +1,432 @@
+{
+  "slug": "nexus",
+  "host": "nexus.cloudworks.pt",
+  "verifiedAt": "2026-10-06T02:03:36Z",
+  "status": "awaiting-owner",
+  "card": {
+    "name": "nexus",
+    "description": "Hermes Agent — a general-purpose agent reachable over A2A.",
+    "url": "https://nexus.cloudworks.pt/",
+    "version": "1.0.0",
+    "skills": [
+      {
+        "id": "toolset.a2a",
+        "name": "a2a",
+        "tags": [
+          "a2a",
+          "a2a_call",
+          "a2a_discover",
+          "a2a_history",
+          "a2a_list",
+          "a2a_orchestrate"
+        ]
+      },
+      {
+        "id": "toolset.browser",
+        "name": "browser",
+        "tags": [
+          "browser",
+          "browser_back",
+          "browser_click",
+          "browser_console",
+          "browser_get_images",
+          "browser_navigate",
+          "browser_press",
+          "browser_scroll",
+          "browser_snapshot",
+          "browser_type",
+          "browser_vault_enter_code"
+        ]
+      },
+      {
+        "id": "toolset.browser-cdp",
+        "name": "browser-cdp",
+        "tags": [
+          "browser-cdp",
+          "browser_cdp",
+          "browser_dialog"
+        ]
+      },
+      {
+        "id": "toolset.browser-use",
+        "name": "browser-use",
+        "tags": [
+          "browser-use",
+          "browser_exec"
+        ]
+      },
+      {
+        "id": "toolset.clarify",
+        "name": "clarify",
+        "tags": [
+          "clarify",
+          "clarify"
+        ]
+      },
+      {
+        "id": "toolset.code_execution",
+        "name": "code_execution",
+        "tags": [
+          "code_execution",
+          "execute_code"
+        ]
+      },
+      {
+        "id": "toolset.computer_use",
+        "name": "computer_use",
+        "tags": [
+          "computer_use",
+          "computer_use"
+        ]
+      },
+      {
+        "id": "toolset.connections",
+        "name": "connections",
+        "tags": [
+          "connections",
+          "manage_connections"
+        ]
+      },
+      {
+        "id": "toolset.cronjob",
+        "name": "cronjob",
+        "tags": [
+          "cronjob",
+          "cronjob_manage"
+        ]
+      },
+      {
+        "id": "toolset.delegation",
+        "name": "delegation",
+        "tags": [
+          "delegation",
+          "delegate_task"
+        ]
+      },
+      {
+        "id": "toolset.desktop_ui",
+        "name": "desktop_ui",
+        "tags": [
+          "desktop_ui",
+          "annotate_preview",
+          "apply_layout",
+          "close_terminal",
+          "desktop_preview",
+          "drive_preview",
+          "focus_pane",
+          "gui_tour",
+          "react_to_message",
+          "read_terminal",
+          "read_window_below"
+        ]
+      },
+      {
+        "id": "toolset.discord",
+        "name": "discord",
+        "tags": [
+          "discord",
+          "discord"
+        ]
+      },
+      {
+        "id": "toolset.discord_admin",
+        "name": "discord_admin",
+        "tags": [
+          "discord_admin",
+          "discord_admin"
+        ]
+      },
+      {
+        "id": "toolset.feishu_doc",
+        "name": "feishu_doc",
+        "tags": [
+          "feishu_doc",
+          "feishu_doc_read"
+        ]
+      },
+      {
+        "id": "toolset.feishu_drive",
+        "name": "feishu_drive",
+        "tags": [
+          "feishu_drive",
+          "feishu_drive_add_comment",
+          "feishu_drive_list_comment_replies",
+          "feishu_drive_list_comments",
+          "feishu_drive_reply_comment"
+        ]
+      },
+      {
+        "id": "toolset.file",
+        "name": "file",
+        "tags": [
+          "file",
+          "patch",
+          "read_file",
+          "search_files",
+          "write_file"
+        ]
+      },
+      {
+        "id": "toolset.hermes-yuanbao",
+        "name": "hermes-yuanbao",
+        "tags": [
+          "hermes-yuanbao",
+          "yb_query_group_info",
+          "yb_query_group_members",
+          "yb_search_sticker",
+          "yb_send_dm",
+          "yb_send_sticker"
+        ]
+      },
+      {
+        "id": "toolset.homeassistant",
+        "name": "homeassistant",
+        "tags": [
+          "homeassistant",
+          "ha_call_service",
+          "ha_get_state",
+          "ha_list_entities",
+          "ha_list_services"
+        ]
+      },
+      {
+        "id": "toolset.image_gen",
+        "name": "image_gen",
+        "tags": [
+          "image_gen",
+          "image_generate"
+        ]
+      },
+      {
+        "id": "toolset.kanban",
+        "name": "kanban",
+        "tags": [
+          "kanban",
+          "kanban_attach",
+          "kanban_attach_url",
+          "kanban_attachments",
+          "kanban_block",
+          "kanban_comment",
+          "kanban_complete",
+          "kanban_create",
+          "kanban_heartbeat",
+          "kanban_link",
+          "kanban_list"
+        ]
+      },
+      {
+        "id": "toolset.mcp-codebase-memory",
+        "name": "mcp-codebase-memory",
+        "tags": [
+          "mcp-codebase-memory",
+          "mcp__codebase_memory__check_index_coverage",
+          "mcp__codebase_memory__delete_project",
+          "mcp__codebase_memory__detect_changes",
+          "mcp__codebase_memory__get_architecture",
+          "mcp__codebase_memory__get_code_snippet",
+          "mcp__codebase_memory__get_graph_schema",
+          "mcp__codebase_memory__get_prompt",
+          "mcp__codebase_memory__index_repository",
+          "mcp__codebase_memory__index_status",
+          "mcp__codebase_memory__ingest_traces"
+        ]
+      },
+      {
+        "id": "toolset.mcp-context7",
+        "name": "mcp-context7",
+        "tags": [
+          "mcp-context7",
+          "mcp__context7__get_prompt",
+          "mcp__context7__list_prompts",
+          "mcp__context7__list_resources",
+          "mcp__context7__query_docs",
+          "mcp__context7__read_resource",
+          "mcp__context7__resolve_library_id"
+        ]
+      },
+      {
+        "id": "toolset.memory",
+        "name": "memory",
+        "tags": [
+          "memory",
+          "memory"
+        ]
+      },
+      {
+        "id": "toolset.mnemosyne-dashboard",
+        "name": "mnemosyne-dashboard",
+        "tags": [
+          "mnemosyne-dashboard",
+          "mnemosyne_dashboard_config",
+          "mnemosyne_dashboard_start",
+          "mnemosyne_dashboard_status",
+          "mnemosyne_dashboard_stop"
+        ]
+      },
+      {
+        "id": "toolset.project",
+        "name": "project",
+        "tags": [
+          "project",
+          "desktop_project"
+        ]
+      },
+      {
+        "id": "toolset.session_search",
+        "name": "session_search",
+        "tags": [
+          "session_search",
+          "session_search"
+        ]
+      },
+      {
+        "id": "toolset.setup",
+        "name": "setup",
+        "tags": [
+          "setup",
+          "manage_catalog"
+        ]
+      },
+      {
+        "id": "toolset.skills",
+        "name": "skills",
+        "tags": [
+          "skills",
+          "skill_manage",
+          "skill_view",
+          "skills_list"
+        ]
+      },
+      {
+        "id": "toolset.spotify",
+        "name": "spotify",
+        "tags": [
+          "spotify",
+          "spotify_albums",
+          "spotify_devices",
+          "spotify_library",
+          "spotify_playback",
+          "spotify_playlists",
+          "spotify_queue",
+          "spotify_search"
+        ]
+      },
+      {
+        "id": "toolset.terminal",
+        "name": "terminal",
+        "tags": [
+          "terminal",
+          "process_manage",
+          "terminal"
+        ]
+      },
+      {
+        "id": "toolset.todo",
+        "name": "todo",
+        "tags": [
+          "todo",
+          "todo_list"
+        ]
+      },
+      {
+        "id": "toolset.tts",
+        "name": "tts",
+        "tags": [
+          "tts",
+          "text_to_speech"
+        ]
+      },
+      {
+        "id": "toolset.video",
+        "name": "video",
+        "tags": [
+          "video",
+          "video_analyze"
+        ]
+      },
+      {
+        "id": "toolset.video_gen",
+        "name": "video_gen",
+        "tags": [
+          "video_gen",
+          "video_generate",
+          "xai_video_edit",
+          "xai_video_extend"
+        ]
+      },
+      {
+        "id": "toolset.vision",
+        "name": "vision",
+        "tags": [
+          "vision",
+          "vision_analyze"
+        ]
+      },
+      {
+        "id": "toolset.web",
+        "name": "web",
+        "tags": [
+          "web",
+          "web_extract",
+          "web_search"
+        ]
+      },
+      {
+        "id": "toolset.x_search",
+        "name": "x_search",
+        "tags": [
+          "x_search",
+          "x_search"
+        ]
+      }
+    ]
+  },
+  "evidence": {
+    "cardUrl": "https://nexus.cloudworks.pt/.well-known/agent-card.json",
+    "cardStatus": 200,
+    "cardSha256": "0e080755e369530cd4d059e1dc4f8710cff3da50bd64ee27d5ad91b912faa3f3",
+    "serviceUrl": "https://nexus.cloudworks.pt/",
+    "serviceStatus": 200,
+    "serviceContentType": "text/html",
+    "organization": "Hermes Agent",
+    "a2aCapabilities": {
+      "streaming": true,
+      "pushNotifications": true,
+      "stateTransitionHistory": false,
+      "extendedAgentCard": false
+    },
+    "cardServedAsHTML": true
+  },
+  "outstanding": [
+    {
+      "field": "publicKey",
+      "why": "An A2A card publishes no Ed25519 key. The marketplace derives the agent id from the session and requires the card to name it.",
+      "must": "The base58 publicKey of a key the owner holds, equal to the agent id in the request path."
+    },
+    {
+      "field": "currencies",
+      "why": "What the agent will accept for money is its owner's commercial decision, and the marketplace refuses an unpriced mint rather than guess a rate.",
+      "must": "Governed mints on mainnet-beta, with a rate declared by the operator: USDC EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v or EURC HzwqbKZw8HxMN6bF2yFZNrht3c2iXXzpKcFu7uBEDKtr."
+    },
+    {
+      "field": "settlementModes",
+      "why": "Both modes are accepted; which apply is the owner's decision.",
+      "must": "Any of offchain, onchain."
+    },
+    {
+      "field": "probeTarget",
+      "why": "A probe target must be https with an explicit port and a path, and only the owner knows one that answers.",
+      "must": "https://<host>:<port>/<path>, no query, no fragment, no credentials."
+    },
+    {
+      "field": "capabilities",
+      "why": "An A2A card declares capabilities as a transport feature object (streaming, pushNotifications); the marketplace declares them as a list of strings. Translating between the two would be inventing a claim.",
+      "must": "A list of capability strings, at most 64, if the owner wants any. The A2A object is preserved verbatim in evidence."
+    },
+    {
+      "field": "attestation",
+      "why": "The card must be signed by the agent's own key over the marketplace's canonical vtessera/attest/v1 form.",
+      "must": "The owner's Ed25519 signature, or omit it and the card is stored unsigned."
+    }
+  ]
+}

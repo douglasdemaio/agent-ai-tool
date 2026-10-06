@@ -1,0 +1,122 @@
+{
+  "slug": "lforla-assistant",
+  "host": "lforla.org",
+  "verifiedAt": "2026-10-06T02:03:36Z",
+  "status": "awaiting-owner",
+  "card": {
+    "name": "LFORLA Assistant",
+    "description": "AI assistant for the LFORLA reinforcement learning leaderboard. Answers questions about benchmark rankings, model performance and evaluation methodology using the public LFORLA API.",
+    "url": "https://lforla.org/a2a",
+    "version": "1.0.0",
+    "skills": [
+      {
+        "id": "leaderboard-lookup",
+        "name": "Leaderboard Lookup",
+        "tags": [
+          "leaderboard",
+          "ranking",
+          "rl"
+        ],
+        "inputModes": [
+          "text/plain"
+        ],
+        "outputModes": [
+          "text/plain",
+          "application/json"
+        ]
+      },
+      {
+        "id": "benchmark-search",
+        "name": "Benchmark Search",
+        "tags": [
+          "benchmarks",
+          "environments"
+        ],
+        "inputModes": [
+          "text/plain"
+        ],
+        "outputModes": [
+          "text/plain",
+          "application/json"
+        ]
+      },
+      {
+        "id": "model-lookup",
+        "name": "Model Lookup",
+        "tags": [
+          "models",
+          "evaluation"
+        ],
+        "inputModes": [
+          "text/plain"
+        ],
+        "outputModes": [
+          "text/plain",
+          "application/json"
+        ]
+      },
+      {
+        "id": "platform-status",
+        "name": "Platform Status",
+        "tags": [
+          "status",
+          "health"
+        ],
+        "inputModes": [
+          "text/plain"
+        ],
+        "outputModes": [
+          "text/plain",
+          "application/json"
+        ]
+      }
+    ]
+  },
+  "evidence": {
+    "cardUrl": "https://lforla.org/.well-known/agent-card.json",
+    "cardStatus": 200,
+    "cardSha256": "46b083a79d558fe428600f1190fea1af1b7ce66587c4037627a5cbc7815fd1a8",
+    "serviceUrl": "https://lforla.org/a2a",
+    "serviceStatus": 200,
+    "serviceContentType": "text/html",
+    "organization": "LFORLA",
+    "a2aCapabilities": {
+      "streaming": false,
+      "pushNotifications": false,
+      "extendedAgentCard": false
+    },
+    "cardServedAsHTML": true
+  },
+  "outstanding": [
+    {
+      "field": "publicKey",
+      "why": "An A2A card publishes no Ed25519 key. The marketplace derives the agent id from the session and requires the card to name it.",
+      "must": "The base58 publicKey of a key the owner holds, equal to the agent id in the request path."
+    },
+    {
+      "field": "currencies",
+      "why": "What the agent will accept for money is its owner's commercial decision, and the marketplace refuses an unpriced mint rather than guess a rate.",
+      "must": "Governed mints on mainnet-beta, with a rate declared by the operator: USDC EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v or EURC HzwqbKZw8HxMN6bF2yFZNrht3c2iXXzpKcFu7uBEDKtr."
+    },
+    {
+      "field": "settlementModes",
+      "why": "Both modes are accepted; which apply is the owner's decision.",
+      "must": "Any of offchain, onchain."
+    },
+    {
+      "field": "probeTarget",
+      "why": "A probe target must be https with an explicit port and a path, and only the owner knows one that answers.",
+      "must": "https://<host>:<port>/<path>, no query, no fragment, no credentials."
+    },
+    {
+      "field": "capabilities",
+      "why": "An A2A card declares capabilities as a transport feature object (streaming, pushNotifications); the marketplace declares them as a list of strings. Translating between the two would be inventing a claim.",
+      "must": "A list of capability strings, at most 64, if the owner wants any. The A2A object is preserved verbatim in evidence."
+    },
+    {
+      "field": "attestation",
+      "why": "The card must be signed by the agent's own key over the marketplace's canonical vtessera/attest/v1 form.",
+      "must": "The owner's Ed25519 signature, or omit it and the card is stored unsigned."
+    }
+  ]
+}

@@ -344,6 +344,33 @@ distinction between *down* and *gone*.
 this does not depend on anyone remembering; if the monthly issue is not being
 worked, that is the signal that the cadence is wrong, not that the mechanism is.
 
+## Drafted registrations
+
+`docs/listing-criteria.md` sets out what an agent must be true before this
+directory will draft a registration for it on vtessera, and which of those things
+the directory can check rather than take on trust. The rules the marketplace
+enforces are quoted from where it enforces them; the rest are enforced in
+`internal/drafts` and asserted with negative cases.
+
+Twenty drafts live in `drafts/`, each a real agent whose card was fetched and
+whose service URL answered 200 at the time recorded in the file:
+
+```bash
+make drafts-verify          # re-fetch every card and service URL
+go run . -draft reviewchi   # print the request for one, and what is missing
+```
+
+`make drafts-verify` is the only target here that talks to hosts outside this
+repository, which is why it is not in `all`.
+
+Every draft is `awaiting-owner`, and one test fails if that ever stops being true.
+Not because the checks are hard, but because an A2A agent card publishes no
+Ed25519 identity, while the marketplace derives the agent id from the
+authenticated session and requires the card to name it. Across all twenty drafts
+not one card declared a public key. A third party cannot complete a registration
+even in principle, so a draft that claimed to be ready would be asserting the
+owner had agreed to something they never saw.
+
 ## Discovery
 
 The generator emits `robots.txt`, `sitemap.xml`, `llms.txt`, `agents.json`,

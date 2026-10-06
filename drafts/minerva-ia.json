@@ -1,0 +1,153 @@
+{
+  "slug": "minerva-ia",
+  "host": "my.minerva-ia.com",
+  "verifiedAt": "2026-10-06T02:03:36Z",
+  "status": "awaiting-owner",
+  "card": {
+    "name": "Minerva-IA",
+    "description": "AI assistant for Microsoft 365 and Azure administration. Manages users, groups, licenses, security policies, compliance, Exchange Online, SharePoint, Teams, and Azure resources.",
+    "url": "https://my.minerva-ia.com/api/a2a",
+    "version": "1.0.0",
+    "skills": [
+      {
+        "id": "microsoft_graph",
+        "name": "Microsoft Graph API",
+        "tags": [
+          "m365",
+          "graph",
+          "users",
+          "groups",
+          "licenses",
+          "security"
+        ]
+      },
+      {
+        "id": "azure_arm",
+        "name": "Azure Resource Manager",
+        "tags": [
+          "azure",
+          "arm",
+          "vms",
+          "storage",
+          "networking",
+          "rbac"
+        ]
+      },
+      {
+        "id": "microsoft_search",
+        "name": "Microsoft Search",
+        "tags": [
+          "search",
+          "m365",
+          "mail",
+          "files",
+          "sharepoint"
+        ]
+      },
+      {
+        "id": "tenant_context",
+        "name": "Tenant Context",
+        "tags": [
+          "tenant",
+          "context",
+          "overview"
+        ]
+      },
+      {
+        "id": "security_report",
+        "name": "Security Report",
+        "tags": [
+          "security",
+          "compliance",
+          "report"
+        ]
+      },
+      {
+        "id": "exchange_online",
+        "name": "Exchange Online Management",
+        "tags": [
+          "exchange",
+          "powershell",
+          "mailbox",
+          "transport"
+        ]
+      },
+      {
+        "id": "sharepoint_pnp",
+        "name": "SharePoint PnP Management",
+        "tags": [
+          "sharepoint",
+          "pnp",
+          "powershell",
+          "sites"
+        ]
+      },
+      {
+        "id": "teams_admin",
+        "name": "Teams Administration",
+        "tags": [
+          "teams",
+          "powershell",
+          "policies"
+        ]
+      },
+      {
+        "id": "purview_compliance",
+        "name": "Purview Compliance",
+        "tags": [
+          "purview",
+          "compliance",
+          "dlp",
+          "retention"
+        ]
+      }
+    ]
+  },
+  "evidence": {
+    "cardUrl": "https://my.minerva-ia.com/.well-known/agent.json",
+    "cardStatus": 200,
+    "cardSha256": "b0a4efcd3fe38ef7b54490e0401a010b6630ab03e19f8cfb4894325328138519",
+    "serviceUrl": "https://my.minerva-ia.com/api/a2a",
+    "serviceStatus": 200,
+    "serviceContentType": "text/html",
+    "organization": "Minerva-IA",
+    "a2aCapabilities": {
+      "streaming": true,
+      "pushNotifications": false,
+      "stateTransitionHistory": true
+    },
+    "cardServedAsHTML": true
+  },
+  "outstanding": [
+    {
+      "field": "publicKey",
+      "why": "An A2A card publishes no Ed25519 key. The marketplace derives the agent id from the session and requires the card to name it.",
+      "must": "The base58 publicKey of a key the owner holds, equal to the agent id in the request path."
+    },
+    {
+      "field": "currencies",
+      "why": "What the agent will accept for money is its owner's commercial decision, and the marketplace refuses an unpriced mint rather than guess a rate.",
+      "must": "Governed mints on mainnet-beta, with a rate declared by the operator: USDC EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v or EURC HzwqbKZw8HxMN6bF2yFZNrht3c2iXXzpKcFu7uBEDKtr."
+    },
+    {
+      "field": "settlementModes",
+      "why": "Both modes are accepted; which apply is the owner's decision.",
+      "must": "Any of offchain, onchain."
+    },
+    {
+      "field": "probeTarget",
+      "why": "A probe target must be https with an explicit port and a path, and only the owner knows one that answers.",
+      "must": "https://<host>:<port>/<path>, no query, no fragment, no credentials."
+    },
+    {
+      "field": "capabilities",
+      "why": "An A2A card declares capabilities as a transport feature object (streaming, pushNotifications); the marketplace declares them as a list of strings. Translating between the two would be inventing a claim.",
+      "must": "A list of capability strings, at most 64, if the owner wants any. The A2A object is preserved verbatim in evidence."
+    },
+    {
+      "field": "attestation",
+      "why": "The card must be signed by the agent's own key over the marketplace's canonical vtessera/attest/v1 form.",
+      "must": "The owner's Ed25519 signature, or omit it and the card is stored unsigned."
+    }
+  ]
+}
