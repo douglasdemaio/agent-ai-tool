@@ -1,0 +1,192 @@
+{
+  "slug": "opentennis",
+  "host": "opentennis.net",
+  "verifiedAt": "2026-10-06T02:03:36Z",
+  "status": "awaiting-owner",
+  "card": {
+    "name": "OpenTennis",
+    "description": "OpenTennis platform — browse tennis trips, find courts and venues, discover players and rankings, and access ladder competitions. All capabilities listed here are publicly accessible without authentication.",
+    "url": "https://opentennis.net",
+    "version": "1.0.0",
+    "skills": [
+      {
+        "id": "trips",
+        "name": "Tennis Trips",
+        "tags": [
+          "tennis",
+          "trips",
+          "travel",
+          "training"
+        ],
+        "inputModes": [
+          "text/plain"
+        ],
+        "outputModes": [
+          "text/plain",
+          "application/json",
+          "text/markdown"
+        ]
+      },
+      {
+        "id": "courts",
+        "name": "Courts & Venues",
+        "tags": [
+          "tennis",
+          "courts",
+          "venues",
+          "facilities",
+          "map"
+        ],
+        "inputModes": [
+          "text/plain"
+        ],
+        "outputModes": [
+          "text/plain",
+          "application/json",
+          "text/markdown"
+        ]
+      },
+      {
+        "id": "players",
+        "name": "Player Search & Profiles",
+        "tags": [
+          "tennis",
+          "players",
+          "profiles",
+          "search",
+          "rankings"
+        ],
+        "inputModes": [
+          "text/plain"
+        ],
+        "outputModes": [
+          "text/plain",
+          "application/json",
+          "text/markdown"
+        ]
+      },
+      {
+        "id": "ladder",
+        "name": "Ladder Rankings",
+        "tags": [
+          "tennis",
+          "ladder",
+          "rankings",
+          "competition",
+          "city"
+        ],
+        "inputModes": [
+          "text/plain"
+        ],
+        "outputModes": [
+          "text/plain",
+          "application/json",
+          "text/markdown"
+        ]
+      },
+      {
+        "id": "level-tools",
+        "name": "Tennis Level Assessment",
+        "tags": [
+          "tennis",
+          "ntrp",
+          "level",
+          "rating",
+          "skill"
+        ],
+        "inputModes": [
+          "text/plain"
+        ],
+        "outputModes": [
+          "text/plain",
+          "application/json",
+          "text/markdown"
+        ]
+      },
+      {
+        "id": "community",
+        "name": "Community",
+        "tags": [
+          "tennis",
+          "community",
+          "forum",
+          "posts"
+        ],
+        "inputModes": [
+          "text/plain"
+        ],
+        "outputModes": [
+          "text/plain",
+          "application/json",
+          "text/markdown"
+        ]
+      },
+      {
+        "id": "blog",
+        "name": "Blog",
+        "tags": [
+          "tennis",
+          "blog",
+          "articles",
+          "news",
+          "guides"
+        ],
+        "inputModes": [
+          "text/plain"
+        ],
+        "outputModes": [
+          "text/plain",
+          "application/json",
+          "text/markdown"
+        ]
+      }
+    ]
+  },
+  "evidence": {
+    "cardUrl": "https://opentennis.net/.well-known/agent-card.json",
+    "cardStatus": 200,
+    "cardSha256": "f712d5eca6c79d7ce7db6a608145bff38975575b38f99b5f3eb9d707a4530bd9",
+    "serviceUrl": "https://opentennis.net",
+    "serviceStatus": 200,
+    "serviceContentType": "text/html",
+    "organization": "OpenTennis",
+    "a2aCapabilities": {
+      "streaming": false,
+      "pushNotifications": false,
+      "stateTransitionHistory": false
+    },
+    "cardServedAsHTML": true
+  },
+  "outstanding": [
+    {
+      "field": "publicKey",
+      "why": "An A2A card publishes no Ed25519 key. The marketplace derives the agent id from the session and requires the card to name it.",
+      "must": "The base58 publicKey of a key the owner holds, equal to the agent id in the request path."
+    },
+    {
+      "field": "currencies",
+      "why": "What the agent will accept for money is its owner's commercial decision, and the marketplace refuses an unpriced mint rather than guess a rate.",
+      "must": "Governed mints on mainnet-beta, with a rate declared by the operator: USDC EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v or EURC HzwqbKZw8HxMN6bF2yFZNrht3c2iXXzpKcFu7uBEDKtr."
+    },
+    {
+      "field": "settlementModes",
+      "why": "Both modes are accepted; which apply is the owner's decision.",
+      "must": "Any of offchain, onchain."
+    },
+    {
+      "field": "probeTarget",
+      "why": "A probe target must be https with an explicit port and a path, and only the owner knows one that answers.",
+      "must": "https://<host>:<port>/<path>, no query, no fragment, no credentials."
+    },
+    {
+      "field": "capabilities",
+      "why": "An A2A card declares capabilities as a transport feature object (streaming, pushNotifications); the marketplace declares them as a list of strings. Translating between the two would be inventing a claim.",
+      "must": "A list of capability strings, at most 64, if the owner wants any. The A2A object is preserved verbatim in evidence."
+    },
+    {
+      "field": "attestation",
+      "why": "The card must be signed by the agent's own key over the marketplace's canonical vtessera/attest/v1 form.",
+      "must": "The owner's Ed25519 signature, or omit it and the card is stored unsigned."
+    }
+  ]
+}

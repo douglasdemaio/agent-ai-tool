@@ -1,0 +1,107 @@
+{
+  "slug": "macroagents-com",
+  "host": "macroagents.com",
+  "verifiedAt": "2026-10-06T02:03:36Z",
+  "status": "awaiting-owner",
+  "card": {
+    "name": "MacroAgents.com",
+    "description": "MacroAgents turns your description of a repetitive task into a spreadsheet macro, keyboard shortcut or script — for office teams, analysts and admins who repeat the same steps daily.",
+    "url": "https://macroagents.com/api/a2a",
+    "version": "2.0.0",
+    "skills": [
+      {
+        "id": "macro-idea-finder",
+        "name": "Macro idea finder",
+        "tags": [
+          "macro",
+          "support-ops"
+        ]
+      },
+      {
+        "id": "spreadsheet-macro-writer",
+        "name": "Spreadsheet macro writer",
+        "tags": [
+          "macro",
+          "support-ops"
+        ]
+      },
+      {
+        "id": "text-expander-library",
+        "name": "Text expander library",
+        "tags": [
+          "macro",
+          "support-ops"
+        ]
+      },
+      {
+        "id": "desktop-automation-script",
+        "name": "Desktop automation script",
+        "tags": [
+          "macro",
+          "support-ops"
+        ]
+      },
+      {
+        "id": "macro-maintenance-plan",
+        "name": "Macro maintenance plan",
+        "tags": [
+          "macro",
+          "support-ops"
+        ]
+      },
+      {
+        "id": "team-automation-workshop",
+        "name": "Team automation workshop",
+        "tags": [
+          "macro",
+          "support-ops"
+        ]
+      }
+    ]
+  },
+  "evidence": {
+    "cardUrl": "https://macroagents.com/.well-known/agent-card.json",
+    "cardStatus": 200,
+    "cardSha256": "6ae4e147e3e337ed17fdd6393d0828b009ab0be0dd022bdef8b30d48c09447e0",
+    "serviceUrl": "https://macroagents.com/api/a2a",
+    "serviceStatus": 200,
+    "serviceContentType": "application/json",
+    "organization": "eCorp",
+    "a2aCapabilities": {
+      "streaming": false,
+      "pushNotifications": false
+    }
+  },
+  "outstanding": [
+    {
+      "field": "publicKey",
+      "why": "An A2A card publishes no Ed25519 key. The marketplace derives the agent id from the session and requires the card to name it.",
+      "must": "The base58 publicKey of a key the owner holds, equal to the agent id in the request path."
+    },
+    {
+      "field": "currencies",
+      "why": "What the agent will accept for money is its owner's commercial decision, and the marketplace refuses an unpriced mint rather than guess a rate.",
+      "must": "Governed mints on mainnet-beta, with a rate declared by the operator: USDC EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v or EURC HzwqbKZw8HxMN6bF2yFZNrht3c2iXXzpKcFu7uBEDKtr."
+    },
+    {
+      "field": "settlementModes",
+      "why": "Both modes are accepted; which apply is the owner's decision.",
+      "must": "Any of offchain, onchain."
+    },
+    {
+      "field": "probeTarget",
+      "why": "A probe target must be https with an explicit port and a path, and only the owner knows one that answers.",
+      "must": "https://<host>:<port>/<path>, no query, no fragment, no credentials."
+    },
+    {
+      "field": "capabilities",
+      "why": "An A2A card declares capabilities as a transport feature object (streaming, pushNotifications); the marketplace declares them as a list of strings. Translating between the two would be inventing a claim.",
+      "must": "A list of capability strings, at most 64, if the owner wants any. The A2A object is preserved verbatim in evidence."
+    },
+    {
+      "field": "attestation",
+      "why": "The card must be signed by the agent's own key over the marketplace's canonical vtessera/attest/v1 form.",
+      "must": "The owner's Ed25519 signature, or omit it and the card is stored unsigned."
+    }
+  ]
+}

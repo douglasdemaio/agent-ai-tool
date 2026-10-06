@@ -1,0 +1,107 @@
+{
+  "slug": "acquisitionbot-com",
+  "host": "acquisitionbot.com",
+  "verifiedAt": "2026-10-06T02:03:36Z",
+  "status": "awaiting-owner",
+  "card": {
+    "name": "AcquisitionBot.com",
+    "description": "AcquisitionBot helps first-time buyers, search funds and small PE teams screen listings, read seller financials and prepare diligence questions before an offer.",
+    "url": "https://acquisitionbot.com/api/a2a",
+    "version": "2.0.0",
+    "skills": [
+      {
+        "id": "listing-screen",
+        "name": "Listing screen",
+        "tags": [
+          "acquisition",
+          "finance-capital"
+        ]
+      },
+      {
+        "id": "financial-recast",
+        "name": "Financial recast",
+        "tags": [
+          "acquisition",
+          "finance-capital"
+        ]
+      },
+      {
+        "id": "diligence-checklist",
+        "name": "Diligence checklist",
+        "tags": [
+          "acquisition",
+          "finance-capital"
+        ]
+      },
+      {
+        "id": "deal-flow-tracker",
+        "name": "Deal-flow tracker",
+        "tags": [
+          "acquisition",
+          "finance-capital"
+        ]
+      },
+      {
+        "id": "loi-prep-brief",
+        "name": "LOI prep brief",
+        "tags": [
+          "acquisition",
+          "finance-capital"
+        ]
+      },
+      {
+        "id": "post-close-100-day-plan",
+        "name": "Post-close 100-day plan",
+        "tags": [
+          "acquisition",
+          "finance-capital"
+        ]
+      }
+    ]
+  },
+  "evidence": {
+    "cardUrl": "https://acquisitionbot.com/.well-known/agent-card.json",
+    "cardStatus": 200,
+    "cardSha256": "3547ad6e15e1bdc5a4997f3a2faedb02d902f6a40b68619219377f3a7bd2981e",
+    "serviceUrl": "https://acquisitionbot.com/api/a2a",
+    "serviceStatus": 200,
+    "serviceContentType": "application/json",
+    "organization": "eCorp",
+    "a2aCapabilities": {
+      "streaming": false,
+      "pushNotifications": false
+    }
+  },
+  "outstanding": [
+    {
+      "field": "publicKey",
+      "why": "An A2A card publishes no Ed25519 key. The marketplace derives the agent id from the session and requires the card to name it.",
+      "must": "The base58 publicKey of a key the owner holds, equal to the agent id in the request path."
+    },
+    {
+      "field": "currencies",
+      "why": "What the agent will accept for money is its owner's commercial decision, and the marketplace refuses an unpriced mint rather than guess a rate.",
+      "must": "Governed mints on mainnet-beta, with a rate declared by the operator: USDC EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v or EURC HzwqbKZw8HxMN6bF2yFZNrht3c2iXXzpKcFu7uBEDKtr."
+    },
+    {
+      "field": "settlementModes",
+      "why": "Both modes are accepted; which apply is the owner's decision.",
+      "must": "Any of offchain, onchain."
+    },
+    {
+      "field": "probeTarget",
+      "why": "A probe target must be https with an explicit port and a path, and only the owner knows one that answers.",
+      "must": "https://<host>:<port>/<path>, no query, no fragment, no credentials."
+    },
+    {
+      "field": "capabilities",
+      "why": "An A2A card declares capabilities as a transport feature object (streaming, pushNotifications); the marketplace declares them as a list of strings. Translating between the two would be inventing a claim.",
+      "must": "A list of capability strings, at most 64, if the owner wants any. The A2A object is preserved verbatim in evidence."
+    },
+    {
+      "field": "attestation",
+      "why": "The card must be signed by the agent's own key over the marketplace's canonical vtessera/attest/v1 form.",
+      "must": "The owner's Ed25519 signature, or omit it and the card is stored unsigned."
+    }
+  ]
+}

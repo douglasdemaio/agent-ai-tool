@@ -17,9 +17,11 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strings"
 	"time"
 
 	"github.com/douglasdemaio/agent-ai-tool/internal/content"
+	"github.com/douglasdemaio/agent-ai-tool/internal/drafts"
 	"github.com/douglasdemaio/agent-ai-tool/internal/health"
 	"github.com/douglasdemaio/agent-ai-tool/internal/live"
 	"github.com/douglasdemaio/agent-ai-tool/internal/render"
@@ -68,8 +70,14 @@ func run() error {
 		attempts   = flag.Int("attempts", health.DefaultAttempts, "probe attempts per endpoint before judging it")
 		timeout    = flag.Duration("timeout", live.DefaultTimeout, "per-request timeout for live fetches")
 		nowFlag    = flag.String("now", "", "override the generation time (RFC3339); for reproducible builds")
+		draftFlag  = flag.String("draft", "", "print the registration request for one drafted agent, then exit")
+		draftDir   = flag.String("drafts", drafts.DraftDir, "directory holding the drafted registrations")
 	)
 	flag.Parse()
+
+	if *draftFlag != "" {
+		return printDraft(*draftDir, *draftFlag)
+	}
 
 	now := time.Now().UTC()
 	if *nowFlag != "" {
@@ -300,4 +308,56 @@ func report(result live.Result, label string) {
 	default:
 		log.Printf("%s: WARNING live fetch failed (%v) and no snapshot exists; omitting the section", label, result.FetchErr)
 	}
+}
+
+// printDraft shows what sending one drafted registration would take, and what is
+// still missing before it could be. A draft is not a submission: the identity it
+// needs is the owner's, so the request is printed with the owner's own variables
+// rather than filled in with a key this repository does not have and must not
+// have.
+func printDraft(dir, slug string) error {
+	all, err := drafts.Load(dir)
+	if err != nil {
+		return err
+	}
+	for _, d := range all {
+		if d.Slug != slug {
+			continue
+		}
+		fmt.Printf("# %s\n", d.Slug)
+		fmt.Printf("# verified %s from %s (sha256 %s…)\n",
+			d.VerifiedAt, d.Evidence.CardURL, shortSum(d.Evidence.CardSHA256))
+		fmt.Printf("# service %s answered %d\n", d.Evidence.ServiceURL, d.Evidence.ServiceSt)
+
+		ready, why := d.Ready()
+		if ready {
+			fmt.Println("# ready to send")
+		} else {
+			fmt.Printf("# NOT ready: %s\n", why)
+		}
+		for _, o := range d.Outstanding {
+			fmt.Printf("#   %s: %s\n", o.Field, o.Must)
+		}
+
+		body, err := json.MarshalIndent(map[string]any{"card": d.Card}, "", "  ")
+		if err != nil {
+			return err
+		}
+		fmt.Printf("\nPUT $VTESSERA_BASE_URL/v1/agents/$AGENT_ID/card\n")
+		fmt.Printf("Authorization: Bearer $VTESSERA_SESSION\n")
+		fmt.Printf("Content-Type: application/json\n\n%s\n", body)
+		return nil
+	}
+	slugs := make([]string, 0, len(all))
+	for _, d := range all {
+		slugs = append(slugs, d.Slug)
+	}
+	return fmt.Errorf("no draft named %q; there are %d: %s", slug, len(slugs), strings.Join(slugs, ", "))
+}
+
+func shortSum(sum string) string {
+	if len(sum) <= 12 {
+		return sum
+	}
+	return sum[:6]
 }

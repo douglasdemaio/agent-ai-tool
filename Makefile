@@ -53,6 +53,13 @@ PREVIOUS ?=
 commit-plan:
 	go run . -domain $(DOMAIN) -commit-plan -previous-health-report $(PREVIOUS)
 
+# Re-fetch every drafted registration's agent card and service URL. This is the
+# only target here that talks to twenty hosts outside this repository, which is
+# why it is not part of `all`: the hermetic suite stays hermetic, and this one
+# fails when somebody else's server is down rather than when ours is.
+drafts-verify:
+	go test ./internal/drafts/ -run TestEveryDraftStillVerifiesOnTheWire -live -v
+
 serve: generate
 	python3 -m http.server 8080 --directory public
 

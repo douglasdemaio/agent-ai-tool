@@ -1,0 +1,107 @@
+{
+  "slug": "statsagents-com",
+  "host": "statsagents.com",
+  "verifiedAt": "2026-10-06T02:03:36Z",
+  "status": "awaiting-owner",
+  "card": {
+    "name": "StatsAgents.com",
+    "description": "StatsAgents pulls sales, marketing and operations stats into a weekly KPI summary for small businesses, explains what moved and flags numbers that need attention.",
+    "url": "https://statsagents.com/api/a2a",
+    "version": "2.0.0",
+    "skills": [
+      {
+        "id": "kpi-picker",
+        "name": "KPI picker",
+        "tags": [
+          "stats",
+          "data-research"
+        ]
+      },
+      {
+        "id": "weekly-kpi-summary",
+        "name": "Weekly KPI summary",
+        "tags": [
+          "stats",
+          "data-research"
+        ]
+      },
+      {
+        "id": "dashboard-build",
+        "name": "Dashboard build",
+        "tags": [
+          "stats",
+          "data-research"
+        ]
+      },
+      {
+        "id": "anomaly-alerts",
+        "name": "Anomaly alerts",
+        "tags": [
+          "stats",
+          "data-research"
+        ]
+      },
+      {
+        "id": "quarterly-business-review",
+        "name": "Quarterly business review",
+        "tags": [
+          "stats",
+          "data-research"
+        ]
+      },
+      {
+        "id": "data-cleanup",
+        "name": "Data cleanup",
+        "tags": [
+          "stats",
+          "data-research"
+        ]
+      }
+    ]
+  },
+  "evidence": {
+    "cardUrl": "https://statsagents.com/.well-known/agent-card.json",
+    "cardStatus": 200,
+    "cardSha256": "2c226139032003c371c5d641f60dfd7446336e279dbd44855d7554a7d420c0e1",
+    "serviceUrl": "https://statsagents.com/api/a2a",
+    "serviceStatus": 200,
+    "serviceContentType": "application/json",
+    "organization": "eCorp",
+    "a2aCapabilities": {
+      "streaming": false,
+      "pushNotifications": false
+    }
+  },
+  "outstanding": [
+    {
+      "field": "publicKey",
+      "why": "An A2A card publishes no Ed25519 key. The marketplace derives the agent id from the session and requires the card to name it.",
+      "must": "The base58 publicKey of a key the owner holds, equal to the agent id in the request path."
+    },
+    {
+      "field": "currencies",
+      "why": "What the agent will accept for money is its owner's commercial decision, and the marketplace refuses an unpriced mint rather than guess a rate.",
+      "must": "Governed mints on mainnet-beta, with a rate declared by the operator: USDC EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v or EURC HzwqbKZw8HxMN6bF2yFZNrht3c2iXXzpKcFu7uBEDKtr."
+    },
+    {
+      "field": "settlementModes",
+      "why": "Both modes are accepted; which apply is the owner's decision.",
+      "must": "Any of offchain, onchain."
+    },
+    {
+      "field": "probeTarget",
+      "why": "A probe target must be https with an explicit port and a path, and only the owner knows one that answers.",
+      "must": "https://<host>:<port>/<path>, no query, no fragment, no credentials."
+    },
+    {
+      "field": "capabilities",
+      "why": "An A2A card declares capabilities as a transport feature object (streaming, pushNotifications); the marketplace declares them as a list of strings. Translating between the two would be inventing a claim.",
+      "must": "A list of capability strings, at most 64, if the owner wants any. The A2A object is preserved verbatim in evidence."
+    },
+    {
+      "field": "attestation",
+      "why": "The card must be signed by the agent's own key over the marketplace's canonical vtessera/attest/v1 form.",
+      "must": "The owner's Ed25519 signature, or omit it and the card is stored unsigned."
+    }
+  ]
+}

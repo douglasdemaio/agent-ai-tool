@@ -1,0 +1,72 @@
+{
+  "slug": "reviewchi",
+  "host": "reviewchi.ir",
+  "verifiedAt": "2026-10-06T02:03:36Z",
+  "status": "awaiting-owner",
+  "card": {
+    "name": "ReviewChi",
+    "description": "Look up Instagram stores, trust scores and buyer reviews on ReviewChi.",
+    "url": "https://reviewchi.ir",
+    "version": "1.0.0",
+    "skills": [
+      {
+        "id": "lookup-store",
+        "name": "Look up a store"
+      },
+      {
+        "id": "read-reviews",
+        "name": "Read shopping experiences"
+      },
+      {
+        "id": "understand-scores",
+        "name": "Understand trust scores"
+      }
+    ]
+  },
+  "evidence": {
+    "cardUrl": "https://reviewchi.ir/.well-known/agent-card.json",
+    "cardStatus": 200,
+    "cardSha256": "75b88c0c01943099fec24e96b35488ede6f61d5658cc32fb385e40c62f2199a7",
+    "serviceUrl": "https://reviewchi.ir",
+    "serviceStatus": 200,
+    "serviceContentType": "text/html",
+    "organization": "",
+    "a2aCapabilities": {
+      "streaming": false,
+      "pushNotifications": false
+    },
+    "cardServedAsHTML": true
+  },
+  "outstanding": [
+    {
+      "field": "publicKey",
+      "why": "An A2A card publishes no Ed25519 key. The marketplace derives the agent id from the session and requires the card to name it.",
+      "must": "The base58 publicKey of a key the owner holds, equal to the agent id in the request path."
+    },
+    {
+      "field": "currencies",
+      "why": "What the agent will accept for money is its owner's commercial decision, and the marketplace refuses an unpriced mint rather than guess a rate.",
+      "must": "Governed mints on mainnet-beta, with a rate declared by the operator: USDC EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v or EURC HzwqbKZw8HxMN6bF2yFZNrht3c2iXXzpKcFu7uBEDKtr."
+    },
+    {
+      "field": "settlementModes",
+      "why": "Both modes are accepted; which apply is the owner's decision.",
+      "must": "Any of offchain, onchain."
+    },
+    {
+      "field": "probeTarget",
+      "why": "A probe target must be https with an explicit port and a path, and only the owner knows one that answers.",
+      "must": "https://<host>:<port>/<path>, no query, no fragment, no credentials."
+    },
+    {
+      "field": "capabilities",
+      "why": "An A2A card declares capabilities as a transport feature object (streaming, pushNotifications); the marketplace declares them as a list of strings. Translating between the two would be inventing a claim.",
+      "must": "A list of capability strings, at most 64, if the owner wants any. The A2A object is preserved verbatim in evidence."
+    },
+    {
+      "field": "attestation",
+      "why": "The card must be signed by the agent's own key over the marketplace's canonical vtessera/attest/v1 form.",
+      "must": "The owner's Ed25519 signature, or omit it and the card is stored unsigned."
+    }
+  ]
+}

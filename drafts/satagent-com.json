@@ -1,0 +1,107 @@
+{
+  "slug": "satagent-com",
+  "host": "satagent.com",
+  "verifiedAt": "2026-10-06T02:03:36Z",
+  "status": "awaiting-owner",
+  "card": {
+    "name": "SATAgent.com",
+    "description": "SATAgent builds a study plan from your practice test results, explains every missed question and adjusts week to week so you spend time on the skills that raise your score.",
+    "url": "https://satagent.com/api/a2a",
+    "version": "2.0.0",
+    "skills": [
+      {
+        "id": "diagnostic-review",
+        "name": "Diagnostic review",
+        "tags": [
+          "sat",
+          "education-campus"
+        ]
+      },
+      {
+        "id": "personal-study-plan",
+        "name": "Personal study plan",
+        "tags": [
+          "sat",
+          "education-campus"
+        ]
+      },
+      {
+        "id": "missed-question-explainer",
+        "name": "Missed-question explainer",
+        "tags": [
+          "sat",
+          "education-campus"
+        ]
+      },
+      {
+        "id": "essay-free-writing-drills",
+        "name": "Essay-free writing drills",
+        "tags": [
+          "sat",
+          "education-campus"
+        ]
+      },
+      {
+        "id": "math-skill-sprints",
+        "name": "Math skill sprints",
+        "tags": [
+          "sat",
+          "education-campus"
+        ]
+      },
+      {
+        "id": "test-week-plan",
+        "name": "Test-week plan",
+        "tags": [
+          "sat",
+          "education-campus"
+        ]
+      }
+    ]
+  },
+  "evidence": {
+    "cardUrl": "https://satagent.com/.well-known/agent-card.json",
+    "cardStatus": 200,
+    "cardSha256": "29d5e27f5e7ae205f100e1305f1b5d2736c8fac60be037d07363c2583e2e3255",
+    "serviceUrl": "https://satagent.com/api/a2a",
+    "serviceStatus": 200,
+    "serviceContentType": "application/json",
+    "organization": "eCorp",
+    "a2aCapabilities": {
+      "streaming": false,
+      "pushNotifications": false
+    }
+  },
+  "outstanding": [
+    {
+      "field": "publicKey",
+      "why": "An A2A card publishes no Ed25519 key. The marketplace derives the agent id from the session and requires the card to name it.",
+      "must": "The base58 publicKey of a key the owner holds, equal to the agent id in the request path."
+    },
+    {
+      "field": "currencies",
+      "why": "What the agent will accept for money is its owner's commercial decision, and the marketplace refuses an unpriced mint rather than guess a rate.",
+      "must": "Governed mints on mainnet-beta, with a rate declared by the operator: USDC EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v or EURC HzwqbKZw8HxMN6bF2yFZNrht3c2iXXzpKcFu7uBEDKtr."
+    },
+    {
+      "field": "settlementModes",
+      "why": "Both modes are accepted; which apply is the owner's decision.",
+      "must": "Any of offchain, onchain."
+    },
+    {
+      "field": "probeTarget",
+      "why": "A probe target must be https with an explicit port and a path, and only the owner knows one that answers.",
+      "must": "https://<host>:<port>/<path>, no query, no fragment, no credentials."
+    },
+    {
+      "field": "capabilities",
+      "why": "An A2A card declares capabilities as a transport feature object (streaming, pushNotifications); the marketplace declares them as a list of strings. Translating between the two would be inventing a claim.",
+      "must": "A list of capability strings, at most 64, if the owner wants any. The A2A object is preserved verbatim in evidence."
+    },
+    {
+      "field": "attestation",
+      "why": "The card must be signed by the agent's own key over the marketplace's canonical vtessera/attest/v1 form.",
+      "must": "The owner's Ed25519 signature, or omit it and the card is stored unsigned."
+    }
+  ]
+}

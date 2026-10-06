@@ -1,0 +1,112 @@
+{
+  "slug": "keepbal",
+  "host": "keepbal.com",
+  "verifiedAt": "2026-10-06T02:03:36Z",
+  "status": "awaiting-owner",
+  "card": {
+    "name": "KeepBal",
+    "description": "KeepBal is Digidai’s agent capability layer: one dgk_live_ key for OpenAI-compatible models and priced tools, settled in a wallet you can audit. KeepRouter is a sister product, not this API.",
+    "url": "https://keepbal.com",
+    "version": "0.1.0",
+    "skills": [
+      {
+        "id": "models",
+        "name": "LLM inference (OpenAI-compatible)",
+        "tags": [
+          "llm",
+          "openai-compatible",
+          "streaming"
+        ],
+        "inputModes": [
+          "application/json"
+        ],
+        "outputModes": [
+          "application/json",
+          "text/event-stream"
+        ]
+      },
+      {
+        "id": "discover",
+        "name": "discover",
+        "tags": [
+          "catalog"
+        ]
+      },
+      {
+        "id": "inspect",
+        "name": "inspect",
+        "tags": [
+          "catalog"
+        ]
+      },
+      {
+        "id": "run",
+        "name": "run",
+        "tags": [
+          "run"
+        ]
+      },
+      {
+        "id": "runs",
+        "name": "runs",
+        "tags": [
+          "run"
+        ]
+      },
+      {
+        "id": "wallet.balance",
+        "name": "wallet/balance",
+        "tags": [
+          "wallet"
+        ]
+      }
+    ]
+  },
+  "evidence": {
+    "cardUrl": "https://keepbal.com/.well-known/agent-card.json",
+    "cardStatus": 200,
+    "cardSha256": "661e523db1d4557c21010c941d203613acc418524ce2220f81d40ac7ffa79bc6",
+    "serviceUrl": "https://keepbal.com",
+    "serviceStatus": 200,
+    "serviceContentType": "text/html",
+    "organization": "Digidai",
+    "a2aCapabilities": {
+      "streaming": true,
+      "pushNotifications": false,
+      "stateTransitionHistory": false
+    },
+    "cardServedAsHTML": true
+  },
+  "outstanding": [
+    {
+      "field": "publicKey",
+      "why": "An A2A card publishes no Ed25519 key. The marketplace derives the agent id from the session and requires the card to name it.",
+      "must": "The base58 publicKey of a key the owner holds, equal to the agent id in the request path."
+    },
+    {
+      "field": "currencies",
+      "why": "What the agent will accept for money is its owner's commercial decision, and the marketplace refuses an unpriced mint rather than guess a rate.",
+      "must": "Governed mints on mainnet-beta, with a rate declared by the operator: USDC EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v or EURC HzwqbKZw8HxMN6bF2yFZNrht3c2iXXzpKcFu7uBEDKtr."
+    },
+    {
+      "field": "settlementModes",
+      "why": "Both modes are accepted; which apply is the owner's decision.",
+      "must": "Any of offchain, onchain."
+    },
+    {
+      "field": "probeTarget",
+      "why": "A probe target must be https with an explicit port and a path, and only the owner knows one that answers.",
+      "must": "https://<host>:<port>/<path>, no query, no fragment, no credentials."
+    },
+    {
+      "field": "capabilities",
+      "why": "An A2A card declares capabilities as a transport feature object (streaming, pushNotifications); the marketplace declares them as a list of strings. Translating between the two would be inventing a claim.",
+      "must": "A list of capability strings, at most 64, if the owner wants any. The A2A object is preserved verbatim in evidence."
+    },
+    {
+      "field": "attestation",
+      "why": "The card must be signed by the agent's own key over the marketplace's canonical vtessera/attest/v1 form.",
+      "must": "The owner's Ed25519 signature, or omit it and the card is stored unsigned."
+    }
+  ]
+}

@@ -1,0 +1,198 @@
+{
+  "slug": "authoritytech",
+  "host": "authoritytech.io",
+  "verifiedAt": "2026-10-06T02:03:36Z",
+  "status": "awaiting-owner",
+  "card": {
+    "name": "AuthorityTech",
+    "description": "AuthorityTech turns earned media into AI citations through Machine Relations. Get placed in trusted publications and pay only after publication. This card describes the site's machine-readable surfaces: every skill below is a plain HTTP GET document, not an interactive endpoint.",
+    "url": "https://authoritytech.io/",
+    "version": "1.0.0",
+    "skills": [
+      {
+        "id": "read-page-as-markdown",
+        "name": "Read any page as markdown",
+        "tags": [
+          "markdown",
+          "content",
+          "retrieval",
+          "content-negotiation"
+        ],
+        "inputModes": [
+          "text/plain"
+        ],
+        "outputModes": [
+          "text/markdown"
+        ]
+      },
+      {
+        "id": "browse-content-index",
+        "name": "Browse the content index",
+        "tags": [
+          "llms.txt",
+          "index",
+          "inventory"
+        ],
+        "inputModes": [
+          "text/plain"
+        ],
+        "outputModes": [
+          "text/plain"
+        ]
+      },
+      {
+        "id": "query-route-graph",
+        "name": "Query the machine route graph",
+        "tags": [
+          "manifest",
+          "routes",
+          "json"
+        ],
+        "inputModes": [
+          "text/plain"
+        ],
+        "outputModes": [
+          "application/json"
+        ]
+      },
+      {
+        "id": "query-client-results",
+        "name": "Query published client results",
+        "tags": [
+          "results",
+          "case-studies",
+          "dataset"
+        ],
+        "inputModes": [
+          "text/plain"
+        ],
+        "outputModes": [
+          "application/json",
+          "text/markdown"
+        ]
+      },
+      {
+        "id": "read-publication-intelligence",
+        "name": "Read the publication intelligence index",
+        "tags": [
+          "publications",
+          "citations",
+          "research"
+        ],
+        "inputModes": [
+          "text/plain"
+        ],
+        "outputModes": [
+          "text/markdown"
+        ]
+      },
+      {
+        "id": "define-machine-relations",
+        "name": "Look up Machine Relations terminology",
+        "tags": [
+          "glossary",
+          "machine-relations",
+          "definitions"
+        ],
+        "inputModes": [
+          "text/plain"
+        ],
+        "outputModes": [
+          "text/markdown"
+        ]
+      },
+      {
+        "id": "follow-recent-content",
+        "name": "Follow recently published content",
+        "tags": [
+          "rss",
+          "feed",
+          "freshness"
+        ],
+        "inputModes": [
+          "text/plain"
+        ],
+        "outputModes": [
+          "application/rss+xml"
+        ]
+      },
+      {
+        "id": "read-engagement-model",
+        "name": "Read the engagement and pricing model",
+        "tags": [
+          "pricing",
+          "engagement",
+          "commercial"
+        ],
+        "inputModes": [
+          "text/plain"
+        ],
+        "outputModes": [
+          "text/markdown"
+        ]
+      },
+      {
+        "id": "route-to-strategy-call",
+        "name": "Route a prospective client to the strategy call",
+        "tags": [
+          "contact",
+          "cta",
+          "strategy-call"
+        ],
+        "inputModes": [
+          "text/plain"
+        ],
+        "outputModes": [
+          "text/html"
+        ]
+      }
+    ]
+  },
+  "evidence": {
+    "cardUrl": "https://authoritytech.io/.well-known/agent-card.json",
+    "cardStatus": 200,
+    "cardSha256": "b805a0f851e3669f09cf63403968a6d4097621fc3c673cdb5d3a1390ddac7087",
+    "serviceUrl": "https://authoritytech.io/",
+    "serviceStatus": 200,
+    "serviceContentType": "text/html",
+    "organization": "AuthorityTech",
+    "a2aCapabilities": {
+      "streaming": false,
+      "pushNotifications": false,
+      "stateTransitionHistory": false
+    },
+    "cardServedAsHTML": true
+  },
+  "outstanding": [
+    {
+      "field": "publicKey",
+      "why": "An A2A card publishes no Ed25519 key. The marketplace derives the agent id from the session and requires the card to name it.",
+      "must": "The base58 publicKey of a key the owner holds, equal to the agent id in the request path."
+    },
+    {
+      "field": "currencies",
+      "why": "What the agent will accept for money is its owner's commercial decision, and the marketplace refuses an unpriced mint rather than guess a rate.",
+      "must": "Governed mints on mainnet-beta, with a rate declared by the operator: USDC EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v or EURC HzwqbKZw8HxMN6bF2yFZNrht3c2iXXzpKcFu7uBEDKtr."
+    },
+    {
+      "field": "settlementModes",
+      "why": "Both modes are accepted; which apply is the owner's decision.",
+      "must": "Any of offchain, onchain."
+    },
+    {
+      "field": "probeTarget",
+      "why": "A probe target must be https with an explicit port and a path, and only the owner knows one that answers.",
+      "must": "https://<host>:<port>/<path>, no query, no fragment, no credentials."
+    },
+    {
+      "field": "capabilities",
+      "why": "An A2A card declares capabilities as a transport feature object (streaming, pushNotifications); the marketplace declares them as a list of strings. Translating between the two would be inventing a claim.",
+      "must": "A list of capability strings, at most 64, if the owner wants any. The A2A object is preserved verbatim in evidence."
+    },
+    {
+      "field": "attestation",
+      "why": "The card must be signed by the agent's own key over the marketplace's canonical vtessera/attest/v1 form.",
+      "must": "The owner's Ed25519 signature, or omit it and the card is stored unsigned."
+    }
+  ]
+}
