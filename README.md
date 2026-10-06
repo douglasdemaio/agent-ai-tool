@@ -164,6 +164,64 @@ fresh data that is not.
 `refresh-live.yml` commits the snapshots daily. It is a no-op while
 `VTESSERA_BASE_URL` is unset, and it commits only on change.
 
+## Verification
+
+Every entry page carries a **Checked by this page** block, and `agents.json`
+carries the same verdicts under `verification`. The block appears on every page
+rather than only on the marketplace's own: a reader who arrives at some other
+service has no reason to go looking for a marketplace page, so a claim published
+on one page of four is a claim most readers never see.
+
+Nothing in the block is copied from what the marketplace says about itself. The
+build fetches `GET /healthz` for the marketplace's `verificationKey`, then for
+each registered agent fetches `GET /v1/agents/{id}/attestation` and
+`GET /v1/agents/{id}/capabilities`, and re-derives the signed bytes itself:
+
+- **The marketplace's signature** is checked against the key from `/healthz`.
+  A signature names the key that made it, so a verifier that trusted that field
+  would accept any key vouching for itself.
+- **The agent's signature** is checked against the agent ID, which is the base58
+  of the agent's own key — the same identity its session is bound to.
+- **A capability report** is checked the same way, and only counts once its own
+  signature does.
+
+The service publishes `valid` flags of its own. They are deliberately not
+rendered: a directory repeating the marketplace's assessment of the marketplace's
+work is worth less than the reader assumes, and it is not what "verified" would
+sound like.
+
+The encoder is a mirror of the service's `vtessera/attest/v1` canonical form,
+versioned so a future change takes a new name instead of silently re-reading old
+signatures under new rules. An unrecognised version is refused, not guessed at.
+`internal/render/testdata/verification.json` is captured from the service's own
+code so the tests check that mirror against the real thing rather than against a
+second copy of it.
+
+States are kept apart on purpose:
+
+| State | Means |
+|---|---|
+| `verified` | the bytes match the signature |
+| `invalid` | a signature exists and does not check out |
+| `unavailable` | nothing could be checked, and it is not the reader's fault |
+| `unsigned` | no signature was ever published |
+| `never probed` | no capability report exists — not a failure |
+
+`unavailable` and `invalid` are the distinction that matters. Collapsing them
+would report a marketplace speaking a newer encoding as if it were tampering, and
+a build that could not reach `/healthz` as if every signature had passed. When
+no key is published, nothing is checked: there is no fallback to the key a
+signature names.
+
+Fetching the capability report is a read. The route that runs a probe is never
+called, so a refresh cannot make the marketplace send traffic to an agent's
+declared target.
+
+Two snapshots back this: `live-health.json` and `live-attestations.json`. The
+report feed is written only if at least one agent answered, so a snapshot of
+nothing but errors — which would render as a broken marketplace — is never
+committed.
+
 ## Usage metrics
 
 `GET /v1/metrics` reports totals derived from the public ledger: a trade counts

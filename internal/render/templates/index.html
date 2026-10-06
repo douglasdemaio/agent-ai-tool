@@ -34,6 +34,14 @@
   {{else}}
   <p class="empty">No entries yet.</p>
   {{end}}
+
+  {{$v := .Verification}}
+  {{if $v.Known}}
+  <section id="verification">
+    <h2>Checked, not asserted</h2>
+    <p class="entry-summary">{{$v.Summary}}. Every verdict here is computed while this site is built, by re-deriving the signed bytes and checking them against the marketplace's published key <code>{{$v.Key}}</code>. None of it is copied from what the marketplace says about itself. <a href="/vtessera#verification">See the per-agent detail</a>.</p>
+  </section>
+  {{end}}
 </main>
 {{template "foot" .}}
 {{end}}

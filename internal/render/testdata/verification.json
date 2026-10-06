@@ -1,0 +1,92 @@
+{
+  "agent": {
+    "card": {
+      "name": "summarizer",
+      "description": "Summarises long documents.",
+      "version": "0.1.0",
+      "url": "https://agents.example/summarizer",
+      "publicKey": "3eSdHG44thnPEP7QETrxKDLpMbecvTA2HVeXFJJiAd2Q",
+      "capabilities": [
+        "text",
+        "files"
+      ],
+      "skills": [
+        {
+          "id": "summarise",
+          "name": "Summarise",
+          "tags": [
+            "nlp"
+          ],
+          "inputModes": [
+            "text",
+            "application/pdf"
+          ],
+          "outputModes": [
+            "text"
+          ]
+        }
+      ],
+      "currencies": [
+        "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
+      ],
+      "settlementModes": [
+        "offchain"
+      ],
+      "probeTarget": "https://agents.example"
+    },
+    "id": "3eSdHG44thnPEP7QETrxKDLpMbecvTA2HVeXFJJiAd2Q",
+    "status": "active"
+  },
+  "attestation": {
+    "agent": {
+      "attested": true,
+      "keyId": "3eSdHG44thnPEP7QETrxKDLpMbecvTA2HVeXFJJiAd2Q",
+      "signature": {
+        "alg": "Ed25519",
+        "keyId": "3eSdHG44thnPEP7QETrxKDLpMbecvTA2HVeXFJJiAd2Q",
+        "digest": "b6642cea075652225bc854d61ea86e1ad531a9353bea2e6b1196ddf95af6c35a",
+        "value": "kC/5V3A9FEZlgLeshBCL8a/8wmaJyrNeYmQtKMInL+w06Rn9EGBE41zuV/idzZ1cEEW06lucXr8k3h58+bsSCA==",
+        "signedAt": "2026-10-06T01:31:49Z"
+      },
+      "valid": true
+    },
+    "agentId": "3eSdHG44thnPEP7QETrxKDLpMbecvTA2HVeXFJJiAd2Q",
+    "canonicalForm": "vtessera/attest/v1",
+    "marketplace": {
+      "attested": true,
+      "keyId": "5rXezEUcPoLLDKATEsDJzUdNojasqE2ekkHntNLfEQtL",
+      "signature": {
+        "alg": "Ed25519",
+        "keyId": "5rXezEUcPoLLDKATEsDJzUdNojasqE2ekkHntNLfEQtL",
+        "digest": "6b02d25719ca379c508457b00d71387786436ceb7315a394a8190f94d8d8d13c",
+        "value": "tcraaNGcRSo+OGpuQM1aJEvl0nWIievIheBOPk3Ost8uTIQrGvSFJgEZTb584dts5hjNmogvZd9DQfQ9iFLiAw==",
+        "signedAt": "2026-10-06T01:31:49.591750591Z"
+      },
+      "valid": true
+    },
+    "recorded": true
+  },
+  "probe": {
+    "agentId": "3eSdHG44thnPEP7QETrxKDLpMbecvTA2HVeXFJJiAd2Q",
+    "attestedBy": "5rXezEUcPoLLDKATEsDJzUdNojasqE2ekkHntNLfEQtL",
+    "checkedAt": "2026-10-05T12:00:00Z",
+    "passed": true,
+    "results": [
+      {
+        "Capability": "text",
+        "Status": "pass",
+        "Detail": "answered in 240ms"
+      }
+    ],
+    "signature": {
+      "alg": "Ed25519",
+      "keyId": "5rXezEUcPoLLDKATEsDJzUdNojasqE2ekkHntNLfEQtL",
+      "digest": "a19e6905d5fbe8eed44dc4ec340481ae31e86106ee80e7e8bbab563392266f41",
+      "value": "aYus60WJ6bJMPbnNiWYrCxKiYcM5fx3Qph1iNQfIDXUKkn5PWD8cay8eUu5i6ZPyyy6xV6rg095QX3GkdAiIAg==",
+      "signedAt": "2026-10-05T12:00:01.25Z"
+    },
+    "target": "https://agents.example",
+    "valid": true
+  },
+  "verificationKey": "5rXezEUcPoLLDKATEsDJzUdNojasqE2ekkHntNLfEQtL"
+}
