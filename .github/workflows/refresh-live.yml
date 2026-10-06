@@ -46,12 +46,20 @@ jobs:
           # happened for as long as these two files were untracked, which left
           # the offline fallback with nothing to fall back to. Porcelain reports
           # untracked files as ??, so a first snapshot commits.
-          if [ -z "$(git status --porcelain -- content/live-vtessera.json content/live-metrics.json)" ]; then
+          # `:(glob)` rather than a shell glob or a literal list: a shell glob
+          # only matches files that already exist, so a snapshot being written
+          # for the first time is missed, and a literal list misses every file
+          # added after it was written. Both of those hid here once already —
+          # live-health.json and live-attestations.json were added to the
+          # service and to this repository together, and this job kept only
+          # naming the two it was written against.
+          snapshots=':(glob)content/live-*.json'
+          if [ -z "$(git status --porcelain -- $snapshots)" ]; then
             echo "Snapshots unchanged."
             exit 0
           fi
           git config user.name  'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add content/live-vtessera.json content/live-metrics.json
+          git add $snapshots
           git commit -m 'chore: refresh live vtessera snapshots'
           git push
