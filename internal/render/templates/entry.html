@@ -87,7 +87,7 @@
     <dd>{{$v.Cluster}}{{if $v.SettlementTier}} &middot; settlement {{$v.SettlementTier}}{{end}}</dd>
     {{end}}
     <dt>Cards checked</dt>
-    <dd>{{$v.Checked}} &middot; {{$v.MarketVerified}} verified by the marketplace &middot; {{$v.AgentVerified}} verified by the agent</dd>
+    <dd>{{$v.Checked}} &middot; {{$v.MarketVerified}} verified by the marketplace &middot; {{$v.AgentVerified}} verified by the agent{{if $v.MarketUnrecorded}} &middot; <span class="muted">{{$v.MarketUnrecorded}} with no attestation recorded, registered before this marketplace signed cards</span>{{end}}</dd>
     <dt>Capability lists</dt>
     <dd>{{if $v.ProbeNone}}{{$v.ProbeNone}} never probed{{end}}{{if $v.Probed}} &middot; {{$v.ProbeVerified}} verified and passing{{if $v.ProbeFailed}}, {{$v.ProbeFailed}} verified and failing{{end}}{{if $v.ProbeUnchecked}}, {{$v.ProbeUnchecked}} signed but not checkable here{{end}}{{end}}</dd>
     {{if not $v.FetchedAt.IsZero}}

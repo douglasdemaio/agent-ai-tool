@@ -309,6 +309,7 @@ code {
 .state-unsigned,
 .state-never-probed,
 .state-unverified,
+.state-not-attested,
 .state-unavailable {
   color: var(--muted);
 }

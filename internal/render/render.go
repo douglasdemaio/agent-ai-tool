@@ -215,11 +215,16 @@ type verification struct {
 	Checked        int
 	MarketVerified int
 	AgentVerified  int
-	Probed         int
-	ProbeVerified  int
-	ProbeFailed    int
-	ProbeNone      int
-	ProbeUnchecked int
+	// MarketUnrecorded counts cards the marketplace holds no attestation for,
+	// which is every card registered before it began signing them. Reported apart
+	// from the unsigned because lumping them together told readers a working
+	// marketplace had refused to vouch for anybody.
+	MarketUnrecorded int
+	Probed           int
+	ProbeVerified    int
+	ProbeFailed      int
+	ProbeNone        int
+	ProbeUnchecked   int
 }
 
 // Summary is the one-line count for the index page, where the per-agent detail
@@ -234,6 +239,12 @@ func (v verification) Summary() string {
 		return fmt.Sprintf("%d of %d cards verified by the marketplace and the agent", v.Checked, v.Checked)
 	case v.MarketVerified > 0:
 		return fmt.Sprintf("%d of %d cards verified by the marketplace", v.MarketVerified, v.Checked)
+	case v.MarketUnrecorded == v.Checked:
+		// "none of 6 cards verified" is what this used to say, with every one of
+		// the six registered before the marketplace signed cards. It reads as a
+		// finding about the marketplace and is really a fact about when the
+		// agents registered.
+		return fmt.Sprintf("no attestation recorded for any of %d cards, all registered before the marketplace signed cards", v.Checked)
 	default:
 		return fmt.Sprintf("none of %d cards verified", v.Checked)
 	}
@@ -362,6 +373,9 @@ func (s Site) verificationBlock() verification {
 		}
 		if v.Agent.Valid {
 			block.AgentVerified++
+		}
+		if !v.Marketplace.Recorded {
+			block.MarketUnrecorded++
 		}
 		switch {
 		case !v.Probe.Probed:
