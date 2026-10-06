@@ -57,6 +57,13 @@ type Verified struct {
 	// tampering.
 	Checked  bool
 	SignedAt time.Time
+	// Recorded says the marketplace holds an attestation for this agent at all.
+	// Its absence is a third thing, not a flavour of "unsigned": a card published
+	// before the marketplace signed anything has no row, because the marketplace
+	// was not signing yet rather than because it declined to. Rendering that as
+	// "unsigned" told a reader the marketplace had refused to vouch for six
+	// agents when it had in fact been deployed for an hour.
+	Recorded bool
 }
 
 // CardAttestation is what a marketplace knows about a card's provenance.
@@ -323,8 +330,8 @@ func VerifyAgent(agent Agent, attestation CardAttestation, probe *ProbeReport, m
 		CardName:      agent.Card.Name,
 		CardURL:       agent.Card.URL,
 		CanonicalForm: attestation.CanonicalForm,
-		Marketplace:   Verified{Attested: attestation.Marketplace.Attested},
-		Agent:         Verified{Attested: attestation.Agent.Attested},
+		Marketplace:   Verified{Attested: attestation.Marketplace.Attested, Recorded: attestation.Recorded},
+		Agent:         Verified{Attested: attestation.Agent.Attested, Recorded: attestation.Recorded},
 	}
 	if attestation.CanonicalForm != "" && attestation.CanonicalForm != CanonicalForm {
 		out.Marketplace.Reason = "signed in " + attestation.CanonicalForm + ", which this directory cannot check"
@@ -400,9 +407,15 @@ func verifyProbe(agentID string, report *ProbeReport, marketplaceKeyID string) P
 // carries the detail for the reader who wants it.
 //
 // "unsigned" and "invalid" are separate because they call for different reactions.
-// An unsigned card is an older marketplace that never attested anything; an
-// invalid one is a card whose bytes no longer match a signature, which is the
-// case worth stopping and reading.
+// An unsigned card is a card the marketplace holds and did not sign, which is the
+// older marketplace that never attested anything; an invalid one is a card whose
+// bytes no longer match a signature, which is the case worth stopping and reading.
+//
+// "not attested" is a third state for a card the marketplace holds no attestation
+// for at all, which is what a card registered before this marketplace signed
+// anything looks like forever. It is not an unsigned card, and rendering it as one
+// accuses a working marketplace of having declined to vouch for an agent it simply
+// has not been asked about yet.
 func (v Verified) State() string {
 	switch {
 	case v.Valid:
@@ -411,6 +424,8 @@ func (v Verified) State() string {
 		return "invalid"
 	case v.Reason != "":
 		return "unavailable"
+	case !v.Recorded:
+		return "not attested"
 	default:
 		return "unsigned"
 	}
@@ -418,10 +433,16 @@ func (v Verified) State() string {
 
 // Detail is the reason to show beside a state, empty when there is nothing to add.
 func (v Verified) Detail() string {
-	if v.Valid || v.Reason == "" {
+	if v.Valid {
 		return ""
 	}
-	return v.Reason
+	if v.Reason != "" {
+		return v.Reason
+	}
+	if !v.Recorded {
+		return "no attestation recorded; this card was registered before the marketplace signed cards"
+	}
+	return ""
 }
 
 func (v Verified) At() time.Time { return v.SignedAt }

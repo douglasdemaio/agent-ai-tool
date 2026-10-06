@@ -470,3 +470,37 @@ func TestHealthIsRefusedWithoutAVerificationKey(t *testing.T) {
 		t.Errorf("a health response with a key was refused: %v", err)
 	}
 }
+
+func TestACardRegisteredBeforeTheMarketplaceSignedIsNotReportedAsUnsigned(t *testing.T) {
+	// The production marketplace had signed cards for about an hour when this was
+	// written. Every one of its six existing agents had registered before that,
+	// so every attestation row was absent and every one of them rendered as
+	// "unsigned" - which says the marketplace declined to vouch for them, when it
+	// had not been asked.
+	agent := Agent{ID: mustKeyID(t), Card: AgentCard{Name: "predates-attestation"}}
+	verdict := VerifyAgent(agent, CardAttestation{
+		AgentID: agent.ID, Recorded: false, CanonicalForm: CanonicalForm,
+	}, nil, "5LRpM9wpvPfRYuQAC7oNdyaQa6sakpMcnZeR9FS5CgjB")
+
+	for _, side := range []struct {
+		name string
+		got  Verified
+	}{
+		{"marketplace", verdict.Marketplace},
+		{"agent", verdict.Agent},
+	} {
+		if side.got.State() != "not attested" {
+			t.Errorf("%s side reads %q, want %q", side.name, side.got.State(), "not attested")
+		}
+		if side.got.Detail() == "" {
+			t.Errorf("%s side gives no reason, so a reader cannot tell it from a refusal", side.name)
+		}
+	}
+
+	// A row that exists with no signature on it is a genuinely unsigned card, and
+	// collapsing the two would replace one wrong answer with another.
+	unsigned := Verified{Recorded: true}
+	if unsigned.State() != "unsigned" {
+		t.Errorf("an attested row with no signature reads %q, want unsigned", unsigned.State())
+	}
+}

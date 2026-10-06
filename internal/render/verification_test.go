@@ -324,3 +324,49 @@ func TestAReportFeedThatFailedDoesNotLeaveEveryCardReadingAsUnsigned(t *testing.
 		}
 	}
 }
+
+func TestThePageDoesNotBlameTheMarketplaceForCardsItPredates(t *testing.T) {
+	// Six agents registered before the marketplace began signing cards, none of
+	// them signed and none of them refused. The page said "0 verified by the
+	// marketplace" for all six, which is the worst reading available and the
+	// wrong one.
+	f := loadFixture(t)
+	at := time.Date(2026, 10, 6, 2, 0, 0, 0, time.UTC)
+	// The row is absent, which is what "registered before attestations existed"
+	// looks like to a reader of the endpoint.
+	s := f.site(t, at, nil, &live.AgentReportsResponse{Agents: []live.AgentReport{{
+		AgentID:     f.Agent.ID,
+		Attestation: live.CardAttestation{AgentID: f.Agent.ID, Recorded: false, CanonicalForm: live.CanonicalForm},
+	}}})
+
+	for _, v := range s.VerifyAgents() {
+		if v.Marketplace.State() == "unsigned" {
+			t.Errorf("a card with no attestation row reads as unsigned")
+		}
+		if got := v.Marketplace.State(); got != "not attested" {
+			t.Errorf("state = %q, want %q", got, "not attested")
+		}
+	}
+
+	out := renderToDir(t, s)
+	body, err := os.ReadFile(filepath.Join(out, "vtessera", "index.html"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	page := string(body)
+	for _, want := range []string{
+		"no attestation recorded",
+		"state-not-attested",
+		"registered before this marketplace signed cards",
+	} {
+		if !strings.Contains(page, want) {
+			t.Errorf("the page does not say %q", want)
+		}
+	}
+	if strings.Contains(page, "state-unsigned") {
+		t.Error("the page still renders a card with no attestation row as unsigned")
+	}
+	if !strings.Contains(page, "0 verified by the marketplace") {
+		t.Error("the counts changed; this test is asserting about a page that moved")
+	}
+}
