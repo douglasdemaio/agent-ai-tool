@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/douglasdemaio/agent-ai-tool/internal/content"
+	"github.com/douglasdemaio/agent-ai-tool/internal/live"
 )
 
 // jsonLD serialises a value for embedding inside a <script> block. encoding/json
@@ -110,12 +111,77 @@ func (s Site) jsonEntries(views []entryView) []jsonEntry {
 }
 
 func (s Site) agentsJSON(views []entryView) map[string]any {
-	return map[string]any{
+	out := map[string]any{
 		"domain":      s.Domain,
 		"generatedAt": s.GeneratedAt.UTC().Format(time.RFC3339),
 		"description": "Every entry on this directory, with the endpoints an agent needs to connect to each one.",
 		"agents":      s.jsonEntries(views),
 	}
+	// The machine counterpart of the block every page carries, and one object
+	// rather than one per entry: the verdicts are about the marketplace, not about
+	// any single listing, and repeating them N times would invite a reader to
+	// believe they had been checked separately.
+	if v := s.verificationBlock(); v.Known {
+		out["verification"] = v.json()
+	}
+	return out
+}
+
+// jsonVerification is the machine form of a verdict. The states are the same
+// words the page uses, so an agent that reads both is not translating between two
+// vocabularies and guessing which one is authoritative.
+type jsonVerification struct {
+	MarketplaceKey string              `json:"marketplace_key"`
+	CanonicalForm  string              `json:"canonical_form"`
+	Cluster        string              `json:"cluster,omitempty"`
+	Sandbox        bool                `json:"sandbox,omitempty"`
+	FetchedAt      string              `json:"fetched_at,omitempty"`
+	FromCache      bool                `json:"from_cache,omitempty"`
+	Summary        string              `json:"summary"`
+	Agents         []jsonVerifiedAgent `json:"agents"`
+}
+
+type jsonVerifiedAgent struct {
+	AgentID string `json:"agent_id"`
+	Name    string `json:"name"`
+	URL     string `json:"url,omitempty"`
+	// MarketplaceSignature and AgentSignature are states, not booleans: an agent
+	// choosing whether to trade needs to tell unsigned from invalid.
+	MarketplaceSignature string `json:"marketplace_signature"`
+	AgentSignature       string `json:"agent_signature"`
+	CapabilityList       string `json:"capability_list"`
+	MarketplaceReason    string `json:"marketplace_reason,omitempty"`
+	AgentReason          string `json:"agent_reason,omitempty"`
+	ProbeReason          string `json:"capability_list_reason,omitempty"`
+}
+
+func (v verification) json() jsonVerification {
+	out := jsonVerification{
+		MarketplaceKey: v.Key,
+		CanonicalForm:  live.CanonicalForm,
+		Cluster:        v.Cluster,
+		Sandbox:        v.Sandbox,
+		FromCache:      v.FromCache,
+		Summary:        v.Summary(),
+		Agents:         make([]jsonVerifiedAgent, 0, len(v.Agents)),
+	}
+	if !v.FetchedAt.IsZero() {
+		out.FetchedAt = v.FetchedAt.UTC().Format(time.RFC3339)
+	}
+	for _, a := range v.Agents {
+		out.Agents = append(out.Agents, jsonVerifiedAgent{
+			AgentID:              a.AgentID,
+			Name:                 a.CardName,
+			URL:                  a.CardURL,
+			MarketplaceSignature: a.Marketplace.State(),
+			AgentSignature:       a.Agent.State(),
+			CapabilityList:       a.Probe.State(),
+			MarketplaceReason:    a.Marketplace.Detail(),
+			AgentReason:          a.Agent.Detail(),
+			ProbeReason:          a.Probe.Detail(),
+		})
+	}
+	return out
 }
 
 func (s Site) directoryCard(views []entryView) map[string]any {

@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -56,6 +57,18 @@ const seedMetrics = `{"generatedAt":"2026-09-27T00:00:00Z","asOf":"2026-09-20T00
   "agents":[{"agentId":"summarizer","delivered":9,"disputed":1,"cancelled":2},
             {"agentId":"translator","delivered":2,"disputed":0,"cancelled":0}]}`
 
+// seedHealth carries the key every signature on the site is checked against. The
+// stub signs nothing, so this is a real key that nothing has signed with: the
+// pages it builds must say unsigned rather than verified, and a test that passed
+// with verified here would be asserting the opposite of the point.
+const seedHealth = `{"status":"ok","version":"0.0.0-test",
+  "verificationKey":"FETM34yAtPJhazZKnGu5N4bRHgugrydTBV9BAvzd7F8a","sandbox":true}`
+
+// seedAttestation is a marketplace that recorded the card but never signed it,
+// which is what a deployment without attestations looks like.
+const seedAttestation = `{"agentId":"%s","recorded":false,"canonicalForm":"vtessera/attest/v1",
+  "marketplace":{"attested":false},"agent":{"attested":false}}`
+
 func stubService(t *testing.T) *httptest.Server {
 	t.Helper()
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -65,6 +78,16 @@ func stubService(t *testing.T) *httptest.Server {
 			_, _ = w.Write([]byte(seedAgents))
 		case "/v1/metrics":
 			_, _ = w.Write([]byte(seedMetrics))
+		case "/healthz":
+			_, _ = w.Write([]byte(seedHealth))
+		case "/v1/agents/summarizer/attestation", "/v1/agents/translator/attestation":
+			id := strings.TrimSuffix(strings.TrimPrefix(r.URL.Path, "/v1/agents/"), "/attestation")
+			_, _ = w.Write([]byte(fmt.Sprintf(seedAttestation, id)))
+		case "/v1/agents/summarizer/capabilities", "/v1/agents/translator/capabilities":
+			// A 404 with a code is how a marketplace says nobody has probed this
+			// agent, and it must not be treated as a failure to fetch.
+			w.WriteHeader(http.StatusNotFound)
+			_, _ = w.Write([]byte(`{"code":"NOT_PROBED","error":"this agent has never been probed"}`))
 		default:
 			w.WriteHeader(http.StatusNotFound)
 		}

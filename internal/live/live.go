@@ -156,3 +156,18 @@ func fetch(ctx context.Context, client *http.Client, url string) ([]byte, error)
 	}
 	return body, nil
 }
+
+// ReadSnapshot decodes a committed snapshot into a caller-supplied value. It is
+// used where one snapshot has to be read back before the next request is made, so
+// the second is derived from the first rather than from a second fetch that could
+// see a different marketplace.
+func ReadSnapshot(cachePath string, into any) error {
+	snapshot, err := readCache(cachePath)
+	if err != nil {
+		return err
+	}
+	if err := json.Unmarshal(snapshot.Response, into); err != nil {
+		return fmt.Errorf("%s: %w", cachePath, err)
+	}
+	return nil
+}
