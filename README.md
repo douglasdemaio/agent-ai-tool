@@ -164,6 +164,33 @@ fresh data that is not.
 `refresh-live.yml` commits the snapshots daily. It is a no-op while
 `VTESSERA_BASE_URL` is unset, and it commits only on change.
 
+### Why a rebuild has to be a deploy
+
+`generatedAt` is the build's own clock, so it only moves when the site is
+rebuilt. Three things keep that true, because each of them failing silently
+left the published directory days old while every committed file looked
+current:
+
+- **Scheduled commits push with the deploy key.** A push made with the
+  workflow `GITHUB_TOKEN` triggers no other workflow, so a snapshot or health
+  commit written with it never caused a rebuild. Deploys only happened when
+  somebody pushed by hand.
+- **`pages.yml` redeploys on every push to `main`.** It used to ignore
+  `content/live-*.json`, on the theory that a snapshot refresh is not a site
+  change. It is one: the live section of the site is written from those
+  files, so ignoring them is what keeps the published `last_verified` where
+  the last human push left it.
+- **`test.yml` runs on a schedule as well as on push, and fails when the
+  published `agents.json` is more than 48 hours old.** A stale directory is
+  exactly what a stopped deploy produces, and a stopped deploy stops the
+  pushes a push-only check would have run on. It reads what is served, not
+  what the workspace would produce.
+
+The Pages build passes `VTESSERA_BASE_URL` to `generate`, so one pass fetches
+the live feed and writes `agents.json`, `llms.txt` and the HTML pages
+together. They cannot disagree, which is also asserted directly in
+`TestTheThreeDiscoverySurfacesCannotDisagree`.
+
 ## Verification
 
 Every entry page carries a **Checked by this page** block, and `agents.json`

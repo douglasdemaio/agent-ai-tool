@@ -4,6 +4,12 @@ on:
   pull_request:
   push:
     branches: [main]
+  # Scheduled as well as pushed. The published file only goes stale when the
+  # deploy that rewrites it has stopped running, and a stopped deploy means no
+  # push-triggered run either — a push-only check would be silent in exactly
+  # the failure it exists to catch.
+  schedule:
+    - cron: '19 */6 * * *'
 
 permissions:
   contents: read
@@ -43,3 +49,36 @@ jobs:
         # the committed snapshot or stays absent. The site must publish whether
         # or not vtessera is reachable, so generation failing is the failure.
         run: make generate
+      - name: The published directory is fresh
+        # The build stamps generatedAt with its own clock, so the published
+        # value only ages if nothing has been rebuilding the site. This reads
+        # what is actually served, not what the workspace would produce.
+        run: |
+          python3 - <<'EOF'
+          import json, sys, urllib.request
+          from datetime import datetime, timezone
+
+          url = "https://agent-ai-tool.com/agents.json"
+          try:
+              with urllib.request.urlopen(url, timeout=30) as r:
+                  data = json.load(r)
+          except Exception as exc:
+              print(f"cannot read {url}: {exc}", file=sys.stderr)
+              sys.exit(1)
+
+          generated = data.get("generatedAt")
+          if not generated:
+              print(f"{url} carries no generatedAt", file=sys.stderr)
+              sys.exit(1)
+
+          stamp = datetime.fromisoformat(generated.replace("Z", "+00:00"))
+          age = (datetime.now(timezone.utc) - stamp).total_seconds()
+          print(f"generatedAt={generated} age={age / 3600:.1f}h")
+          if age > 48 * 3600:
+              print(
+                  f"the published directory is {age / 3600:.0f} hours old; "
+                  "the Pages deploy has stopped running",
+                  file=sys.stderr,
+              )
+              sys.exit(1)
+          EOF
