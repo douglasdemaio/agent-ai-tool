@@ -35,7 +35,13 @@ jobs:
   check:
     runs-on: ubuntu-latest
     steps:
+      # This job pushes to main, and main requires the `test` status check,
+      # which a bot's direct push can never carry. So the push authenticates as
+      # a deploy key rather than as GITHUB_TOKEN, and that key is the bypass
+      # actor in the repository ruleset that replaces branch protection.
       - uses: actions/checkout@v4
+        with:
+          ssh-key: ${{ secrets.SNAPSHOT_DEPLOY_KEY }}
       - uses: actions/setup-go@v5
         with:
           go-version: '1.27'
