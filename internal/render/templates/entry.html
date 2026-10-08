@@ -8,12 +8,24 @@
   <dl class="facts">
     <dt>Endpoint</dt>
     <dd><a href="{{.View.Entry.URL}}" rel="nofollow noopener">{{.View.Entry.URL}}</a></dd>
-    {{if .View.Endpoint}}
+    {{if .View.Unreachable}}
+    {{if .View.MCPEndpoint}}
     <dt>MCP endpoint</dt>
-    <dd><a href="{{.View.Endpoint}}" rel="nofollow noopener">{{.View.Endpoint}}</a></dd>
-    {{else if .View.Unreachable}}
+    {{template "entryEndpointWithheld" .}}
+    {{end}}
+    {{if .View.APIEndpoint}}
+    <dt>API endpoint</dt>
+    {{template "entryEndpointWithheld" .}}
+    {{end}}
+    {{else}}
+    {{if .View.MCPEndpoint}}
     <dt>MCP endpoint</dt>
-    <dd class="withheld">withheld &mdash; it did not answer a recent health check{{if .View.EndpointDetail}} <span class="entry-meta">{{.View.EndpointDetail}}</span>{{end}} <span class="entry-meta">{{if .View.LastAlive}}last answered {{stamp .View.LastAlive}}{{else}}it has not answered a check on record{{end}}</span></dd>
+    <dd><a href="{{.View.MCPEndpoint}}" rel="nofollow noopener">{{.View.MCPEndpoint}}</a></dd>
+    {{end}}
+    {{if .View.APIEndpoint}}
+    <dt>API endpoint</dt>
+    <dd><a href="{{.View.APIEndpoint}}" rel="nofollow noopener">{{.View.APIEndpoint}}</a></dd>
+    {{end}}
     {{end}}
     {{if .View.Entry.AgentCardURL}}
     <dt>Agent card</dt>
@@ -142,3 +154,5 @@
 <script type="application/ld+json">{{.Site.EntryJSONLD .View}}</script>
 {{template "foot" .}}
 {{end}}
+
+{{define "entryEndpointWithheld"}}<dd class="withheld">withheld &mdash; it did not answer a recent health check{{if .View.EndpointDetail}} <span class="entry-meta">{{.View.EndpointDetail}}</span>{{end}} <span class="entry-meta">{{if .View.LastAlive}}last answered {{stamp .View.LastAlive}}{{else}}it has not answered a check on record{{end}}</span></dd>{{end}}

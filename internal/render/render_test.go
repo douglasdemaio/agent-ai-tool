@@ -1284,3 +1284,142 @@ func TestOurOwnProbesNeverEarnAnEntryABadge(t *testing.T) {
 		t.Error("an outside agent's deliveries should still badge the entry")
 	}
 }
+
+// Both kinds of endpoint used to be published under one label, so a JSON
+// document was advertised as an MCP endpoint and an agent that trusted the
+// label opened a session against it and got an HTTP 405. The label has to
+// follow what the endpoint speaks on every surface that prints it, or the
+// surfaces disagree about what to connect to.
+func TestAnEndpointIsLabelledByWhatItSpeaks(t *testing.T) {
+	api := entry("models-dev", "A JSON document.")
+	api.APIURL = strptr("https://models.dev/api.json")
+	mcp := entry("vtessera", "A marketplace.")
+	mcp.MCPEndpointURL = strptr("https://vtessera.example.com/mcp")
+	out := renderTo(t, site(t, api, mcp))
+
+	for _, tc := range []struct {
+		name, path, want, dontWant string
+	}{
+		{
+			name:     "entry page of a plain API names it as an API",
+			path:     "models-dev/index.html",
+			want:     "<dt>API endpoint</dt>",
+			dontWant: "<dt>MCP endpoint</dt>",
+		},
+		{
+			name:     "entry page of an MCP server names it as MCP",
+			path:     "vtessera/index.html",
+			want:     "<dt>MCP endpoint</dt>",
+			dontWant: "<dt>API endpoint</dt>",
+		},
+		{
+			name:     "llms.txt names a plain API as an API",
+			path:     "llms.txt",
+			want:     "- API endpoint: https://models.dev/api.json",
+			dontWant: "- MCP endpoint: https://models.dev/api.json",
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			body := read(t, out, tc.path)
+			if !strings.Contains(body, tc.want) {
+				t.Errorf("missing %q", tc.want)
+			}
+			if strings.Contains(body, tc.dontWant) {
+				t.Errorf("carries %q, which mislabels the endpoint", tc.dontWant)
+			}
+		})
+	}
+
+	// llms.txt carries both entries, so the MCP bullet is asserted against this
+	// file rather than the page that only holds one of them.
+	llms := read(t, out, "llms.txt")
+	if !strings.Contains(llms, "- MCP endpoint: https://vtessera.example.com/mcp") {
+		t.Error("llms.txt does not name the MCP endpoint as MCP")
+	}
+
+	var payload struct {
+		Agents []struct {
+			Slug           string  `json:"slug"`
+			MCPEndpointURL *string `json:"mcp_endpoint_url"`
+			APIURL         *string `json:"api_url"`
+		} `json:"agents"`
+	}
+	if err := json.Unmarshal([]byte(read(t, out, "agents.json")), &payload); err != nil {
+		t.Fatalf("agents.json: %v", err)
+	}
+	for _, a := range payload.Agents {
+		switch a.Slug {
+		case "models-dev":
+			if a.APIURL == nil || *a.APIURL != "https://models.dev/api.json" {
+				t.Errorf("api_url = %v, want the plain API published there", a.APIURL)
+			}
+			if a.MCPEndpointURL != nil {
+				t.Errorf("mcp_endpoint_url = %q, want null for an entry that speaks no MCP", *a.MCPEndpointURL)
+			}
+		case "vtessera":
+			if a.MCPEndpointURL == nil || *a.MCPEndpointURL != "https://vtessera.example.com/mcp" {
+				t.Errorf("mcp_endpoint_url = %v, want the MCP endpoint published there", a.MCPEndpointURL)
+			}
+			if a.APIURL != nil {
+				t.Errorf("api_url = %q, want absent for an entry with no plain API", *a.APIURL)
+			}
+		}
+	}
+}
+
+// Withholding must not erase the kind. A row that says only "endpoint
+// withheld" leaves the reader unable to tell whether the thing that did not
+// answer was a server to open a session against or a document to fetch, and
+// the withheld label is the one place the two could still be confused.
+func TestAWithheldEndpointKeepsItsKind(t *testing.T) {
+	e := entry("models-dev", "A JSON document.")
+	e.APIURL = strptr("https://models.dev/api.json")
+	s := site(t, e)
+	s.Unreachable = map[string]bool{"models-dev": true}
+	s.EndpointDetails = map[string]string{"models-dev": "GET https://models.dev/api.json = 500"}
+	checked := time.Date(2026, 9, 29, 6, 0, 0, 0, time.UTC)
+	s.HealthCheckedAt = &checked
+	out := renderTo(t, s)
+
+	page := read(t, out, "models-dev/index.html")
+	if !strings.Contains(page, "<dt>API endpoint</dt>") || !strings.Contains(page, "withheld") {
+		t.Errorf("the entry page should withhold an API endpoint under its own label")
+	}
+	if strings.Contains(page, "<dt>MCP endpoint</dt>") {
+		t.Error("the entry page claims an MCP endpoint this entry never had")
+	}
+	if strings.Contains(page, `href="https://models.dev/api.json"`) {
+		t.Error("the entry page still links a dead API")
+	}
+
+	llms := read(t, out, "llms.txt")
+	if !strings.Contains(llms, "- API endpoint: withheld") {
+		t.Error("llms.txt should withhold the API endpoint under its own label")
+	}
+	if strings.Contains(llms, "- API endpoint: https://") {
+		t.Error("llms.txt still lists a dead API as callable")
+	}
+	if strings.Contains(llms, "- MCP endpoint: withheld") {
+		t.Error("llms.txt withholds an MCP endpoint this entry never had")
+	}
+
+	var payload struct {
+		Agents []struct {
+			APIURL *string `json:"api_url"`
+			Down   bool    `json:"endpoint_unreachable"`
+			Reason string  `json:"endpoint_unreachable_reason"`
+		} `json:"agents"`
+	}
+	if err := json.Unmarshal([]byte(read(t, out, "agents.json")), &payload); err != nil {
+		t.Fatalf("agents.json: %v", err)
+	}
+	if len(payload.Agents) != 1 {
+		t.Fatalf("agents = %d, want one", len(payload.Agents))
+	}
+	if payload.Agents[0].APIURL != nil {
+		t.Errorf("agents.json still hands out a dead API: %q", *payload.Agents[0].APIURL)
+	}
+	if !payload.Agents[0].Down || payload.Agents[0].Reason == "" {
+		t.Error("the outage should still be reported as unreachable with a reason")
+	}
+}

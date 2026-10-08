@@ -30,6 +30,7 @@ func TestOnlyAdvertisedEndpointsAreProbed(t *testing.T) {
 		{Slug: "b", AgentCardURL: ptr("https://b.example/card")},
 		{Slug: "c", URL: "https://c.example"},
 		{Slug: "d", MCPEndpointURL: ptr("https://d.example/mcp"), AgentCardURL: ptr("https://d.example/card")},
+		{Slug: "e", APIURL: ptr("https://e.example/api.json")},
 	})
 	if len(targets["a"]) != 1 || len(targets["b"]) != 1 {
 		t.Fatalf("endpoint targets = %v", targets)
@@ -39,6 +40,12 @@ func TestOnlyAdvertisedEndpointsAreProbed(t *testing.T) {
 	}
 	if len(targets["d"]) != 2 {
 		t.Errorf("expected both the endpoint and the card probed, got %v", targets["d"])
+	}
+	// A plain API is as callable as an MCP endpoint and as worth probing: it is
+	// what the directory tells an agent to call, so a JSON API nobody checks is
+	// a URL the site would keep publishing after it stopped answering.
+	if len(targets["e"]) != 1 || targets["e"][0] != "https://e.example/api.json" {
+		t.Errorf("api_url targets = %v, want the plain API probed", targets["e"])
 	}
 }
 

@@ -10,17 +10,33 @@ import (
 )
 
 type Entry struct {
-	Slug           string     `json:"slug"`
-	Name           string     `json:"name"`
-	Summary        string     `json:"summary"`
-	URL            string     `json:"url"`
-	AgentCardURL   *string    `json:"agent_card_url"`
-	MCPEndpointURL *string    `json:"mcp_endpoint_url"`
-	Category       string     `json:"category,omitempty"`
-	Access         string     `json:"access,omitempty"`
-	Source         string     `json:"source"`
-	LastVerified   time.Time  `json:"last_verified"`
-	HowToCall      *HowToCall `json:"how_to_call,omitempty"`
+	Slug         string  `json:"slug"`
+	Name         string  `json:"name"`
+	Summary      string  `json:"summary"`
+	URL          string  `json:"url"`
+	AgentCardURL *string `json:"agent_card_url"`
+	// MCPEndpointURL is an endpoint that speaks MCP: a server an agent opens a
+	// session against. It is now a narrower field than it started out — it used
+	// to hold any URL the service wanted an agent to call, which put a plain
+	// JSON document and a protocol endpoint under one label. An agent that
+	// trusts the label and posts an MCP initialize to models.dev/api.json gets
+	// an HTTP 405, and a directory that hands out that label has mis-described
+	// every consumer that believes it. See APIURL for the other half.
+	//
+	// Deprecated: the field is being narrowed rather than removed, and it stays
+	// published for one release so consumers reading it do not break on a
+	// missing key. Values that do not speak MCP have moved to APIURL.
+	MCPEndpointURL *string `json:"mcp_endpoint_url"`
+	// APIURL is a plain HTTP endpoint an agent calls directly — a JSON API to
+	// fetch or POST to, with no MCP session and no server to run. It answers
+	// the same question MCPEndpointURL does ("which address do I call?") for
+	// services that do not speak MCP, which is most of them.
+	APIURL       *string    `json:"api_url,omitempty"`
+	Category     string     `json:"category,omitempty"`
+	Access       string     `json:"access,omitempty"`
+	Source       string     `json:"source"`
+	LastVerified time.Time  `json:"last_verified"`
+	HowToCall    *HowToCall `json:"how_to_call,omitempty"`
 }
 
 // HowToCall is what a reader needs in order to actually make a call, rather
@@ -132,6 +148,11 @@ func (e Entry) Validate() error {
 	if e.MCPEndpointURL != nil {
 		if err := absoluteHTTP(*e.MCPEndpointURL); err != nil {
 			return fmt.Errorf("mcp_endpoint_url: %w", err)
+		}
+	}
+	if e.APIURL != nil {
+		if err := absoluteHTTP(*e.APIURL); err != nil {
+			return fmt.Errorf("api_url: %w", err)
 		}
 	}
 	if e.Source != SourceCurated && e.Source != SourceLive {

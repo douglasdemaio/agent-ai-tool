@@ -90,6 +90,8 @@ func TestValidateRejectsUnusableFields(t *testing.T) {
 		"ftp url":              {func(e *Entry) { e.URL = "ftp://example.com" }, "http or https"},
 		"empty url":            {func(e *Entry) { e.URL = "" }, "must not be empty"},
 		"bad agent card url":   {func(e *Entry) { bad := "not a url"; e.AgentCardURL = &bad }, "absolute"},
+		"bad mcp endpoint url": {func(e *Entry) { bad := "not a url"; e.MCPEndpointURL = &bad }, "mcp_endpoint_url"},
+		"bad api url":          {func(e *Entry) { bad := "not a url"; e.APIURL = &bad }, "api_url"},
 		"unknown source":       {func(e *Entry) { e.Source = "scraped" }, "source"},
 		"uppercase slug":       {func(e *Entry) { e.Slug = "VteSSera" }, "slug"},
 		"slug with underscore": {func(e *Entry) { e.Slug = "vtes_sera" }, "slug"},

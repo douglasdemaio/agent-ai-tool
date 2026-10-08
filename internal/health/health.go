@@ -159,6 +159,9 @@ func Targets(entries []content.Entry) map[string][]string {
 		if e.MCPEndpointURL != nil {
 			urls = append(urls, *e.MCPEndpointURL)
 		}
+		if e.APIURL != nil {
+			urls = append(urls, *e.APIURL)
+		}
 		if e.AgentCardURL != nil {
 			urls = append(urls, *e.AgentCardURL)
 		}

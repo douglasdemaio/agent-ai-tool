@@ -115,18 +115,6 @@ func (s Site) VerifyAgents() []live.AgentVerification {
 	return out
 }
 
-// endpointFor returns the machine endpoint an entry advertises, or nil when the
-// entry has none or a recent check says it cannot be reached.
-func (s Site) endpointFor(e content.Entry) *string {
-	if e.MCPEndpointURL == nil {
-		return nil
-	}
-	if s.Unreachable[e.Slug] {
-		return nil
-	}
-	return e.MCPEndpointURL
-}
-
 type usage struct {
 	Delivered int
 	Disputed  int
@@ -174,9 +162,16 @@ type entryView struct {
 	// template's truthiness test is concerned, which would let an empty
 	// marketplace look like a working one.
 	LiveEmpty bool
-	// Endpoint is the machine endpoint this entry advertises, withheld when a
-	// recent health check could not reach it.
-	Endpoint *string
+	// MCPEndpoint is the entry's MCP endpoint — one an agent opens a session
+	// against — and APIEndpoint is a plain HTTP endpoint it calls directly,
+	// such as a JSON document to fetch. Neither is removed when a check fails:
+	// Unreachable and EndpointDetail say that, and an address silently dropped
+	// would leave a withheld row with no label to show, so the page could not
+	// tell a dead MCP server from a dead JSON API. What agents.json publishes
+	// is nilled on the same rule as before: a URL the site has just failed to
+	// reach must not be handed out as if it worked.
+	MCPEndpoint *string
+	APIEndpoint *string
 	// Unreachable reports that the endpoint is withheld, so the page can say
 	// why rather than silently omitting a field an agent expects.
 	Unreachable bool
@@ -357,14 +352,15 @@ func (s Site) MetricsLead() string {
 }
 
 // viewFor builds a view and applies the health verdict. The curated entry keeps
-// its own mcp_endpoint_url: the source file stays the record of what the service
-// publishes, while the rendered site withholds an endpoint a check could not
-// reach. Editing the JSON to remove a URL would lose that distinction the next
-// time the service came back.
+// its own endpoint URLs as filed: the source file stays the record of what the
+// service publishes, while the rendered site withholds an endpoint a check could
+// not reach. Editing the JSON to remove a URL would lose that distinction the
+// next time the service came back.
 func (s Site) viewFor(e content.Entry) entryView {
 	view := entryView{
 		Entry:           e,
-		Endpoint:        s.endpointFor(e),
+		MCPEndpoint:     e.MCPEndpointURL,
+		APIEndpoint:     e.APIURL,
 		Unreachable:     s.Unreachable[e.Slug],
 		HealthCheckedAt: s.HealthCheckedAt,
 		LastChecked:     s.lastChecked(e),
@@ -396,7 +392,7 @@ func (s Site) viewFor(e content.Entry) entryView {
 // touches. The probe can observe an HTTP response; only a human can confirm
 // that the entry still describes the service.
 func (s Site) lastChecked(e content.Entry) *time.Time {
-	if e.MCPEndpointURL == nil && e.AgentCardURL == nil {
+	if e.MCPEndpointURL == nil && e.APIURL == nil && e.AgentCardURL == nil {
 		return nil
 	}
 	if !s.Unreachable[e.Slug] {

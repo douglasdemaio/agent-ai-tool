@@ -60,16 +60,26 @@ func (s Site) schemaOrg(v entryView) map[string]any {
 }
 
 type jsonEntry struct {
-	Slug           string    `json:"slug"`
-	Name           string    `json:"name"`
-	Summary        string    `json:"summary"`
-	URL            string    `json:"url"`
-	AgentCardURL   *string   `json:"agent_card_url"`
-	MCPEndpointURL *string   `json:"mcp_endpoint_url"`
-	Category       string    `json:"category,omitempty"`
-	Access         string    `json:"access,omitempty"`
-	Source         string    `json:"source"`
-	LastVerified   time.Time `json:"last_verified"`
+	Slug         string  `json:"slug"`
+	Name         string  `json:"name"`
+	Summary      string  `json:"summary"`
+	URL          string  `json:"url"`
+	AgentCardURL *string `json:"agent_card_url"`
+	// MCPEndpointURL is published for one release more under its old meaning
+	// narrowed to what the name says: an endpoint that speaks MCP, and nothing
+	// else. Consumers that read it for the address of any machine endpoint now
+	// also have to read api_url, because the values that never spoke MCP have
+	// moved there rather than continue to be advertised as a session an agent
+	// could open. It stays in the file so a key lookup does not break, but it
+	// is null for every entry whose only endpoint is a plain HTTP API.
+	MCPEndpointURL *string `json:"mcp_endpoint_url"`
+	// APIURL is a plain HTTP endpoint an agent calls directly: a JSON API with
+	// no MCP session behind it.
+	APIURL       *string   `json:"api_url,omitempty"`
+	Category     string    `json:"category,omitempty"`
+	Access       string    `json:"access,omitempty"`
+	Source       string    `json:"source"`
+	LastVerified time.Time `json:"last_verified"`
 	// LastChecked is when an automated check last saw this entry's endpoint
 	// answer, and is absent when none ever has. It is deliberately separate
 	// from LastVerified: that one is a human's word that the entry still
@@ -98,17 +108,20 @@ func (s Site) jsonEntries(views []entryView) []jsonEntry {
 			Summary:      v.Entry.Summary,
 			URL:          v.Entry.URL,
 			AgentCardURL: v.Entry.AgentCardURL,
-			// The endpoint as rendered, not as filed. An agent reading this
-			// file must not be handed a URL the site itself has just failed to
-			// reach.
-			MCPEndpointURL: v.Endpoint,
-			Category:       v.Entry.Category,
-			Access:         v.Entry.Access,
-			Source:         v.Entry.Source,
-			LastVerified:   v.Entry.LastVerified,
-			LastChecked:    v.LastChecked,
-			Page:           s.canonical(v.Entry.Slug),
-			HowToCall:      v.Entry.HowToCall,
+			Category:     v.Entry.Category,
+			Access:       v.Entry.Access,
+			Source:       v.Entry.Source,
+			LastVerified: v.Entry.LastVerified,
+			LastChecked:  v.LastChecked,
+			Page:         s.canonical(v.Entry.Slug),
+			HowToCall:    v.Entry.HowToCall,
+		}
+		// The endpoints as rendered, not as filed. An agent reading this file
+		// must not be handed a URL the site itself has just failed to reach;
+		// a withheld one is reported by the flags below instead.
+		if !v.Unreachable {
+			entry.MCPEndpointURL = v.MCPEndpoint
+			entry.APIURL = v.APIEndpoint
 		}
 		if v.Unreachable {
 			entry.EndpointDown = true
@@ -211,13 +224,15 @@ func (s Site) directoryCard(views []entryView) map[string]any {
 			"description": v.Entry.Summary,
 			"tags":        []string{v.Entry.Category},
 		}
-		if v.Endpoint != nil {
-			skill["endpoint"] = *v.Endpoint
-		} else if v.Unreachable {
+		if v.Unreachable {
 			// A withheld endpoint is recorded as withheld rather than pointed
 			// at the home page, so an agent never mistakes a browsing URL for
 			// something it can call.
 			skill["endpointUnavailable"] = true
+		} else if v.MCPEndpoint != nil {
+			skill["endpoint"] = *v.MCPEndpoint
+		} else if v.APIEndpoint != nil {
+			skill["endpoint"] = *v.APIEndpoint
 		} else {
 			skill["endpoint"] = v.Entry.URL
 		}
@@ -268,8 +283,8 @@ func (s Site) llms(views []entryView) string {
 	var b strings.Builder
 	fmt.Fprintf(&b, "# %s\n\n", s.Domain)
 	b.WriteString("A directory of tools an AI agent can actually connect to. Each entry names the\n")
-	b.WriteString("endpoint an agent should call, plus the agent card and MCP endpoint when the\n")
-	b.WriteString("service publishes them.\n\n")
+	b.WriteString("endpoint an agent should call, plus the agent card and the MCP endpoint or\n")
+	b.WriteString("plain API endpoint when the service publishes them.\n\n")
 	fmt.Fprintf(&b, "For machine-readable data fetch %sagents.json; that single file\n", s.canonical(""))
 	b.WriteString("carries every entry and its endpoints. This file is for a reader skimming prose.\n\n")
 	b.WriteString("## How to use this efficiently (one fetch)\n\n")
@@ -305,11 +320,24 @@ func (s Site) llms(views []entryView) string {
 		if v.Entry.AgentCardURL != nil {
 			fmt.Fprintf(&b, "- Agent card: %s\n", *v.Entry.AgentCardURL)
 		}
-		if v.Endpoint != nil {
-			fmt.Fprintf(&b, "- MCP endpoint: %s\n", *v.Endpoint)
+		endpoints := []struct {
+			label string
+			url   *string
+		}{
+			{"MCP endpoint", v.MCPEndpoint},
+			{"API endpoint", v.APIEndpoint},
 		}
-		if v.Unreachable {
-			b.WriteString("- MCP endpoint: withheld, it did not answer a recent health check\n")
+		for _, ep := range endpoints {
+			if ep.url == nil {
+				continue
+			}
+			if v.Unreachable {
+				fmt.Fprintf(&b, "- %s: withheld, it did not answer a recent health check\n", ep.label)
+			} else {
+				fmt.Fprintf(&b, "- %s: %s\n", ep.label, *ep.url)
+			}
+		}
+		if v.Unreachable && (v.MCPEndpoint != nil || v.APIEndpoint != nil) {
 			if v.EndpointDetail != "" {
 				fmt.Fprintf(&b, "  (%s)\n", v.EndpointDetail)
 			}

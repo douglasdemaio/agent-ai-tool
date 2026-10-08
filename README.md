@@ -56,6 +56,7 @@ Drop a JSON file in `content/entries/`:
   "url": "https://example.com",
   "agent_card_url": null,
   "mcp_endpoint_url": null,
+  "api_url": null,
   "category": "text",
   "access": "free tier available",
   "source": "curated",
@@ -66,18 +67,29 @@ Drop a JSON file in `content/entries/`:
 Validation is strict on purpose. Unknown fields are rejected rather than
 ignored, duplicate slugs fail the build, and URLs must be absolute `http` or
 `https`. A mistyped field should stop the build, not ship as a blank on the
-page. `agent_card_url` and `mcp_endpoint_url` are optional; use `null` or omit
-them. `category` and `access` are optional free text.
+page. `agent_card_url`, `mcp_endpoint_url` and `api_url` are optional; use
+`null` or omit them. `category` and `access` are optional free text.
 
-`mcp_endpoint_url` carries the address an agent should actually call, so it
-holds the machine endpoint rather than the project's home page, and the home
-page goes in `url`. Anything an agent can only read as a human should not be
-buried in the `summary` sentence. Before adding an entry, confirm the endpoint
-answers: an entry pointing at a URL that 404s is worse than no entry, because
-the whole claim of the directory is that the endpoints work.
+The two endpoint fields name the kind of endpoint, because an agent has to know
+before it connects. `mcp_endpoint_url` is one that speaks MCP: a server the agent
+opens a session against with `initialize`. `api_url` is a plain HTTP endpoint it
+calls directly — a JSON document to fetch, an API to POST to — with no session
+behind it. They used to be a single field, which published
+`https://models.dev/api.json` under a label meaning *run an MCP session against
+this*; an agent that trusted the label got an HTTP 405 for its trouble.
 
-An entry whose service is not deployed yet keeps `mcp_endpoint_url` at `null`
-and says so in its summary, rather than listing an address that will not answer.
+`mcp_endpoint_url` is therefore deprecated. It stays in `agents.json` for one
+release so a reader keyed on the old name does not break on a missing key, it
+only ever holds an endpoint that speaks MCP, and every value that does not has
+moved to `api_url`. Both hold the machine endpoint rather than the project's
+home page, and the home page goes in `url`. Anything an agent can only read as
+a human should not be buried in the `summary` sentence. Before adding an entry,
+confirm the endpoint answers: an entry pointing at a URL that 404s is worse than
+no entry, because the whole claim of the directory is that the endpoints work.
+
+An entry whose service is not deployed yet keeps `mcp_endpoint_url` and `api_url`
+at `null` and says so in its summary, rather than listing an address that will
+not answer.
 
 ### Publishing how to call it
 
@@ -279,7 +291,8 @@ and no third-party scripts.
 
 The directory's claim is that these are endpoints an agent can call, so
 `content/health.json` records whether they still answer. `check-health.yml`
-probes every `mcp_endpoint_url` and `agent_card_url` twice a day and commits the
+probes every `mcp_endpoint_url`, `api_url` and `agent_card_url` twice a day and
+commits the
 verdict; the build then withholds any endpoint a fresh report found dead.
 
 ```bash
