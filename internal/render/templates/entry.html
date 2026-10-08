@@ -13,7 +13,7 @@
     <dd><a href="{{.View.Endpoint}}" rel="nofollow noopener">{{.View.Endpoint}}</a></dd>
     {{else if .View.Unreachable}}
     <dt>MCP endpoint</dt>
-    <dd class="withheld">withheld &mdash; it did not answer a recent health check{{if .View.EndpointDetail}} <span class="entry-meta">{{.View.EndpointDetail}}</span>{{end}}</dd>
+    <dd class="withheld">withheld &mdash; it did not answer a recent health check{{if .View.EndpointDetail}} <span class="entry-meta">{{.View.EndpointDetail}}</span>{{end}} <span class="entry-meta">{{if .View.LastAlive}}last answered {{stamp .View.LastAlive}}{{else}}it has not answered a check on record{{end}}</span></dd>
     {{end}}
     {{if .View.Entry.AgentCardURL}}
     <dt>Agent card</dt>

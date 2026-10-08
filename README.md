@@ -312,12 +312,27 @@ Three properties are deliberate, and each is tested:
   report stamped in the future is discarded for the same reason. This is why the
   24-hour refresh above exists: the failure mode of a stale report is not a wrong
   page, it is no page that admits it is out of date.
+- **Each endpoint is judged on time it was given.** The sweep's total budget is
+  the sum of the per-endpoint budgets — three attempts, their intervals and
+  their request timeouts each — and every endpoint carries its own deadline
+  inside that. It used to be one deadline for the whole run, sized to a single
+  request: the earlier endpoints spent it, and vtessera, last alphabetically,
+  was committed as `context cancelled between attempts` on three runs out of
+  nine. Two of those three probes had succeeded; the code returned before it
+  counted them, so a working service was withheld for someone else's budget and
+  its own evidence being thrown away. Both are covered by tests: a sweep that
+  outlives its budget is not a failure, it is a wrong answer.
 
 Withholding is reversible and never touches the source file: the JSON keeps the
 URL the service publishes, and only the rendered surfaces omit it. An endpoint
 returns the moment the next report says it answers. Where it is withheld, the
-entry is marked `endpoint_unreachable` with the failure reason, so an agent can
-tell a service that is down from one nobody has ever checked.
+entry is marked `endpoint_unreachable` with the failure reason, and every
+surface that says so also says when the endpoint last answered — `endpoint_last_ok`
+in `agents.json`, `last answered` on the page and in `llms.txt` — carried
+forward from earlier reports so the date stays at the beginning of the outage
+rather than resetting to whichever check keeps noticing it. An endpoint that
+has never answered says exactly that, because "down since never checked" and
+"down for a week" are different statements and neither reads well as a blank.
 
 Entry home pages are deliberately not probed. They are human destinations, and
 a site that rejects a bare user agent would demote itself for serving exactly

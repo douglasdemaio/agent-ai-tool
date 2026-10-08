@@ -20,7 +20,7 @@
     <li>
       <a class="entry-name" href="/{{.Entry.Slug}}">{{.Entry.Name}}</a>
       {{if .Usage}}<span class="badge" title="{{.Usage.Delivered}} deliveries recorded">{{.Usage.Delivered}} delivered</span>{{end}}
-      {{if .Unreachable}}<span class="badge down" title="{{.EndpointDetail}}">endpoint down</span>{{end}}
+      {{if .Unreachable}}<span class="badge down" title="{{if .EndpointDetail}}{{.EndpointDetail}}; {{end}}{{if .LastAlive}}last answered {{stamp .LastAlive}}{{else}}no successful check on record{{end}}">endpoint down</span>{{end}}
       {{if .ReviewDue}}<span class="badge due" title="Not confirmed against the service in over six months">review due</span>{{end}}
       <p class="entry-summary">{{.Entry.Summary}}</p>
       <p class="entry-meta">

@@ -1,5 +1,5 @@
 {
-  "checkedAt": "2026-10-08T13:40:16.499591172Z",
+  "checkedAt": "2026-10-08T15:12:09.024062699Z",
   "endpoints": {
     "mcp-registry https://registry.modelcontextprotocol.io/v0.1/servers": {
       "url": "https://registry.modelcontextprotocol.io/v0.1/servers",
@@ -30,22 +30,21 @@
     },
     "vtessera https://vtessera-mcp.fly.dev/mcp": {
       "url": "https://vtessera-mcp.fly.dev/mcp",
-      "alive": false,
+      "alive": true,
       "attempts": [
         0,
         0,
-        2
-      ],
-      "detail": "context cancelled between attempts"
+        0
+      ]
     },
     "vtessera https://vtessera.fly.dev/.well-known/agent-card.json": {
       "url": "https://vtessera.fly.dev/.well-known/agent-card.json",
-      "alive": false,
+      "alive": true,
       "attempts": [
-        2,
-        2
-      ],
-      "detail": "context cancelled between attempts"
+        0,
+        0,
+        0
+      ]
     }
   }
 }

@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -144,9 +143,7 @@ func generate(t *testing.T, dir string, client *http.Client, baseURL string, ext
 	if client == nil {
 		client = &http.Client{Timeout: cfg.timeout}
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), cfg.timeout)
-	defer cancel()
-	return cfg.run(ctx, client)
+	return cfg.run(client)
 }
 
 // testConfig is the single description of a test workspace, so the modes that
@@ -597,8 +594,6 @@ func planWith(t *testing.T, dir, previous string) string {
 		cfg := testConfig(t, dir)
 		cfg.commitPlan = true
 		cfg.previous = previous
-		ctx, cancel := context.WithTimeout(context.Background(), cfg.timeout)
-		defer cancel()
-		return cfg.run(ctx, &http.Client{Timeout: cfg.timeout})
+		return cfg.run(&http.Client{Timeout: cfg.timeout})
 	}))
 }

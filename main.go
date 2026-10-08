@@ -106,17 +106,52 @@ func run() error {
 		now:        now,
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), cfg.timeout)
-	defer cancel()
-	return cfg.run(ctx, &http.Client{Timeout: cfg.timeout})
+	return cfg.run(&http.Client{Timeout: cfg.timeout})
 }
 
-func (c config) run(ctx context.Context, client *http.Client) error {
+// runBackstop bounds a generate or refresh run. Every fetch inside one is
+// already bounded by the client timeout, and the four feed fetches plus the
+// per-agent reports they fan out to are sequential, so this exists only to stop
+// the program if that ever stops being true. It is deliberately far larger than
+// any single request: a backstop sized to one request and shared by all of them
+// is the mistake that made the health sweep report live services as down.
+const runBackstop = 15 * time.Minute
+
+// budget is the outer deadline for one invocation.
+//
+// -check gets a budget computed from the work it is about to do, because a
+// sweep that outlives its own budget does not fail — it reports the endpoints
+// it had not reached as dead, which is a wrong answer rather than a visible
+// one. Everything else gets the backstop, since the requests it makes are
+// counted by the client timeout rather than by the clock.
+func (c config) budget(entries []content.Entry) (context.Context, context.CancelFunc) {
+	if c.check {
+		return context.WithTimeout(context.Background(), health.Budget(health.Targets(entries), c.healthOptions()))
+	}
+	return context.WithTimeout(context.Background(), runBackstop)
+}
+
+// healthOptions is the one description of how -check probes. It builds the
+// sweep and the budget that has to cover it from the same numbers, because a
+// budget computed from different settings than the sweep runs with is a budget
+// that expires early by exactly the difference.
+func (c config) healthOptions() health.Options {
+	return health.Options{
+		Attempts: c.attempts,
+		Interval: health.DefaultInterval,
+		Timeout:  c.timeout,
+	}
+}
+
+func (c config) run(client *http.Client) error {
 	entries, err := content.Load(c.contentDir)
 	if err != nil {
 		return err
 	}
 	log.Printf("loaded %d curated entries from %s", len(entries), c.contentDir)
+
+	ctx, cancel := c.budget(entries)
+	defer cancel()
 
 	agentsCache := filepath.Join(c.cacheDir, "live-vtessera.json")
 	metricsCache := filepath.Join(c.cacheDir, "live-metrics.json")
@@ -170,18 +205,19 @@ func (c config) run(ctx context.Context, client *http.Client) error {
 	unreachable := report.Unreachable(c.now)
 
 	site := render.Site{
-		Domain:           c.domain,
-		Entries:          entries,
-		MetricsFromCache: metrics.FromCache,
-		ReportsFromCache: reports.FromCache,
-		ReportsFetchedAt: reports.FetchedAt,
-		ReportsErr:       prefixErr("attestation reports", reports.FetchErr),
-		MetricsAge:       metrics.Age(c.now),
-		MetricsErr:       metrics.FetchErr,
-		GeneratedAt:      c.now,
-		AssetsDir:        c.assetsDir,
-		Unreachable:      unreachable,
-		EndpointDetails:  report.Details(),
+		Domain:            c.domain,
+		Entries:           entries,
+		MetricsFromCache:  metrics.FromCache,
+		ReportsFromCache:  reports.FromCache,
+		ReportsFetchedAt:  reports.FetchedAt,
+		ReportsErr:        prefixErr("attestation reports", reports.FetchErr),
+		MetricsAge:        metrics.Age(c.now),
+		MetricsErr:        metrics.FetchErr,
+		GeneratedAt:       c.now,
+		AssetsDir:         c.assetsDir,
+		Unreachable:       unreachable,
+		EndpointDetails:   report.Details(),
+		EndpointLastAlive: report.LastAlive(),
 	}
 	if !report.CheckedAt.IsZero() {
 		checked := report.CheckedAt
@@ -241,11 +277,12 @@ func (c config) run(ctx context.Context, client *http.Client) error {
 // fact to publish, not a reason to refuse to publish, and a check that failed
 // the build on every upstream hiccup would be a check nobody runs.
 func (c config) checkEndpoints(ctx context.Context, entries []content.Entry, client *http.Client) error {
-	report := health.Check(ctx, entries, client, health.Options{
-		Attempts: c.attempts,
-		Interval: health.DefaultInterval,
-		Timeout:  c.timeout,
-	}, c.now)
+	// The report on disk is still the committed one here: -check overwrites it
+	// only at the end, and the workflow restores it from git when it decides
+	// not to keep the result. It is read for one thing, the date each endpoint
+	// was last alive, and never for a verdict.
+	previous := health.Read(c.healthPath)
+	report := health.Check(ctx, entries, previous, client, c.healthOptions(), c.now)
 	down := 0
 	for _, endpoint := range report.Endpoints {
 		if !endpoint.Alive {

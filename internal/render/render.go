@@ -45,6 +45,11 @@ type Site struct {
 	// exists. Withheld endpoints carry it so a reader can tell a service that
 	// is down from one that was merely never checked.
 	HealthCheckedAt *time.Time
+	// EndpointLastAlive is when each withheld endpoint was last judged alive,
+	// keyed by slug. An entry absent from the map has never answered a check,
+	// which is a different statement from being up and is rendered as such
+	// rather than as a missing date.
+	EndpointLastAlive map[string]time.Time
 
 	// Marketplace is the marketplace's own account of itself, and the only source
 	// of the key that AgentReports is checked against. It is nil when nothing has
@@ -179,6 +184,10 @@ type entryView struct {
 	EndpointDetail string
 	// HealthCheckedAt is when the check ran, for the same reason.
 	HealthCheckedAt *time.Time
+	// LastAlive is when this endpoint last answered, or nil when it never has.
+	// A withheld endpoint without one is a service nobody has seen work, which
+	// says more than an empty date would.
+	LastAlive *time.Time
 	// ReviewDue reports that a curated entry has gone too long without a human
 	// confirming it still describes reality. The health check proves an
 	// endpoint answers; it cannot prove the summary is still true.
@@ -325,6 +334,9 @@ func (s Site) viewFor(e content.Entry) entryView {
 	if view.Unreachable {
 		if detail, ok := s.endpointDetail(e.Slug); ok {
 			view.EndpointDetail = detail
+		}
+		if when, ok := s.EndpointLastAlive[e.Slug]; ok {
+			view.LastAlive = &when
 		}
 	}
 	return view
@@ -482,6 +494,12 @@ func (s Site) canonical(path string) string {
 	return "https://" + s.Domain + "/" + strings.TrimSuffix(clean, "/") + "/"
 }
 
+// stampFormat is how a health date is written to a human. The machine form
+// stays RFC 3339 in agents.json; this is the one on the page and in llms.txt,
+// where the timezone is worth spelling out because "14:54" alone invites a
+// reader to assume their own.
+const stampFormat = "2006-01-02 15:04 UTC"
+
 func (s Site) Render(outDir string) error {
 	views, err := s.resolve()
 	if err != nil {
@@ -490,6 +508,16 @@ func (s Site) Render(outDir string) error {
 	tmpl, err := template.New("site").Funcs(template.FuncMap{
 		"age":    humanAge,
 		"verify": func(t time.Time) string { return t.UTC().Format("2006-01-02") },
+		// stamp is for a date that may be absent. Templates branch on the
+		// pointer first, so the empty case here is a guard rather than a
+		// rendering: an unguarded nil would panic in a template, which is the
+		// least legible way to report a missing health record.
+		"stamp": func(t *time.Time) string {
+			if t == nil {
+				return ""
+			}
+			return t.UTC().Format(stampFormat)
+		},
 		// Bodies are published as formatted JSON so a reader can copy them
 		// directly. Indented rather than compact because this is documentation
 		// being read by a person deciding whether to paste it.

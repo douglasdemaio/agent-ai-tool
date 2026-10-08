@@ -944,3 +944,68 @@ func TestTheThreeDiscoverySurfacesCannotDisagree(t *testing.T) {
 		})
 	}
 }
+
+// A withheld endpoint with no date reads as a service that has always been
+// down. Every surface that states the verdict has to state how old the
+// evidence behind it is, or a reader cannot tell an outage from a bad first
+// impression.
+func TestAWithheldEndpointSaysWhenItLastAnswered(t *testing.T) {
+	lastOK := time.Date(2026, 10, 5, 14, 54, 0, 0, time.UTC)
+	s := deadEndpointSite(t)
+	s.EndpointLastAlive = map[string]time.Time{"vtessera": lastOK}
+	out := renderTo(t, s)
+
+	const stamp = "2026-10-05 14:54 UTC"
+	if page := read(t, out, "vtessera/index.html"); !strings.Contains(page, "last answered "+stamp) {
+		t.Error("the entry page does not say when the endpoint last answered")
+	}
+	if index := read(t, out, "index.html"); !strings.Contains(index, "last answered "+stamp) {
+		t.Error("the directory badge does not say when the endpoint last answered")
+	}
+	if llms := read(t, out, "llms.txt"); !strings.Contains(llms, "(last answered "+stamp+")") {
+		t.Error("llms.txt does not say when the endpoint last answered")
+	}
+
+	var payload struct {
+		Agents []struct {
+			Down   bool       `json:"endpoint_unreachable"`
+			LastOK *time.Time `json:"endpoint_last_ok"`
+		} `json:"agents"`
+	}
+	if err := json.Unmarshal([]byte(read(t, out, "agents.json")), &payload); err != nil {
+		t.Fatal(err)
+	}
+	got := payload.Agents[0]
+	if !got.Down {
+		t.Fatal("agents.json does not mark the endpoint unreachable")
+	}
+	if got.LastOK == nil || !got.LastOK.Equal(lastOK) {
+		t.Errorf("endpoint_last_ok = %v, want %s", got.LastOK, lastOK)
+	}
+}
+
+func TestAnEndpointThatHasNeverAnsweredSaysSoInsteadOfShowingNoDate(t *testing.T) {
+	out := renderTo(t, deadEndpointSite(t))
+
+	if page := read(t, out, "vtessera/index.html"); !strings.Contains(page, "it has not answered a check on record") {
+		t.Error("the entry page shows neither a date nor an explanation")
+	}
+	if index := read(t, out, "index.html"); !strings.Contains(index, "no successful check on record") {
+		t.Error("the directory badge shows neither a date nor an explanation")
+	}
+	if llms := read(t, out, "llms.txt"); !strings.Contains(llms, "(it has not answered a check on record)") {
+		t.Error("llms.txt shows neither a date nor an explanation")
+	}
+
+	var payload struct {
+		Agents []struct {
+			LastOK *time.Time `json:"endpoint_last_ok"`
+		} `json:"agents"`
+	}
+	if err := json.Unmarshal([]byte(read(t, out, "agents.json")), &payload); err != nil {
+		t.Fatal(err)
+	}
+	if payload.Agents[0].LastOK != nil {
+		t.Errorf("endpoint_last_ok = %v, want the field omitted when there is no record", payload.Agents[0].LastOK)
+	}
+}
