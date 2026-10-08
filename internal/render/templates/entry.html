@@ -69,6 +69,7 @@
     <dt>Signature encoding</dt><dd>{{.SignatureEncoding}}</dd>
   </dl>{{end}}
   {{if .SignedMessage}}<p class="muted">{{.SignedMessage}}</p>{{end}}
+  {{if .TestVector}}<p class="muted">Fixed handshake test vector &mdash; published throwaway key, exact bytes to sign, expected signature: <a href="{{.TestVector}}">handshake.json</a></p>{{end}}
   {{end}}
 
   <h3>Calls</h3>

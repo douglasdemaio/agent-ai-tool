@@ -62,12 +62,17 @@ type HowToCall struct {
 // linked because a spec file in another repository is not reachable by an agent
 // that only reads this one.
 type AuthFlow struct {
-	Type              string     `json:"type"`
-	Credential        string     `json:"credential,omitempty"`
-	KeyEncoding       string     `json:"key_encoding,omitempty"`
-	SignatureEncoding string     `json:"signature_encoding,omitempty"`
-	SignedMessage     string     `json:"signed_message,omitempty"`
-	Steps             []AuthStep `json:"steps"`
+	Type              string `json:"type"`
+	Credential        string `json:"credential,omitempty"`
+	KeyEncoding       string `json:"key_encoding,omitempty"`
+	SignatureEncoding string `json:"signature_encoding,omitempty"`
+	SignedMessage     string `json:"signed_message,omitempty"`
+	// TestVector links a fixed handshake sample — published key, exact bytes,
+	// expected signature — that a reader can re-sign and compare without
+	// contacting the service. Optional: most services have no such sample, and
+	// one that does makes the signing code checkable in a minute.
+	TestVector string     `json:"test_vector,omitempty"`
+	Steps      []AuthStep `json:"steps"`
 }
 
 // AuthStep is one request in the credential dance.
@@ -214,6 +219,11 @@ func (h *HowToCall) validate() error {
 		for i, s := range h.Auth.Steps {
 			if err := validateRequest("auth.steps["+strconv.Itoa(i)+"]", s.Method, s.Path); err != nil {
 				return err
+			}
+		}
+		if h.Auth.TestVector != "" {
+			if err := absoluteHTTP(h.Auth.TestVector); err != nil {
+				return fmt.Errorf("auth.test_vector: %w", err)
 			}
 		}
 	}
