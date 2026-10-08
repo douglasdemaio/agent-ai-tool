@@ -167,6 +167,7 @@ func (s Site) agentsJSON(views []entryView) map[string]any {
 		"domain":        s.Domain,
 		"generatedAt":   s.GeneratedAt.UTC().Format(time.RFC3339),
 		"description":   "Every entry on this directory, with the endpoints an agent needs to connect to each one.",
+		"changes":       s.canonical("") + "changes.json",
 		"agents":        s.jsonEntries(views),
 	}
 	// The machine counterpart of the block every page carries, and one object
@@ -333,6 +334,11 @@ func (s Site) llms(views []entryView) string {
 	b.WriteString("for e in d[\"agents\"]:\n")
 	b.WriteString("    print(e[\"slug\"], e[\"url\"], e.get(\"delivered\"))\n")
 	b.WriteString("```\n\n")
+	fmt.Fprintf(&b, "The change feed at %schanges.json lists what moved: the\n", s.canonical(""))
+	b.WriteString("last 30 builds that changed something, newest first, each naming the\n")
+	b.WriteString("entries added, removed or changed and the fields that moved. It records\n")
+	b.WriteString("listing changes only: a health verdict is already live in the `status`\n")
+	b.WriteString("field below, so a record here means the directory itself moved.\n\n")
 	// The field glossary. agents.json is the machine surface and llms.txt is
 	// the prose one, but one reader sees both: naming the fields here means an
 	// agent that found the file from this page does not have to guess which
@@ -341,8 +347,8 @@ func (s Site) llms(views []entryView) string {
 	b.WriteString("Top level: `schemaVersion` is the shape of the file — `1` today — and\n")
 	b.WriteString("moves only when a field changes meaning or disappears, so a cached\n")
 	b.WriteString("reader re-reads on a bump instead of guessing. `generatedAt` is when this\n")
-	b.WriteString("build ran, `domain` is this directory, and `verification` carries the\n")
-	b.WriteString("marketplace key verdicts.\n\n")
+	b.WriteString("build ran, `domain` is this directory, `changes` links this directory\n")
+	b.WriteString("change feed, and `verification` carries the marketplace key verdicts.\n\n")
 	b.WriteString("Per entry:\n\n")
 	b.WriteString("- `status` — `up` when a check inside the last 48 hours found no complaint,\n")
 	b.WriteString("  `down` when one found the endpoint dead, `unknown` when nothing has been\n")

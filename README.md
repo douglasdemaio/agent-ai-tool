@@ -399,6 +399,54 @@ Both `status` and `response_ms` are gated on the same freshness rule as
 `last_checked`: a report this build no longer trusts publishes `unknown` and no
 timing, never a confident answer about the past.
 
+## Change feed
+
+An agent that reads `agents.json` once a day should not have to diff the whole
+file against yesterday's copy to learn what moved, so a build that changed the
+directory writes `changes.json` alongside it. `agents.json` links to it in the
+top-level object (`changes`), and `llms.txt` names it in prose, so a reader
+that arrived through either surface can find the third.
+
+```bash
+make generate   # writes content/changes.json, and public/changes.json from it
+```
+
+The published file carries `schemaVersion` (currently `1`), `domain`, and up
+to thirty records, newest first. One record is one build, so several
+differences at once land together:
+
+- `added` — the slugs that arrived since the last build that recorded
+  something.
+- `removed` — the slugs that left.
+- `changed` — the slugs that stayed, with the exact field names `agents.json`
+  now publishes differently, so a subscriber re-fetches only what moved.
+
+Three rules are deliberate, and each is tested:
+
+- **The feed is committed history, and only a snapshot build writes it.**
+  `content/changes.json` lives in git like every other committed input, and
+  `public/changes.json` is rendered from it. A build that fetched live values
+  publishes the committed records and appends nothing: its diff would be
+  against numbers this repository does not own, and the next snapshot build
+  would record them moving straight back. A build that changed nothing does
+  not rewrite the file at all, byte for byte, which is what lets CI check the
+  feed is in sync by checking a clean diff rather than parsing JSON in the
+  shell — `test.yml` fails with a line saying to run `make generate`.
+- **Health verdicts are not listing changes.** `status`, `last_ok`,
+  `response_ms`, `last_checked` and the endpoint-unreachable fields move on
+  every sweep; recording them would fill the feed with verdicts the next sweep
+  supersedes. An endpoint an outage has withheld is not a change either: the
+  feed records the URL the entry publishes, so a service having a bad
+  afternoon does not make its own address disappear from the history.
+- **A first build records what exists as arrived, and a feed from another
+  `schemaVersion` is refused rather than overwritten.** The bootstrap is how a
+  new deployment learns its own baseline; overwriting a schema this build does
+  not understand would trade a loud refusal for a silent gap.
+
+A refresh's own record is carried by `refresh-live.yml`, which runs the same
+`make generate` in the same snapshot mode before committing, so the job that
+changes the directory is also the job that records it.
+
 ## Keeping the entries honest
 
 An entry can be wrong in two ways, and they need different machinery.

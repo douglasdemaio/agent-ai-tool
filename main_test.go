@@ -152,15 +152,16 @@ func generate(t *testing.T, dir string, client *http.Client, baseURL string, ext
 func testConfig(t *testing.T, dir string) config {
 	t.Helper()
 	return config{
-		domain:     "agent-ai-tool.com",
-		contentDir: filepath.Join(dir, "content", "entries"),
-		cacheDir:   filepath.Join(dir, "content"),
-		outDir:     filepath.Join(dir, "public"),
-		assetsDir:  filepath.Join(dir, "assets"),
-		healthPath: filepath.Join(dir, "content", "health.json"),
-		attempts:   1,
-		timeout:    5 * time.Second,
-		now:        time.Date(2026, 9, 27, 22, 30, 0, 0, time.UTC),
+		domain:      "agent-ai-tool.com",
+		contentDir:  filepath.Join(dir, "content", "entries"),
+		cacheDir:    filepath.Join(dir, "content"),
+		outDir:      filepath.Join(dir, "public"),
+		assetsDir:   filepath.Join(dir, "assets"),
+		healthPath:  filepath.Join(dir, "content", "health.json"),
+		changesPath: filepath.Join(dir, "content", "changes.json"),
+		attempts:    1,
+		timeout:     5 * time.Second,
+		now:         time.Date(2026, 9, 27, 22, 30, 0, 0, time.UTC),
 	}
 }
 
@@ -616,4 +617,102 @@ func planWith(t *testing.T, dir, previous string) string {
 		cfg.previous = previous
 		return cfg.run(&http.Client{Timeout: cfg.timeout})
 	}))
+}
+
+// The change feed's contract, through the same path a contributor's
+// `make generate` takes: two consecutive builds with a real difference produce
+// one correct record, and the committed file a reader fetches carries it so
+// the next build starts from here instead of from nothing.
+func TestTwoBuildsWithARealDifferenceProduceAFeedEntry(t *testing.T) {
+	dir := workspace(t)
+	// A second entry, so the one record can name all three kinds of
+	// difference at once: something arriving, something leaving, and something
+	// that stayed but now publishes a different value.
+	leaving := `{
+	  "slug": "registry",
+	  "name": "registry",
+	  "summary": "A registry.",
+	  "url": "https://registry.example",
+	  "source": "curated",
+	  "last_verified": "2026-09-20T00:00:00Z"
+	}`
+	if err := os.WriteFile(filepath.Join(dir, "content", "entries", "registry.json"), []byte(leaving), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := generate(t, dir, nil, ""); err != nil {
+		t.Fatal(err)
+	}
+
+	curated := filepath.Join(dir, "content", "entries", "vtessera.json")
+	raw, err := os.ReadFile(curated)
+	if err != nil {
+		t.Fatal(err)
+	}
+	reworded := strings.Replace(string(raw),
+		`"summary": "A2A agent marketplace."`,
+		`"summary": "A2A agent marketplace, reworded."`, 1)
+	if reworded == string(raw) {
+		t.Fatal("could not reword the curated entry")
+	}
+	if err := os.WriteFile(curated, []byte(reworded), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	arriving := `{
+	  "slug": "catalog",
+	  "name": "catalog",
+	  "summary": "A catalog.",
+	  "url": "https://catalog.example",
+	  "source": "curated",
+	  "last_verified": "2026-09-20T00:00:00Z"
+	}`
+	if err := os.WriteFile(filepath.Join(dir, "content", "entries", "catalog.json"), []byte(arriving), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Remove(filepath.Join(dir, "content", "entries", "registry.json")); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := generate(t, dir, nil, ""); err != nil {
+		t.Fatal(err)
+	}
+
+	var feed struct {
+		SchemaVersion int `json:"schemaVersion"`
+		Records       []struct {
+			Added   []string `json:"added"`
+			Removed []string `json:"removed"`
+			Changed []struct {
+				Slug   string   `json:"slug"`
+				Fields []string `json:"fields"`
+			} `json:"changed"`
+		} `json:"records"`
+	}
+	if err := json.Unmarshal([]byte(readFile(t, dir, filepath.Join("public", "changes.json"))), &feed); err != nil {
+		t.Fatal(err)
+	}
+	if feed.SchemaVersion != 1 {
+		t.Errorf("schemaVersion = %d, want 1", feed.SchemaVersion)
+	}
+	if len(feed.Records) != 2 {
+		t.Fatalf("published %d records, want the bootstrap record and this build's", len(feed.Records))
+	}
+	rec := feed.Records[0]
+	if strings.Join(rec.Added, ",") != "catalog" {
+		t.Errorf("added = %v, want the entry that arrived", rec.Added)
+	}
+	if strings.Join(rec.Removed, ",") != "registry" {
+		t.Errorf("removed = %v, want the entry that left", rec.Removed)
+	}
+	if len(rec.Changed) != 1 || rec.Changed[0].Slug != "vtessera" ||
+		strings.Join(rec.Changed[0].Fields, ",") != "summary" {
+		t.Errorf("changed = %+v, want vtessera's summary", rec.Changed)
+	}
+	if boot := feed.Records[1].Added; strings.Join(boot, ",") != "registry,vtessera" {
+		t.Errorf("bootstrap added = %v, want both entries that existed then", boot)
+	}
+
+	committed := readFile(t, dir, filepath.Join("content", "changes.json"))
+	if !strings.Contains(committed, `"catalog"`) || !strings.Contains(committed, `"registry"`) {
+		t.Error("the committed feed does not carry the record the reader fetches")
+	}
 }

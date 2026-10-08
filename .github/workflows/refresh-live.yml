@@ -43,6 +43,14 @@ jobs:
             exit 0
           fi
           go run . -refresh
+      - name: Record what the refresh changed
+        # Snapshot mode — no VTESSERA_BASE_URL on this step, so it reads the
+        # committed inputs (including the snapshots the step above just
+        # wrote) and appends to content/changes.json only if the directory
+        # really moved. Without this, the next scheduled test regenerates the
+        # feed from what this job committed and fails on the diff this job
+        # did not carry.
+        run: make generate
       - name: Commit if changed
         run: |
           # `git status --porcelain` rather than `git diff --quiet`: diff only
@@ -58,13 +66,17 @@ jobs:
           # live-health.json and live-attestations.json were added to the
           # service and to this repository together, and this job kept only
           # naming the two it was written against.
+          # content/changes.json rides along because it moves exactly when
+          # the snapshots do, and a record this job wrote but did not commit
+          # would fail the next scheduled test. Porcelain over diff, again:
+          # an untracked feed would otherwise read as unchanged.
           snapshots=':(glob)content/live-*.json'
-          if [ -z "$(git status --porcelain -- $snapshots)" ]; then
+          if [ -z "$(git status --porcelain -- $snapshots content/changes.json)" ]; then
             echo "Snapshots unchanged."
             exit 0
           fi
           git config user.name  'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add $snapshots
+          git add $snapshots content/changes.json
           git commit -m 'chore: refresh live vtessera snapshots'
           git push

@@ -33,6 +33,15 @@ type Site struct {
 	MetricsErr          error
 	GeneratedAt         time.Time
 	AssetsDir           string
+	// ChangesPath is the committed change feed — the history a reader fetches
+	// to catch up, and the baseline this build diffs against. Empty means the
+	// directory publishes no feed, so no changes.json is written at all
+	// rather than an empty one that would read as "nothing has ever changed".
+	ChangesPath string
+	// RecordChanges permits a write back to ChangesPath, and is set only for
+	// builds that read committed data. See updateChangeFeed for why a build
+	// that fetched fresh values publishes the feed without adding to it.
+	RecordChanges bool
 	// Unreachable names entries whose advertised endpoints a recent health
 	// check could not reach. Their endpoints are withheld from every published
 	// surface rather than advertised as callable, because the directory's claim
@@ -613,6 +622,16 @@ func (s Site) Render(outDir string) error {
 	if err != nil {
 		return err
 	}
+	// The feed is settled before anything is written: it is the one output
+	// that also reads and rewrites a committed file, so a failure here must
+	// happen before half a site is on disk.
+	var changes []ChangeRecord
+	if s.ChangesPath != "" {
+		changes, err = s.updateChangeFeed(s.ChangesPath, views)
+		if err != nil {
+			return err
+		}
+	}
 	tmpl, err := template.New("site").Funcs(template.FuncMap{
 		"age":    humanAge,
 		"verify": func(t time.Time) string { return t.UTC().Format("2006-01-02") },
@@ -683,6 +702,11 @@ func (s Site) Render(outDir string) error {
 	}
 	if err := s.writeJSON(filepath.Join(outDir, "agents.json"), s.agentsJSON(views)); err != nil {
 		return err
+	}
+	if s.ChangesPath != "" {
+		if err := s.writeJSON(filepath.Join(outDir, "changes.json"), s.changeFeedJSON(changes)); err != nil {
+			return err
+		}
 	}
 	if err := s.writeJSON(filepath.Join(outDir, ".well-known", "agent-card.json"), s.directoryCard(views)); err != nil {
 		return err

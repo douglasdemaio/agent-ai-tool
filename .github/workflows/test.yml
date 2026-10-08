@@ -49,6 +49,20 @@ jobs:
         # the committed snapshot or stays absent. The site must publish whether
         # or not vtessera is reachable, so generation failing is the failure.
         run: make generate
+      - name: The committed change feed is in sync
+        # content/changes.json is committed history, and only this snapshot
+        # build (no VTESSERA_BASE_URL above) is allowed to append to it: a
+        # changed directory must carry its record, or the next scheduled run
+        # regenerates, sees a diff, and fails for a change nobody made.
+        # `git status --porcelain` rather than `git diff --quiet`: diff only
+        # ever sees tracked files, so an uncommitted feed reads as clean —
+        # the same trap that hid live-health.json and live-attestations.json.
+        run: |
+          if [ -n "$(git status --porcelain -- content/changes.json)" ]; then
+            echo "content/changes.json is out of date; run 'make generate' and commit the result" >&2
+            git status --porcelain -- content/changes.json >&2
+            exit 1
+          fi
       - name: The published directory is fresh
         # The build stamps generatedAt with its own clock, so the published
         # value only ages if nothing has been rebuilding the site. This reads
