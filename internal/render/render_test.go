@@ -692,12 +692,20 @@ func TestHowToCallReachesEverySurface(t *testing.T) {
 					Returns: "201 with a nonce.",
 				}},
 			},
-			Calls: []content.Call{{
-				Name: "route", Method: "POST", Path: "/agp/route",
-				ContentType: "application/json", Auth: "none",
-				Body:    map[string]any{"method": "agp/route"},
-				Returns: "-32200 while empty.",
-			}},
+			Calls: []content.Call{
+				{
+					Name: "route", Method: "POST", Path: "/agp/route",
+					ContentType: "application/json", Auth: "none",
+					Body:    map[string]any{"method": "agp/route"},
+					Returns: "-32200 while empty.",
+				},
+				{
+					Name: "open a trade", Method: "POST", Path: "/v1/trades",
+					ContentType: "application/json", Auth: "bearer",
+					Body:    map[string]any{"offerId": "<from the offer>"},
+					Returns: "a trade awaiting acceptance.",
+				},
+			},
 		},
 	})
 	s.GeneratedAt = time.Date(2026, 9, 29, 12, 0, 0, 0, time.UTC)
@@ -1422,4 +1430,79 @@ func TestAWithheldEndpointKeepsItsKind(t *testing.T) {
 	if !payload.Agents[0].Down || payload.Agents[0].Reason == "" {
 		t.Error("the outage should still be reported as unreachable with a reason")
 	}
+}
+
+// agents.json, the entry page and llms.txt used to disagree about one call:
+// agents.json published auth "none" for POST /agp/route while the other two
+// said it requires a token, and the live endpoint answers 200 with no
+// Authorization header at all. Agents read whichever surface they land on, so
+// the label has to follow the declared value on every one of them.
+func TestEachCallIsLabelledWithTheAuthItDeclares(t *testing.T) {
+	s := site(t, content.Entry{
+		Slug: "vtessera", Name: "vtessera", Summary: "marketplace",
+		URL: "https://vtessera.fly.dev", Source: content.SourceCurated,
+		LastVerified: time.Date(2026, 9, 29, 0, 0, 0, 0, time.UTC),
+		HowToCall: &content.HowToCall{
+			Calls: []content.Call{
+				{Name: "route", Method: "POST", Path: "/agp/route", Auth: "none"},
+				{Name: "open a trade", Method: "POST", Path: "/v1/trades", Auth: "bearer"},
+			},
+		},
+	})
+	s.GeneratedAt = time.Date(2026, 9, 29, 12, 0, 0, 0, time.UTC)
+	out := renderTo(t, s)
+
+	for _, surface := range []struct {
+		name string
+		body string
+	}{
+		{"entry page", read(t, out, "vtessera/index.html")},
+		{"llms.txt", read(t, out, "llms.txt")},
+	} {
+		for _, tc := range []struct{ path, want string }{
+			{"POST /agp/route", "no token needed"},
+			{"POST /v1/trades", "requires a token"},
+		} {
+			line := lineContaining(surface.body, tc.path)
+			if line == "" {
+				t.Errorf("%s: nothing carries %q", surface.name, tc.path)
+				continue
+			}
+			if !strings.Contains(line, tc.want) {
+				t.Errorf("%s: the line for %s reads %q, want it to say %q",
+					surface.name, tc.path, strings.TrimSpace(line), tc.want)
+			}
+		}
+	}
+
+	// agents.json publishes the values verbatim and was the surface that was
+	// right all along; the fix is the other two reading it correctly.
+	var doc struct {
+		Agents []struct {
+			HowToCall *content.HowToCall `json:"how_to_call"`
+		} `json:"agents"`
+	}
+	body := read(t, out, "agents.json")
+	if err := json.Unmarshal([]byte(body), &doc); err != nil {
+		t.Fatalf("agents.json: %v", err)
+	}
+	if len(doc.Agents) != 1 || doc.Agents[0].HowToCall == nil || len(doc.Agents[0].HowToCall.Calls) != 2 {
+		t.Fatalf("agents.json dropped how_to_call or its calls")
+	}
+	calls := doc.Agents[0].HowToCall.Calls
+	if calls[0].Auth != "none" || calls[0].RequiresToken() {
+		t.Errorf("agents.json auth = %q for the call that needs none", calls[0].Auth)
+	}
+	if calls[1].Auth != "bearer" || !calls[1].RequiresToken() {
+		t.Errorf("agents.json auth = %q for the call that needs a token", calls[1].Auth)
+	}
+}
+
+func lineContaining(body, needle string) string {
+	for _, line := range strings.Split(body, "\n") {
+		if strings.Contains(line, needle) {
+			return line
+		}
+	}
+	return ""
 }

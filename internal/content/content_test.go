@@ -189,3 +189,24 @@ func TestReviewDue(t *testing.T) {
 		}
 	}
 }
+
+// The auth field is stated in words, so "none" has to be read as a statement
+// rather than as a value. Getting this backwards is what made the pages claim
+// a token was required for a call the entry itself declared open.
+func TestACallThatDeclaresNoAuthNeedsNoToken(t *testing.T) {
+	for _, tc := range []struct {
+		auth string
+		want bool
+	}{
+		{"none", false},
+		{"None", false},
+		{"", false},
+		{"bearer", true},
+		{"signature", true},
+	} {
+		call := Call{Auth: tc.auth}
+		if got := call.RequiresToken(); got != tc.want {
+			t.Errorf("RequiresToken(auth=%q) = %v, want %v", tc.auth, got, tc.want)
+		}
+	}
+}

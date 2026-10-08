@@ -90,6 +90,18 @@ type Call struct {
 	Returns     string         `json:"returns,omitempty"`
 }
 
+// RequiresToken reports whether a call needs a credential before it works.
+//
+// The data states this in words, and "none" is a statement rather than an
+// absence: an entry whose call takes no token declares exactly that, so a
+// renderer testing Auth for non-emptiness reads the declaration as a
+// credential and tells every reader a token is required. Only a named
+// credential counts. Getting this wrong is not cosmetic — agents skip calls
+// they believe they cannot make.
+func (c Call) RequiresToken() bool {
+	return c.Auth != "" && !strings.EqualFold(c.Auth, "none")
+}
+
 const (
 	SourceCurated = "curated"
 	SourceLive    = "live"

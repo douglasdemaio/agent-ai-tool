@@ -76,7 +76,7 @@
     {{range .Calls}}
     <li>
       <p><strong>{{.Name}}</strong></p>
-      <p><code>{{.Method}} {{.Path}}</code>{{if .Auth}} <span class="muted">requires a token</span>{{else}} <span class="muted">no token needed</span>{{end}}</p>
+      <p><code>{{.Method}} {{.Path}}</code>{{if .RequiresToken}} <span class="muted">requires a token</span>{{else}} <span class="muted">no token needed</span>{{end}}</p>
       {{with .Body}}<pre><code>{{json .}}</code></pre>{{end}}
       {{with .Returns}}<p class="muted">{{.}}</p>{{end}}
     </li>

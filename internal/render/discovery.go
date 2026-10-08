@@ -390,7 +390,7 @@ func (s Site) llms(views []entryView) string {
 			}
 			for _, c := range h.Calls {
 				auth := "no token needed"
-				if c.Auth != "" {
+				if c.RequiresToken() {
 					auth = "requires a token"
 				}
 				fmt.Fprintf(&b, "\n- %s — %s %s (%s)", c.Name, c.Method, c.Path, auth)

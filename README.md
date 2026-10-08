@@ -135,6 +135,15 @@ rendered on the entry page, and written into `llms.txt`:
 }
 ```
 
+`auth` names the credential the call needs — `bearer`, `signature`, anything
+the reader should send — or `"none"` for a call that needs none at all. The
+three surfaces agree on it: `agents.json` publishes the value verbatim, and the
+entry page and `llms.txt` read `"none"` as open, labelling the call
+*no token needed*. Only a named credential is rendered as *requires a token*,
+because `"none"` is a statement rather than an empty value, and an agent that
+is told a call needs a token it cannot obtain will not make a call it could
+have made.
+
 Paths are **relative** to the entry's `url`, on purpose. The entry already
 publishes an absolute base, and repeating the host in every call gives the two
 a chance to disagree. Absolute paths are rejected at load time.
