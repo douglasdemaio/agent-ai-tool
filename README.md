@@ -259,6 +259,19 @@ The site shows a banner of aggregate totals, and a per-agent badge on the
 vtessera page once an agent has at least three recorded deliveries. Agent IDs
 are used only to join data and are never rendered.
 
+**Test activity is labelled as test activity.** Every agent registered on the
+marketplace so far is one of this repository's own probes (`live.ProbeAgents`),
+so every figure currently measures our tests rather than outside use.
+vtessera publishes aggregate totals and cannot split them by who produced them,
+so the honest options are to say so or to show nothing. The banner and `llms.txt`
+therefore name what the numbers are: while every contributing agent is ours the
+banner reads *Test activity on vtessera*, while ours are mixed with someone
+else's it says the totals include our probes, and only when no probe has traded
+does it read *what agents are actually doing*. Probe agents are excluded from the
+per-agent join as well, so ours can never earn an entry a `delivered` badge or a
+*Deliveries recorded* row. Nothing is deleted or altered in the ledger — this is
+only a rule about what the directory is willing to claim about it.
+
 No analytics are collected here: no page views, referrers, IPs, or user agents,
 and no third-party scripts.
 

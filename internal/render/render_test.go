@@ -1193,3 +1193,94 @@ func TestTheCheckedDateAgreesAcrossTheThreeSurfaces(t *testing.T) {
 			gotJSON, gotLLMS, gotPage)
 	}
 }
+
+// The only agents registered on the marketplace are this repository's own
+// probes, so every number in the banner is our test traffic. A heading that
+// presents it as outside usage is worse than no heading, because the number
+// looks the same either way and only the heading says what it measures.
+func TestTheBannerNamesWhoseActivityItIsShowing(t *testing.T) {
+	probe := live.ProbeAgents[0]
+	for _, tc := range []struct {
+		name     string
+		agents   []live.AgentUsage
+		want     string
+		wantLLMS string
+	}{
+		{
+			name:     "every contributing agent is ours",
+			agents:   []live.AgentUsage{{AgentID: probe, Delivered: 2}},
+			want:     "Test activity on vtessera",
+			wantLLMS: "## Test activity on vtessera",
+		},
+		{
+			// No apostrophe: html/template escapes it, and the assertion is
+			// about the claim rather than about the punctuation.
+			name: "ours are mixed with an outside agent",
+			agents: []live.AgentUsage{
+				{AgentID: probe, Delivered: 2},
+				{AgentID: "outside-agent", Delivered: 4},
+			},
+			want:     "What agents are doing on vtessera, including this repository",
+			wantLLMS: "include this repository's own probe agents",
+		},
+		{
+			name:     "nobody's ours",
+			agents:   []live.AgentUsage{{AgentID: "outside-agent", Delivered: 4}},
+			want:     "What agents are actually doing on vtessera",
+			wantLLMS: "## Marketplace usage",
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			s := site(t, entry("a1", "s"))
+			s.Metrics = &live.MetricsResponse{
+				Totals: live.Totals{Delivered: 6, Consumers: 2},
+				Agents: tc.agents,
+			}
+			page := read(t, renderTo(t, s), "index.html")
+			if !strings.Contains(page, tc.want) {
+				t.Errorf("banner headline does not state %q", tc.want)
+			}
+			llms := read(t, renderTo(t, s), "llms.txt")
+			if !strings.Contains(llms, tc.wantLLMS) {
+				t.Errorf("llms.txt does not carry %q", tc.wantLLMS)
+			}
+		})
+	}
+}
+
+// A delivery badge next to an entry says that entry has been exercised by
+// somebody. Ours exercising our own marketplace is not that, and the badge is
+// the one place a probe could otherwise pass itself off as a customer.
+func TestOurOwnProbesNeverEarnAnEntryABadge(t *testing.T) {
+	s := site(t, entry(live.ProbeAgents[0], "A marketplace."))
+	s.Metrics = &live.MetricsResponse{
+		Totals: live.Totals{Delivered: 9, Disputed: 1},
+		Agents: []live.AgentUsage{{AgentID: live.ProbeAgents[0], Delivered: 9}},
+	}
+	out := renderTo(t, s)
+
+	index := read(t, out, "index.html")
+	if strings.Contains(index, "9 delivered") {
+		t.Error("a probe agent's deliveries earned an entry a badge")
+	}
+	if !strings.Contains(index, "No entry currently carries a recorded usage count") {
+		t.Error("the index should say no entry carries a count rather than showing a probe's")
+	}
+	page := read(t, out, s.Entries[0].Slug+"/index.html")
+	if strings.Contains(page, "Deliveries recorded") {
+		t.Error("a probe agent's deliveries reached the entry page")
+	}
+
+	// An outside agent with the same figure still earns it, so the exclusion is
+	// about who traded rather than about the count. The entry has to carry the
+	// same identifier the join is keyed on, which is how badges work today.
+	outside := site(t, entry("outside-agent", "A marketplace."))
+	outside.Metrics = &live.MetricsResponse{
+		Totals: live.Totals{Delivered: 9},
+		Agents: []live.AgentUsage{{AgentID: "outside-agent", Delivered: 9}},
+	}
+	index = read(t, renderTo(t, outside), "index.html")
+	if !strings.Contains(index, "9 delivered") {
+		t.Error("an outside agent's deliveries should still badge the entry")
+	}
+}

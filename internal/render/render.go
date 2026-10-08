@@ -322,9 +322,38 @@ func (s Site) usageByAgent() map[string]usage {
 	}
 	out := make(map[string]usage, len(s.Metrics.Agents))
 	for _, a := range s.Metrics.Agents {
+		if live.IsProbeAgent(a.AgentID) {
+			// Our own test agents must never earn an entry a delivery badge.
+			// The banner is labelled as test activity; a badge next to an
+			// entry is a claim about that entry being exercised, and ours
+			// exercising it is not that.
+			continue
+		}
 		out[a.AgentID] = usage{Delivered: a.Delivered, Disputed: a.Disputed, Cancelled: a.Cancelled}
 	}
 	return out
+}
+
+// MetricsLead is the banner's headline, and its job is to name whose activity
+// the numbers describe.
+//
+// vtessera publishes aggregate totals and cannot split them by who produced
+// them, so while any of our own probe agents have traded, the figures include
+// our tests. The honest options are therefore to say so or to show nothing:
+// what the directory may not do is print the same totals under a heading that
+// invites a reader to take them as outside usage.
+func (s Site) MetricsLead() string {
+	if s.Metrics == nil {
+		return ""
+	}
+	switch {
+	case s.Metrics.AllProbes():
+		return "Test activity on vtessera — our own probe agents, no outside usage yet"
+	case s.Metrics.AnyProbes():
+		return "What agents are doing on vtessera, including this repository's own test agents"
+	default:
+		return "What agents are actually doing on vtessera"
+	}
 }
 
 // viewFor builds a view and applies the health verdict. The curated entry keeps

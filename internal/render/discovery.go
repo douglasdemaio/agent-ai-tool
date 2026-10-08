@@ -378,7 +378,19 @@ func (s Site) llms(views []entryView) string {
 		stepNum = i
 	}
 	if s.Metrics != nil {
-		b.WriteString("## Marketplace usage\n\n")
+		switch {
+		case s.Metrics.AllProbes():
+			b.WriteString("## Test activity on vtessera\n\n")
+			b.WriteString("Every figure below comes from this repository's own probe agents, so it\n")
+			b.WriteString("measures our tests rather than outside use of the marketplace. No agent\n")
+			b.WriteString("that is not ours has traded yet.\n\n")
+		case s.Metrics.AnyProbes():
+			b.WriteString("## Marketplace usage\n\n")
+			b.WriteString("These totals include this repository's own probe agents; vtessera does\n")
+			b.WriteString("not publish a split between them and anyone else.\n\n")
+		default:
+			b.WriteString("## Marketplace usage\n\n")
+		}
 		fmt.Fprintf(&b, "Recorded across the vtessera marketplace: %d delivered, %d disputed,\n", s.Metrics.Totals.Delivered, s.Metrics.Totals.Disputed)
 		fmt.Fprintf(&b, "%d cancelled, across %d distinct consumers and %d distinct services in use.\n", s.Metrics.Totals.Cancelled, s.Metrics.Totals.Consumers, s.Metrics.Totals.Services)
 	}

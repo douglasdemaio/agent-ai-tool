@@ -36,7 +36,7 @@
 {{if .Site.Metrics}}
 <section class="metrics{{if .Site.MetricsStale}} degraded{{end}}" aria-label="Marketplace usage">
   <div class="wrap">
-    <p class="metrics-lead">What agents are actually doing on vtessera</p>
+    <p class="metrics-lead">{{.Site.MetricsLead}}</p>
     <ul class="metrics-grid">
       <li><b>{{.Site.Metrics.Totals.Delivered}}</b><span>delivered</span></li>
       <li><b>{{.Site.Metrics.Totals.Consumers}}</b><span>consumers</span></li>
