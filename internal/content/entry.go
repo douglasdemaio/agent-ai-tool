@@ -102,6 +102,21 @@ func (c Call) RequiresToken() bool {
 	return c.Auth != "" && !strings.EqualFold(c.Auth, "none")
 }
 
+// MachineEndpoint is the URL an agent would actually call: an MCP endpoint
+// when the entry publishes one, otherwise a plain API. Nil when it publishes
+// neither, because a homepage is a destination for a human, not a call an
+// agent can make.
+//
+// One answer to one question, so every surface that has to choose — the
+// directory card, the response time in agents.json — chooses the same way
+// instead of each picking its own favourite.
+func (e Entry) MachineEndpoint() *string {
+	if e.MCPEndpointURL != nil {
+		return e.MCPEndpointURL
+	}
+	return e.APIURL
+}
+
 const (
 	SourceCurated = "curated"
 	SourceLive    = "live"

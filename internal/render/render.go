@@ -50,6 +50,11 @@ type Site struct {
 	// which is a different statement from being up and is rendered as such
 	// rather than as a missing date.
 	EndpointLastAlive map[string]time.Time
+	// EndpointResponseMS is how long each entry's machine endpoint took to
+	// answer at the last sweep, keyed by slug. An entry absent from the map
+	// published no measurable answer, and agents.json omits the field rather
+	// than printing a zero that reads as instant.
+	EndpointResponseMS map[string]int
 
 	// Marketplace is the marketplace's own account of itself, and the only source
 	// of the key that AgentReports is checked against. It is nil when nothing has
@@ -374,6 +379,43 @@ func (s Site) viewFor(e content.Entry) entryView {
 		}
 	}
 	return view
+}
+
+// statusFor is what this build can prove about an entry right now.
+//
+// "up" and "down" come from a report this build trusts; "unknown" is the honest
+// answer when there is none, when the report has aged past StaleAfter, or when
+// the entry publishes nothing worth probing. Unknown is not a softer word for
+// up: an agent that needs a live endpoint skips it exactly as it skips down,
+// which is the whole point of the third state.
+func (s Site) statusFor(e content.Entry) string {
+	if s.HealthCheckedAt == nil {
+		return "unknown"
+	}
+	if e.MachineEndpoint() == nil && e.AgentCardURL == nil {
+		return "unknown"
+	}
+	if s.Unreachable[e.Slug] {
+		return "down"
+	}
+	return "up"
+}
+
+// responseMS is how long this entry's machine endpoint took to answer, or nil
+// when the sweep measured nothing it could publish — no endpoint, no probe, or
+// no response at all.
+func (s Site) responseMS(e content.Entry) *int {
+	// The same gate as the status: a timing measured by a report this build no
+	// longer trusts must not outlive the verdict it came with, or agents.json
+	// publishes a precise number next to "unknown".
+	if s.HealthCheckedAt == nil {
+		return nil
+	}
+	ms, ok := s.EndpointResponseMS[e.Slug]
+	if !ok {
+		return nil
+	}
+	return &ms
 }
 
 // lastChecked is when the last automated check saw this entry's endpoints

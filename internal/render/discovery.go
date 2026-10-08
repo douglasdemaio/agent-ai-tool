@@ -86,7 +86,21 @@ type jsonEntry struct {
 	// describes the service, this one is a machine's word that the endpoint
 	// answered, and a reader deciding whether to call needs the second without
 	// being misled into thinking the first was refreshed by it.
-	LastChecked    *time.Time         `json:"last_checked,omitempty"`
+	LastChecked *time.Time `json:"last_checked,omitempty"`
+	// Status is what this build can prove about the entry: "up", "down" or
+	// "unknown". It is the one field an agent needs to skip a dead endpoint
+	// without fetching anything else, and "unknown" is published rather than
+	// folded into "down" because not having been checked is not the same as
+	// having failed a check.
+	Status string `json:"status"`
+	// LastOK is when the entry was last seen answering. It records the same
+	// observation as LastChecked — a check counts only when it saw an answer —
+	// and carries its own name so a reader can ask the question without having
+	// to know that. Both are absent when nothing has ever answered.
+	LastOK *time.Time `json:"last_ok,omitempty"`
+	// ResponseMs is the machine endpoint's median response time at the last
+	// sweep, in milliseconds, and is absent when no attempt got a response.
+	ResponseMs     *int               `json:"response_ms,omitempty"`
 	HowToCall      *content.HowToCall `json:"how_to_call,omitempty"`
 	Page           string             `json:"page"`
 	Delivered      *int               `json:"delivered,omitempty"`
@@ -113,6 +127,9 @@ func (s Site) jsonEntries(views []entryView) []jsonEntry {
 			Source:       v.Entry.Source,
 			LastVerified: v.Entry.LastVerified,
 			LastChecked:  v.LastChecked,
+			Status:       s.statusFor(v.Entry),
+			LastOK:       v.LastChecked,
+			ResponseMs:   s.responseMS(v.Entry),
 			Page:         s.canonical(v.Entry.Slug),
 			HowToCall:    v.Entry.HowToCall,
 		}
@@ -137,12 +154,20 @@ func (s Site) jsonEntries(views []entryView) []jsonEntry {
 	return out
 }
 
+// SchemaVersion is the shape of agents.json. It moves only when a field
+// changes meaning or is removed, so a reader that caches the file can tell a
+// new contract from a new build and re-read on the one that matters. A new
+// optional field is not a new version: a reader that ignores it is still
+// reading the file correctly.
+const SchemaVersion = 1
+
 func (s Site) agentsJSON(views []entryView) map[string]any {
 	out := map[string]any{
-		"domain":      s.Domain,
-		"generatedAt": s.GeneratedAt.UTC().Format(time.RFC3339),
-		"description": "Every entry on this directory, with the endpoints an agent needs to connect to each one.",
-		"agents":      s.jsonEntries(views),
+		"schemaVersion": SchemaVersion,
+		"domain":        s.Domain,
+		"generatedAt":   s.GeneratedAt.UTC().Format(time.RFC3339),
+		"description":   "Every entry on this directory, with the endpoints an agent needs to connect to each one.",
+		"agents":        s.jsonEntries(views),
 	}
 	// The machine counterpart of the block every page carries, and one object
 	// rather than one per entry: the verdicts are about the marketplace, not about
@@ -229,10 +254,8 @@ func (s Site) directoryCard(views []entryView) map[string]any {
 			// at the home page, so an agent never mistakes a browsing URL for
 			// something it can call.
 			skill["endpointUnavailable"] = true
-		} else if v.MCPEndpoint != nil {
-			skill["endpoint"] = *v.MCPEndpoint
-		} else if v.APIEndpoint != nil {
-			skill["endpoint"] = *v.APIEndpoint
+		} else if u := v.Entry.MachineEndpoint(); u != nil {
+			skill["endpoint"] = *u
 		} else {
 			skill["endpoint"] = v.Entry.URL
 		}
@@ -310,6 +333,38 @@ func (s Site) llms(views []entryView) string {
 	b.WriteString("for e in d[\"agents\"]:\n")
 	b.WriteString("    print(e[\"slug\"], e[\"url\"], e.get(\"delivered\"))\n")
 	b.WriteString("```\n\n")
+	// The field glossary. agents.json is the machine surface and llms.txt is
+	// the prose one, but one reader sees both: naming the fields here means an
+	// agent that found the file from this page does not have to guess which
+	// fields are safe to filter on, or what an absent one means.
+	b.WriteString("## agents.json fields\n\n")
+	b.WriteString("Top level: `schemaVersion` is the shape of the file — `1` today — and\n")
+	b.WriteString("moves only when a field changes meaning or disappears, so a cached\n")
+	b.WriteString("reader re-reads on a bump instead of guessing. `generatedAt` is when this\n")
+	b.WriteString("build ran, `domain` is this directory, and `verification` carries the\n")
+	b.WriteString("marketplace key verdicts.\n\n")
+	b.WriteString("Per entry:\n\n")
+	b.WriteString("- `status` — `up` when a check inside the last 48 hours found no complaint,\n")
+	b.WriteString("  `down` when one found the endpoint dead, `unknown` when nothing has been\n")
+	b.WriteString("  checked recently or the entry publishes nothing to probe. Skip anything\n")
+	b.WriteString("  that is not `up` when you need a live endpoint: `unknown` is not a\n")
+	b.WriteString("  softer `up`.\n")
+	b.WriteString("- `last_ok` — when the entry was last seen answering (RFC 3339), absent\n")
+	b.WriteString("  when it never has been. `last_checked` records the same observation\n")
+	b.WriteString("  under the name the pages print.\n")
+	b.WriteString("- `response_ms` — how long the machine endpoint took to answer at the last\n")
+	b.WriteString("  sweep: the median of the attempts that got an HTTP response. Absent when\n")
+	b.WriteString("  none did, which is not the same as zero.\n")
+	b.WriteString("- `last_verified` — the date a human last read the entry against the\n")
+	b.WriteString("  service; probes never move it.\n")
+	b.WriteString("- `mcp_endpoint_url` (deprecated, kept for one release) and `api_url` —\n")
+	b.WriteString("  what to call, while `agent_card_url` is the card and `page` this\n")
+	b.WriteString("  directory's own page. A withheld endpoint is omitted and marked by\n")
+	b.WriteString("  `endpoint_unreachable`, with `endpoint_unreachable_reason` and\n")
+	b.WriteString("  `endpoint_last_ok` saying what failed and when it last worked.\n")
+	b.WriteString("- `delivered` — completed trades for that entry, absent rather than zero\n")
+	b.WriteString("  when nobody has traded. `how_to_call` is the request shape, and\n")
+	b.WriteString("  `source` whether a human curated the entry.\n\n")
 	b.WriteString("## Entries\n\n")
 	stepNum := 1
 	for _, v := range views {

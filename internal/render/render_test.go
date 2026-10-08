@@ -460,6 +460,22 @@ func deadEndpointSite(t *testing.T) Site {
 
 func strptr(s string) *string { return &s }
 
+func intp(v int) *int { return &v }
+
+func sameTime(a, b *time.Time) bool {
+	if a == nil || b == nil {
+		return a == b
+	}
+	return a.Equal(*b)
+}
+
+func sameInt(a, b *int) bool {
+	if a == nil || b == nil {
+		return a == b
+	}
+	return *a == *b
+}
+
 // A dead endpoint must not reach any surface an agent reads, or the site is
 // still telling it to call a URL the site itself could not reach.
 func TestDeadEndpointIsWithheldFromAgentsJSON(t *testing.T) {
@@ -1505,4 +1521,129 @@ func lineContaining(body, needle string) string {
 		}
 	}
 	return ""
+}
+
+// The three states an agent needs to skip a dead endpoint from agents.json
+// alone: one that answers, one that failed a check, and one nobody has checked.
+// "unknown" is published rather than folded into either of the others, because
+// not having been checked is not the same as having failed a check — and the
+// timing and the date travel with the verdict, so a precise number never
+// appears next to a status that disclaims the report it came from.
+func TestAgentsJSONPublishesWhatItCanProveAboutEachEntry(t *testing.T) {
+	healthy := entry("models-dev", "A registry.")
+	healthy.APIURL = strptr("https://models.dev/api.json")
+	dead := entry("vtessera", "A marketplace.")
+	dead.MCPEndpointURL = strptr("https://vtessera.example.com/mcp")
+	// A home page is a destination for a human, so nothing probes it and
+	// nothing can prove anything about it, report or no report.
+	unprobed := entry("notes", "Some notes.")
+
+	checked := time.Date(2026, 9, 29, 6, 0, 0, 0, time.UTC)
+	lastAlive := checked.Add(-24 * time.Hour)
+	s := site(t, healthy, dead, unprobed)
+	s.HealthCheckedAt = &checked
+	s.Unreachable = map[string]bool{"vtessera": true}
+	s.EndpointDetails = map[string]string{"vtessera": "GET https://vtessera.example.com/mcp = 404"}
+	s.EndpointLastAlive = map[string]time.Time{"vtessera": lastAlive}
+	s.EndpointResponseMS = map[string]int{"models-dev": 12}
+
+	out := renderTo(t, s)
+	var payload struct {
+		SchemaVersion int `json:"schemaVersion"`
+		Agents        []struct {
+			Slug       string     `json:"slug"`
+			Status     string     `json:"status"`
+			LastOK     *time.Time `json:"last_ok"`
+			ResponseMs *int       `json:"response_ms"`
+		} `json:"agents"`
+	}
+	if err := json.Unmarshal([]byte(read(t, out, "agents.json")), &payload); err != nil {
+		t.Fatal(err)
+	}
+	if payload.SchemaVersion != SchemaVersion {
+		t.Errorf("schemaVersion = %d, want %d, so a cached reader can tell a new contract from a new build", payload.SchemaVersion, SchemaVersion)
+	}
+	bySlug := map[string]int{}
+	for i, a := range payload.Agents {
+		bySlug[a.Slug] = i
+	}
+	for _, tc := range []struct {
+		slug       string
+		status     string
+		lastOK     *time.Time
+		responseMs *int
+	}{
+		{"models-dev", "up", &checked, intp(12)},
+		{"vtessera", "down", &lastAlive, nil},
+		{"notes", "unknown", nil, nil},
+	} {
+		a := payload.Agents[bySlug[tc.slug]]
+		if a.Status != tc.status {
+			t.Errorf("%s: status = %q, want %q", tc.slug, a.Status, tc.status)
+		}
+		if !sameTime(a.LastOK, tc.lastOK) {
+			t.Errorf("%s: last_ok = %v, want %v", tc.slug, a.LastOK, tc.lastOK)
+		}
+		if !sameInt(a.ResponseMs, tc.responseMs) {
+			t.Errorf("%s: response_ms = %v, want %v", tc.slug, a.ResponseMs, tc.responseMs)
+		}
+	}
+}
+
+// An entry nobody has checked has not answered a check and has not failed one
+// either. Folding that into "up" would promise a liveness the site never
+// observed; folding it into "down" would slander a service that may be fine.
+// The stray timing goes with it: a number next to "unknown" would be a claim
+// the status just disclaimed.
+func TestAnEntryNobodyHasCheckedPublishesUnknownNotUp(t *testing.T) {
+	e := entry("vtessera", "A marketplace.")
+	e.APIURL = strptr("https://vtessera.example.com/api")
+	s := site(t, e)
+	s.EndpointResponseMS = map[string]int{"vtessera": 12}
+
+	out := renderTo(t, s)
+	var payload struct {
+		Agents []struct {
+			Status     string  `json:"status"`
+			LastOK     *string `json:"last_ok"`
+			ResponseMs *int    `json:"response_ms"`
+		} `json:"agents"`
+	}
+	if err := json.Unmarshal([]byte(read(t, out, "agents.json")), &payload); err != nil {
+		t.Fatal(err)
+	}
+	got := payload.Agents[0]
+	if got.Status != "unknown" {
+		t.Errorf("status = %q, want %q", got.Status, "unknown")
+	}
+	if got.LastOK != nil {
+		t.Errorf("last_ok = %s, want the field absent when nothing has been checked", *got.LastOK)
+	}
+	if got.ResponseMs != nil {
+		t.Errorf("response_ms = %d, want the timing dropped with the verdict it came from", *got.ResponseMs)
+	}
+}
+
+// agents.json is the machine surface, but an agent arrives at it through this
+// prose. A reader that never opens the JSON still has to know what each field
+// means, that an absent one is a statement rather than an omission, and that
+// schemaVersion is the promise that a change of meaning is announced rather
+// than slipped in.
+func TestLLMsTxtDocumentsTheAgentsJSONFields(t *testing.T) {
+	out := renderTo(t, site(t, entry("vtessera", "A marketplace.")))
+	llms := read(t, out, "llms.txt")
+	for _, want := range []string{
+		"## agents.json fields",
+		"`schemaVersion`",
+		"`status`",
+		"`up` when a check inside the last 48 hours",
+		"`unknown` is not a\n  softer `up`",
+		"`last_ok`",
+		"`response_ms`",
+		"Absent when\n  none did, which is not the same as zero",
+	} {
+		if !strings.Contains(llms, want) {
+			t.Errorf("llms.txt does not document %q", want)
+		}
+	}
 }

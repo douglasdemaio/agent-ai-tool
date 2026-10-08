@@ -203,31 +203,40 @@ func (c config) run(client *http.Client) error {
 	// happens to be up again.
 	report := health.Read(c.healthPath)
 	unreachable := report.Unreachable(c.now)
+	// HealthCheckedAt and the response times are only ever taken from a report
+	// this build trusts. Stamping them from an unchecked or stale file would
+	// let the pages and agents.json date a check that no longer proves
+	// anything — and would publish a response time next to the status
+	// "unknown", which claims the opposite.
+	fresh := report.Fresh(c.now)
 
 	site := render.Site{
-		Domain:            c.domain,
-		Entries:           entries,
-		MetricsFromCache:  metrics.FromCache,
-		ReportsFromCache:  reports.FromCache,
-		ReportsFetchedAt:  reports.FetchedAt,
-		ReportsErr:        prefixErr("attestation reports", reports.FetchErr),
-		MetricsAge:        metrics.Age(c.now),
-		MetricsErr:        metrics.FetchErr,
-		GeneratedAt:       c.now,
-		AssetsDir:         c.assetsDir,
-		Unreachable:       unreachable,
-		EndpointDetails:   report.Details(),
-		EndpointLastAlive: report.LastAlive(),
+		Domain:             c.domain,
+		Entries:            entries,
+		MetricsFromCache:   metrics.FromCache,
+		ReportsFromCache:   reports.FromCache,
+		ReportsFetchedAt:   reports.FetchedAt,
+		ReportsErr:         prefixErr("attestation reports", reports.FetchErr),
+		MetricsAge:         metrics.Age(c.now),
+		MetricsErr:         metrics.FetchErr,
+		GeneratedAt:        c.now,
+		AssetsDir:          c.assetsDir,
+		Unreachable:        unreachable,
+		EndpointDetails:    report.Details(),
+		EndpointLastAlive:  report.LastAlive(),
+		EndpointResponseMS: report.ResponseTimes(entries),
 	}
-	if !report.CheckedAt.IsZero() {
+	if fresh {
 		checked := report.CheckedAt
 		site.HealthCheckedAt = &checked
+	} else {
+		site.EndpointResponseMS = nil
 	}
 	if len(unreachable) > 0 {
 		log.Printf("health: WARNING withholding the endpoint for %d entry(s) that did not answer the last check: %v",
 			len(unreachable), keys(unreachable))
-	} else if report.CheckedAt.IsZero() {
-		log.Printf("health: no committed report at %s; every endpoint is published unchecked", c.healthPath)
+	} else if !fresh {
+		log.Printf("health: no fresh report at %s; every endpoint is published unchecked", c.healthPath)
 	}
 
 	if agents.Available() {

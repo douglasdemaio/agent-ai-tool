@@ -373,6 +373,8 @@ func TestCheckWritesAReportAndABuildWithholdsWhatItFoundDead(t *testing.T) {
 		Agents []struct {
 			MCPEndpointURL *string `json:"mcp_endpoint_url"`
 			EndpointDown   bool    `json:"endpoint_unreachable"`
+			Status         string  `json:"status"`
+			ResponseMs     *int    `json:"response_ms"`
 		} `json:"agents"`
 	}
 	if err := json.Unmarshal([]byte(agents), &payload); err != nil {
@@ -385,6 +387,18 @@ func TestCheckWritesAReportAndABuildWithholdsWhatItFoundDead(t *testing.T) {
 	}
 	if !strings.Contains(agents, `"endpoint_unreachable": true`) {
 		t.Errorf("agents.json should mark the entry as unreachable: %s", agents)
+	}
+	// Withholding is the page staying quiet; status is the same verdict said
+	// out loud, so an agent that filters on it skips the entry without having
+	// to notice an absent field.
+	if payload.Agents[0].Status != "down" {
+		t.Errorf("status = %q, want %q, the verdict the check just reached", payload.Agents[0].Status, "down")
+	}
+	// The 404 was an answer, so the sweep measured how long it took to get one.
+	// The timing has to survive the report file on its way to agents.json or
+	// the field only ever works inside a single process.
+	if payload.Agents[0].ResponseMs == nil {
+		t.Error("response_ms should survive the report file: a 404 is still an answer, and a measured one")
 	}
 }
 
@@ -408,7 +422,9 @@ func TestCheckThenRecoveryRepublishesTheEndpoint(t *testing.T) {
 }
 
 // With no report committed, everything is published: the site must not suppress
-// services on the strength of a check that has never run.
+// services on the strength of a check that has never run. The status says the
+// same thing in the affirmative — unknown, not up — so a reader filtering on
+// status is not promised a liveness nobody observed either.
 func TestNoReportMeansNoWithholding(t *testing.T) {
 	dir := workspace(t)
 	endpoint := "https://never-checked.example/mcp"
@@ -418,6 +434,10 @@ func TestNoReportMeansNoWithholding(t *testing.T) {
 	}
 	if agents := readFile(t, dir, filepath.Join("public", "agents.json")); !strings.Contains(agents, endpoint) {
 		t.Error("an unchecked endpoint should still be published")
+	}
+	agents := readFile(t, dir, filepath.Join("public", "agents.json"))
+	if !strings.Contains(agents, `"status": "unknown"`) {
+		t.Errorf("an unchecked entry should say its status is unknown: %s", agents)
 	}
 }
 

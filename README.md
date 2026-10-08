@@ -373,6 +373,32 @@ Entry home pages are deliberately not probed. They are human destinations, and
 a site that rejects a bare user agent would demote itself for serving exactly
 the right page.
 
+**The status fields, in `agents.json`.** Withholding keeps a URL off the pages;
+`status` is the same verdict said as data, so an agent can filter without having
+to notice an absent field:
+
+- `status` — `up`, `down` or `unknown`, decided by a report this build trusts
+  (`Report.Fresh`: stamped in the past and younger than `StaleAfter`). `unknown`
+  is published rather than folded into `down`, because an entry nobody has
+  checked has not failed a check, and rather than folded into `up`, because
+  nobody is promised a liveness the site never observed. An entry that
+  publishes nothing worth probing is `unknown` forever, on purpose.
+- `last_ok` — when the entry was last seen answering. It records the same
+  observation as `last_checked` under the name a reader looks for, and both are
+  absent when nothing has ever answered.
+- `response_ms` — the machine endpoint's median response time at the last sweep:
+  the median of the attempts that got an HTTP response, so one slow probe does
+  not stand for the service and one lucky probe does not flatter it. A 404
+  counts as an answer, a timeout does not, and the field is absent rather than
+  showing a dead service as a slow one.
+- `schemaVersion` — currently `1`, moved only when a field changes meaning or
+  disappears, so a cached reader re-reads on a bump instead of guessing. A new
+  optional field is not a new version.
+
+Both `status` and `response_ms` are gated on the same freshness rule as
+`last_checked`: a report this build no longer trusts publishes `unknown` and no
+timing, never a confident answer about the past.
+
 ## Keeping the entries honest
 
 An entry can be wrong in two ways, and they need different machinery.
