@@ -75,6 +75,11 @@ type jsonEntry struct {
 	Delivered      *int               `json:"delivered,omitempty"`
 	EndpointDown   bool               `json:"endpoint_unreachable,omitempty"`
 	EndpointReason string             `json:"endpoint_unreachable_reason,omitempty"`
+	// EndpointLastOK is when the withheld endpoint last answered, and is
+	// present only while the endpoint is withheld. An agent reading a reason
+	// needs the age of the evidence behind it: a service down for a minute and
+	// a service down for a week are different decisions.
+	EndpointLastOK *time.Time `json:"endpoint_last_ok,omitempty"`
 }
 
 func (s Site) jsonEntries(views []entryView) []jsonEntry {
@@ -100,6 +105,7 @@ func (s Site) jsonEntries(views []entryView) []jsonEntry {
 		if v.Unreachable {
 			entry.EndpointDown = true
 			entry.EndpointReason = v.EndpointDetail
+			entry.EndpointLastOK = v.LastAlive
 		}
 		if v.Usage != nil {
 			delivered := v.Usage.Delivered
@@ -298,6 +304,11 @@ func (s Site) llms(views []entryView) string {
 			b.WriteString("- MCP endpoint: withheld, it did not answer a recent health check\n")
 			if v.EndpointDetail != "" {
 				fmt.Fprintf(&b, "  (%s)\n", v.EndpointDetail)
+			}
+			if v.LastAlive != nil {
+				fmt.Fprintf(&b, "  (last answered %s)\n", v.LastAlive.UTC().Format(stampFormat))
+			} else {
+				b.WriteString("  (it has not answered a check on record)\n")
 			}
 		}
 		if v.Entry.Category != "" {

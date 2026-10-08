@@ -63,6 +63,16 @@ type Endpoint struct {
 	// Detail is the last failure reason, kept so a demotion can be explained
 	// without re-running the check.
 	Detail string `json:"detail,omitempty"`
+	// LastAliveAt is when this endpoint was last judged alive, and it is
+	// written only while the endpoint is down. An alive endpoint's answer is
+	// checkedAt already, so recording it again would be noise; what has no
+	// other source is how long a service has been withheld, which is the fact
+	// a reader actually wants next to the verdict.
+	//
+	// It is carried forward from the previous report rather than taken from
+	// this run, so the date stays put while the outage continues instead of
+	// resetting to the check that keeps noticing it.
+	LastAliveAt *time.Time `json:"last_alive_at,omitempty"`
 }
 
 // Status is one probe's result. A 429 counts as alive: the service is there and
@@ -107,6 +117,34 @@ func (o Options) withDefaults() Options {
 	return o
 }
 
+// budget is how long one endpoint may take: every attempt, every interval
+// between them, and a slack of one interval so the last attempt never starts
+// on the edge of the deadline it is measured against.
+func (o Options) budget() time.Duration {
+	return time.Duration(o.Attempts)*(o.Timeout+o.Interval) + o.Interval
+}
+
+// Budget is how long an entire sweep may take. It is the sum of the per
+// endpoint budgets, because the sweep runs them one after another and the only
+// thing a total deadline is for is refusing to run forever if the per-request
+// timeouts stop applying.
+//
+// It must never be sized to one request. The defect this replaces was exactly
+// that: the whole program shared a single deadline equal to the per-request
+// timeout, the earlier endpoints spent it, and the last endpoint in the sweep
+// was reported dead for running out of time it was never given.
+func Budget(targets map[string][]string, opts Options) time.Duration {
+	opts = opts.withDefaults()
+	n := 0
+	for _, urls := range targets {
+		n += len(urls)
+	}
+	if n == 0 {
+		return opts.budget()
+	}
+	return time.Duration(n)*opts.budget() + opts.Interval
+}
+
 // Targets returns the endpoints worth probing, keyed by slug. A curated entry
 // may carry both a machine endpoint and an agent card, and both are things an
 // agent is told to fetch.
@@ -136,10 +174,15 @@ func Targets(entries []content.Entry) map[string][]string {
 // the directory is broken, and a check that could not reach anything must not
 // be mistaken for a directory of dead links.
 //
+// previous is the report already committed, used only to carry forward when
+// each endpoint was last alive. It is not consulted for verdicts: a verdict
+// always comes from this run's probes, and reading one out of the previous
+// report would make a report that can never contradict itself.
+//
 // at is the time to stamp the report, supplied by the caller rather than read
 // from the clock so a build with a pinned generation time stays internally
 // consistent with the report it reads back.
-func Check(ctx context.Context, entries []content.Entry, client *http.Client, opts Options, at time.Time) Report {
+func Check(ctx context.Context, entries []content.Entry, previous Report, client *http.Client, opts Options, at time.Time) Report {
 	opts = opts.withDefaults()
 	report := Report{
 		CheckedAt: at.UTC(),
@@ -156,25 +199,81 @@ func Check(ctx context.Context, entries []content.Entry, client *http.Client, op
 	for _, slug := range slugs {
 		for _, raw := range targets[slug] {
 			key := slug + " " + raw
-			report.Endpoints[key] = probe(ctx, client, raw, opts)
+			result := probe(ctx, client, raw, opts)
+			if !result.Alive {
+				result.LastAliveAt = previous.lastAlive(key)
+			}
+			report.Endpoints[key] = result
 		}
 	}
 	return report
 }
 
+// lastAlive answers "when was this endpoint last seen up?", from the report the
+// caller already holds. An endpoint that was alive in the previous report was
+// last alive at that report's checkedAt; one that was already down has the
+// date the outage began, carried through every check since; one with no
+// previous record has never answered, which is a different statement and is
+// left nil so the page can say it.
+func (r Report) lastAlive(key string) *time.Time {
+	prev, ok := r.Endpoints[key]
+	if !ok {
+		return nil
+	}
+	if prev.Alive {
+		when := r.CheckedAt
+		return &when
+	}
+	return prev.LastAliveAt
+}
+
+// LastAlive returns when each withheld endpoint was last judged alive, keyed by
+// slug. Entries absent from the map have never answered a check, which is what
+// the page says instead of showing an empty date.
+func (r Report) LastAlive() map[string]time.Time {
+	var out map[string]time.Time
+	for key, e := range r.Endpoints {
+		if e.Alive || e.LastAliveAt == nil {
+			continue
+		}
+		slug, _, found := splitKey(key)
+		if !found {
+			continue
+		}
+		if out == nil {
+			out = make(map[string]time.Time)
+		}
+		out[slug] = *e.LastAliveAt
+	}
+	return out
+}
+
+// probe judges one endpoint. It runs under its own deadline, covering its own
+// attempts and intervals, so how much time the earlier endpoints of the sweep
+// took has no bearing on this one.
 func probe(ctx context.Context, client *http.Client, url string, opts Options) Endpoint {
 	result := Endpoint{URL: url}
+	epCtx, cancel := context.WithTimeout(ctx, opts.budget())
+	defer cancel()
+
+loop:
 	for i := 0; i < opts.Attempts; i++ {
 		if i > 0 {
 			select {
-			case <-ctx.Done():
-				result.Detail = "context cancelled between attempts"
-				result.Attempts = append(result.Attempts, StatusFailed.code())
-				return result
+			case <-epCtx.Done():
+				// The budget ran out between attempts. What has already been
+				// probed still stands: falling through to the majority below
+				// keeps a partial run honest, and the early return this
+				// replaced discarded two successful probes as though they
+				// had never happened.
+				if result.Detail == "" {
+					result.Detail = "the endpoint's probe budget ran out"
+				}
+				break loop
 			case <-time.After(opts.Interval):
 			}
 		}
-		status, detail := attempt(ctx, client, url, opts.Timeout)
+		status, detail := attempt(epCtx, client, url, opts.Timeout)
 		result.Attempts = append(result.Attempts, status.code())
 		if detail != "" {
 			result.Detail = detail
@@ -186,7 +285,9 @@ func probe(ctx context.Context, client *http.Client, url string, opts Options) E
 			alive++
 		}
 	}
-	result.Alive = alive*2 > len(result.Attempts)
+	// Zero attempts counts as dead: nothing was proven either way, and this
+	// endpoint has to be reported by something.
+	result.Alive = len(result.Attempts) > 0 && alive*2 > len(result.Attempts)
 	if result.Alive {
 		result.Detail = ""
 	}
