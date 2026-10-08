@@ -30,21 +30,22 @@ import (
 const defaultDomain = "agent-ai-tool.com"
 
 type config struct {
-	baseURL    string
-	domain     string
-	contentDir string
-	cacheDir   string
-	outDir     string
-	assetsDir  string
-	refresh    bool
-	check      bool
-	review     bool
-	commitPlan bool
-	healthPath string
-	previous   string
-	attempts   int
-	timeout    time.Duration
-	now        time.Time
+	baseURL     string
+	domain      string
+	contentDir  string
+	cacheDir    string
+	outDir      string
+	assetsDir   string
+	refresh     bool
+	check       bool
+	review      bool
+	commitPlan  bool
+	healthPath  string
+	changesPath string
+	previous    string
+	attempts    int
+	timeout     time.Duration
+	now         time.Time
 }
 
 func main() {
@@ -55,23 +56,24 @@ func main() {
 
 func run() error {
 	var (
-		baseURL    = flag.String("base-url", os.Getenv("VTESSERA_BASE_URL"), "vtessera base URL; empty means the live section is absent")
-		domain     = flag.String("domain", defaultDomain, "apex domain for canonical URLs and CNAME")
-		contentDir = flag.String("content", "content/entries", "directory of curated entry JSON")
-		cacheDir   = flag.String("cache", "content", "directory holding the committed live snapshots")
-		outDir     = flag.String("out", "public", "output directory")
-		assetsDir  = flag.String("assets", "assets", "directory of static assets to copy")
-		refresh    = flag.Bool("refresh", false, "fetch the live feeds, write the snapshots, and exit")
-		check      = flag.Bool("check", false, "probe every curated entry endpoint, write the health report, and exit")
-		review     = flag.Bool("review", false, "list curated entries overdue for human review, then exit")
-		commitPlan = flag.Bool("commit-plan", false, "print commit or skip for the checked report against the committed one, then exit")
-		healthPath = flag.String("health-report", "content/health.json", "committed endpoint health report")
-		previous   = flag.String("previous-health-report", "", "the report currently in git, for -commit-plan; empty means there is none")
-		attempts   = flag.Int("attempts", health.DefaultAttempts, "probe attempts per endpoint before judging it")
-		timeout    = flag.Duration("timeout", live.DefaultTimeout, "per-request timeout for live fetches")
-		nowFlag    = flag.String("now", "", "override the generation time (RFC3339); for reproducible builds")
-		draftFlag  = flag.String("draft", "", "print the registration request for one drafted agent, then exit")
-		draftDir   = flag.String("drafts", drafts.DraftDir, "directory holding the drafted registrations")
+		baseURL     = flag.String("base-url", os.Getenv("VTESSERA_BASE_URL"), "vtessera base URL; empty means the live section is absent")
+		domain      = flag.String("domain", defaultDomain, "apex domain for canonical URLs and CNAME")
+		contentDir  = flag.String("content", "content/entries", "directory of curated entry JSON")
+		cacheDir    = flag.String("cache", "content", "directory holding the committed live snapshots")
+		outDir      = flag.String("out", "public", "output directory")
+		assetsDir   = flag.String("assets", "assets", "directory of static assets to copy")
+		refresh     = flag.Bool("refresh", false, "fetch the live feeds, write the snapshots, and exit")
+		check       = flag.Bool("check", false, "probe every curated entry endpoint, write the health report, and exit")
+		review      = flag.Bool("review", false, "list curated entries overdue for human review, then exit")
+		commitPlan  = flag.Bool("commit-plan", false, "print commit or skip for the checked report against the committed one, then exit")
+		healthPath  = flag.String("health-report", "content/health.json", "committed endpoint health report")
+		changesPath = flag.String("changes", "content/changes.json", "committed change feed; empty publishes no changes.json")
+		previous    = flag.String("previous-health-report", "", "the report currently in git, for -commit-plan; empty means there is none")
+		attempts    = flag.Int("attempts", health.DefaultAttempts, "probe attempts per endpoint before judging it")
+		timeout     = flag.Duration("timeout", live.DefaultTimeout, "per-request timeout for live fetches")
+		nowFlag     = flag.String("now", "", "override the generation time (RFC3339); for reproducible builds")
+		draftFlag   = flag.String("draft", "", "print the registration request for one drafted agent, then exit")
+		draftDir    = flag.String("drafts", drafts.DraftDir, "directory holding the drafted registrations")
 	)
 	flag.Parse()
 
@@ -89,21 +91,22 @@ func run() error {
 	}
 
 	cfg := config{
-		baseURL:    *baseURL,
-		domain:     *domain,
-		contentDir: *contentDir,
-		cacheDir:   *cacheDir,
-		outDir:     *outDir,
-		assetsDir:  *assetsDir,
-		refresh:    *refresh,
-		check:      *check,
-		review:     *review,
-		commitPlan: *commitPlan,
-		healthPath: *healthPath,
-		previous:   *previous,
-		attempts:   *attempts,
-		timeout:    *timeout,
-		now:        now,
+		baseURL:     *baseURL,
+		domain:      *domain,
+		contentDir:  *contentDir,
+		cacheDir:    *cacheDir,
+		outDir:      *outDir,
+		assetsDir:   *assetsDir,
+		refresh:     *refresh,
+		check:       *check,
+		review:      *review,
+		commitPlan:  *commitPlan,
+		healthPath:  *healthPath,
+		changesPath: *changesPath,
+		previous:    *previous,
+		attempts:    *attempts,
+		timeout:     *timeout,
+		now:         now,
 	}
 
 	return cfg.run(&http.Client{Timeout: cfg.timeout})
@@ -203,31 +206,46 @@ func (c config) run(client *http.Client) error {
 	// happens to be up again.
 	report := health.Read(c.healthPath)
 	unreachable := report.Unreachable(c.now)
+	// HealthCheckedAt and the response times are only ever taken from a report
+	// this build trusts. Stamping them from an unchecked or stale file would
+	// let the pages and agents.json date a check that no longer proves
+	// anything — and would publish a response time next to the status
+	// "unknown", which claims the opposite.
+	fresh := report.Fresh(c.now)
 
 	site := render.Site{
-		Domain:            c.domain,
-		Entries:           entries,
-		MetricsFromCache:  metrics.FromCache,
-		ReportsFromCache:  reports.FromCache,
-		ReportsFetchedAt:  reports.FetchedAt,
-		ReportsErr:        prefixErr("attestation reports", reports.FetchErr),
-		MetricsAge:        metrics.Age(c.now),
-		MetricsErr:        metrics.FetchErr,
-		GeneratedAt:       c.now,
-		AssetsDir:         c.assetsDir,
-		Unreachable:       unreachable,
-		EndpointDetails:   report.Details(),
-		EndpointLastAlive: report.LastAlive(),
+		Domain:           c.domain,
+		Entries:          entries,
+		MetricsFromCache: metrics.FromCache,
+		ReportsFromCache: reports.FromCache,
+		ReportsFetchedAt: reports.FetchedAt,
+		ReportsErr:       prefixErr("attestation reports", reports.FetchErr),
+		MetricsAge:       metrics.Age(c.now),
+		MetricsErr:       metrics.FetchErr,
+		GeneratedAt:      c.now,
+		AssetsDir:        c.assetsDir,
+		ChangesPath:      c.changesPath,
+		// Only a build reading committed data may write the feed. One holding
+		// a base URL has fetched values this repository does not own, and a
+		// diff against those would record a change the next snapshot build
+		// never sees — see render.updateChangeFeed.
+		RecordChanges:      c.baseURL == "",
+		Unreachable:        unreachable,
+		EndpointDetails:    report.Details(),
+		EndpointLastAlive:  report.LastAlive(),
+		EndpointResponseMS: report.ResponseTimes(entries),
 	}
-	if !report.CheckedAt.IsZero() {
+	if fresh {
 		checked := report.CheckedAt
 		site.HealthCheckedAt = &checked
+	} else {
+		site.EndpointResponseMS = nil
 	}
 	if len(unreachable) > 0 {
 		log.Printf("health: WARNING withholding the endpoint for %d entry(s) that did not answer the last check: %v",
 			len(unreachable), keys(unreachable))
-	} else if report.CheckedAt.IsZero() {
-		log.Printf("health: no committed report at %s; every endpoint is published unchecked", c.healthPath)
+	} else if !fresh {
+		log.Printf("health: no fresh report at %s; every endpoint is published unchecked", c.healthPath)
 	}
 
 	if agents.Available() {

@@ -30,6 +30,7 @@ func TestOnlyAdvertisedEndpointsAreProbed(t *testing.T) {
 		{Slug: "b", AgentCardURL: ptr("https://b.example/card")},
 		{Slug: "c", URL: "https://c.example"},
 		{Slug: "d", MCPEndpointURL: ptr("https://d.example/mcp"), AgentCardURL: ptr("https://d.example/card")},
+		{Slug: "e", APIURL: ptr("https://e.example/api.json")},
 	})
 	if len(targets["a"]) != 1 || len(targets["b"]) != 1 {
 		t.Fatalf("endpoint targets = %v", targets)
@@ -39,6 +40,12 @@ func TestOnlyAdvertisedEndpointsAreProbed(t *testing.T) {
 	}
 	if len(targets["d"]) != 2 {
 		t.Errorf("expected both the endpoint and the card probed, got %v", targets["d"])
+	}
+	// A plain API is as callable as an MCP endpoint and as worth probing: it is
+	// what the directory tells an agent to call, so a JSON API nobody checks is
+	// a URL the site would keep publishing after it stopped answering.
+	if len(targets["e"]) != 1 || targets["e"][0] != "https://e.example/api.json" {
+		t.Errorf("api_url targets = %v, want the plain API probed", targets["e"])
 	}
 }
 
@@ -458,5 +465,141 @@ func TestLastAliveNamesOnlyEndpointsThatHaveAnswered(t *testing.T) {
 	}
 	if _, ok := got["c"]; ok {
 		t.Error("an endpoint that has never answered should have no date rather than a zero one")
+	}
+}
+
+// A report is evidence about the present only while it is young enough to be.
+// Everything that publishes a verdict asks this — the date on the page, the
+// status in agents.json, whether an endpoint is withheld — so "may I date this
+// check?" and "may I withhold on it?" must be answered by the same rule,
+// answered once.
+func TestAFreshReportIsTheOnlyOneThatSpeaksForNow(t *testing.T) {
+	now := time.Date(2026, 9, 29, 12, 0, 0, 0, time.UTC)
+	cases := []struct {
+		name      string
+		checkedAt time.Time
+		fresh     bool
+	}{
+		{"an absent report says nothing about now", time.Time{}, false},
+		{"a check from an hour ago is evidence", now.Add(-time.Hour), true},
+		{"a check at the staleness boundary still counts", now.Add(-StaleAfter), true},
+		{"a check older than the staleness window is history", now.Add(-StaleAfter - time.Minute), false},
+		{"a report stamped in the future is not evidence about now", now.Add(time.Hour), false},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			report := Report{CheckedAt: tc.checkedAt, Endpoints: map[string]Endpoint{
+				"dead https://dead.example/mcp": {URL: "https://dead.example/mcp", Alive: false},
+			}}
+			if got := report.Fresh(now); got != tc.fresh {
+				t.Fatalf("Fresh = %v, want %v", got, tc.fresh)
+			}
+			withheld := report.Unreachable(now)
+			if tc.fresh {
+				if len(withheld) != 1 {
+					t.Errorf("Unreachable() = %v, want the dead endpoint withheld on a report fresh enough to date", withheld)
+				}
+			} else if withheld != nil {
+				t.Errorf("Unreachable() = %v, want nothing withheld on a report no one should act on", withheld)
+			}
+		})
+	}
+}
+
+// A response time must be a response, and one probe must not speak for the
+// service: the median of the attempts that got an HTTP answer is published,
+// not the mean a single slow probe drags and not the best attempt a single
+// lucky probe flatters.
+func TestAResponseTimeIsTheMedianOfTheAnsweredAttempts(t *testing.T) {
+	cases := []struct {
+		name    string
+		delays  []time.Duration
+		fastest bool
+	}{
+		{"one slow probe does not stand for the service", []time.Duration{400 * time.Millisecond, 0, 0}, true},
+		{"one fast probe does not flatter a slow service", []time.Duration{0, 400 * time.Millisecond, 400 * time.Millisecond}, false},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			var i int
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				if i < len(tc.delays) && tc.delays[i] > 0 {
+					time.Sleep(tc.delays[i])
+				}
+				i++
+				w.WriteHeader(http.StatusOK)
+			}))
+			defer server.Close()
+
+			report := Check(context.Background(), []content.Entry{entry("a", server.URL)}, Report{}, server.Client(),
+				Options{Attempts: 3, Interval: time.Millisecond, Timeout: 5 * time.Second}, time.Now())
+
+			got := report.Endpoints["a "+server.URL]
+			if got.ResponseMs == nil {
+				t.Fatal("an endpoint that answered every attempt publishes no response time")
+			}
+			if tc.fastest && *got.ResponseMs > 200 {
+				t.Errorf("response_ms = %d, want under 200: the median must not be the slowest probe", *got.ResponseMs)
+			}
+			if !tc.fastest && *got.ResponseMs < 350 {
+				t.Errorf("response_ms = %d, want at least 350: the median must not be the fastest probe", *got.ResponseMs)
+			}
+		})
+	}
+}
+
+// An endpoint that never answers publishes no response time at all. A timeout
+// reported as a duration would make a dead service look like a slow one, which
+// is exactly the confusion the absence of the field exists to avoid.
+func TestAnEndpointThatNeverAnswersPublishesNoResponseTime(t *testing.T) {
+	// The handler returns only when the client gives up: the probe's timeout
+	// closes the connection, which cancels the request context, so nothing is
+	// left running behind the assertions. The extra deadline is for the case
+	// where that never happens — a test must fail, not hang.
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		select {
+		case <-r.Context().Done():
+		case <-time.After(5 * time.Second):
+		}
+	}))
+	defer server.Close()
+
+	report := Check(context.Background(), []content.Entry{entry("a", server.URL)}, Report{}, server.Client(),
+		Options{Attempts: 2, Interval: time.Millisecond, Timeout: 20 * time.Millisecond}, time.Now())
+
+	got := report.Endpoints["a "+server.URL]
+	if got.ResponseMs != nil {
+		t.Errorf("response_ms = %d, want the field absent when no attempt got an HTTP response", *got.ResponseMs)
+	}
+}
+
+// The response time belongs to the URL an agent would call — the MCP endpoint
+// when there is one, otherwise the plain API. The agent card is deliberately
+// not a candidate: how fast a card answers says nothing about how fast the
+// service does, and an entry whose only URL is its card publishes nothing here.
+func TestResponseTimesNamesTheMachineEndpointAndNotTheAgentCard(t *testing.T) {
+	mcp, api, card := "https://mcp.example/mcp", "https://api.example/v1", "https://card.example/agent.json"
+	twelve, long, cardFast := 12, 3400, 3
+	report := Report{Endpoints: map[string]Endpoint{
+		"a " + mcp:  {URL: mcp, ResponseMs: &twelve},
+		"a " + api:  {URL: api, ResponseMs: &long},
+		"a " + card: {URL: card, ResponseMs: &cardFast},
+		"b " + card: {URL: card, ResponseMs: &cardFast},
+	}}
+	entries := []content.Entry{
+		{Slug: "a", MCPEndpointURL: ptr(mcp), APIURL: ptr(api), AgentCardURL: ptr(card)},
+		{Slug: "b", AgentCardURL: ptr(card)},
+		{Slug: "c", URL: "https://c.example"},
+	}
+
+	got := report.ResponseTimes(entries)
+	if got["a"] != twelve {
+		t.Errorf("response time for a = %d, want %d, the MCP endpoint an agent would call", got["a"], twelve)
+	}
+	if _, ok := got["b"]; ok {
+		t.Error("an entry whose only URL is its agent card has no machine response time")
+	}
+	if _, ok := got["c"]; ok {
+		t.Error("an entry with nothing to call has no response time")
 	}
 }

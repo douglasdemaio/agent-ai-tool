@@ -56,6 +56,7 @@ Drop a JSON file in `content/entries/`:
   "url": "https://example.com",
   "agent_card_url": null,
   "mcp_endpoint_url": null,
+  "api_url": null,
   "category": "text",
   "access": "free tier available",
   "source": "curated",
@@ -66,18 +67,29 @@ Drop a JSON file in `content/entries/`:
 Validation is strict on purpose. Unknown fields are rejected rather than
 ignored, duplicate slugs fail the build, and URLs must be absolute `http` or
 `https`. A mistyped field should stop the build, not ship as a blank on the
-page. `agent_card_url` and `mcp_endpoint_url` are optional; use `null` or omit
-them. `category` and `access` are optional free text.
+page. `agent_card_url`, `mcp_endpoint_url` and `api_url` are optional; use
+`null` or omit them. `category` and `access` are optional free text.
 
-`mcp_endpoint_url` carries the address an agent should actually call, so it
-holds the machine endpoint rather than the project's home page, and the home
-page goes in `url`. Anything an agent can only read as a human should not be
-buried in the `summary` sentence. Before adding an entry, confirm the endpoint
-answers: an entry pointing at a URL that 404s is worse than no entry, because
-the whole claim of the directory is that the endpoints work.
+The two endpoint fields name the kind of endpoint, because an agent has to know
+before it connects. `mcp_endpoint_url` is one that speaks MCP: a server the agent
+opens a session against with `initialize`. `api_url` is a plain HTTP endpoint it
+calls directly — a JSON document to fetch, an API to POST to — with no session
+behind it. They used to be a single field, which published
+`https://models.dev/api.json` under a label meaning *run an MCP session against
+this*; an agent that trusted the label got an HTTP 405 for its trouble.
 
-An entry whose service is not deployed yet keeps `mcp_endpoint_url` at `null`
-and says so in its summary, rather than listing an address that will not answer.
+`mcp_endpoint_url` is therefore deprecated. It stays in `agents.json` for one
+release so a reader keyed on the old name does not break on a missing key, it
+only ever holds an endpoint that speaks MCP, and every value that does not has
+moved to `api_url`. Both hold the machine endpoint rather than the project's
+home page, and the home page goes in `url`. Anything an agent can only read as
+a human should not be buried in the `summary` sentence. Before adding an entry,
+confirm the endpoint answers: an entry pointing at a URL that 404s is worse than
+no entry, because the whole claim of the directory is that the endpoints work.
+
+An entry whose service is not deployed yet keeps `mcp_endpoint_url` and `api_url`
+at `null` and says so in its summary, rather than listing an address that will
+not answer.
 
 ### Publishing how to call it
 
@@ -122,6 +134,15 @@ rendered on the entry page, and written into `llms.txt`:
   ]
 }
 ```
+
+`auth` names the credential the call needs — `bearer`, `signature`, anything
+the reader should send — or `"none"` for a call that needs none at all. The
+three surfaces agree on it: `agents.json` publishes the value verbatim, and the
+entry page and `llms.txt` read `"none"` as open, labelling the call
+*no token needed*. Only a named credential is rendered as *requires a token*,
+because `"none"` is a statement rather than an empty value, and an agent that
+is told a call needs a token it cannot obtain will not make a call it could
+have made.
 
 Paths are **relative** to the entry's `url`, on purpose. The entry already
 publishes an absolute base, and repeating the host in every call gives the two
@@ -259,6 +280,19 @@ The site shows a banner of aggregate totals, and a per-agent badge on the
 vtessera page once an agent has at least three recorded deliveries. Agent IDs
 are used only to join data and are never rendered.
 
+**Test activity is labelled as test activity.** Every agent registered on the
+marketplace so far is one of this repository's own probes (`live.ProbeAgents`),
+so every figure currently measures our tests rather than outside use.
+vtessera publishes aggregate totals and cannot split them by who produced them,
+so the honest options are to say so or to show nothing. The banner and `llms.txt`
+therefore name what the numbers are: while every contributing agent is ours the
+banner reads *Test activity on vtessera*, while ours are mixed with someone
+else's it says the totals include our probes, and only when no probe has traded
+does it read *what agents are actually doing*. Probe agents are excluded from the
+per-agent join as well, so ours can never earn an entry a `delivered` badge or a
+*Deliveries recorded* row. Nothing is deleted or altered in the ledger — this is
+only a rule about what the directory is willing to claim about it.
+
 No analytics are collected here: no page views, referrers, IPs, or user agents,
 and no third-party scripts.
 
@@ -266,7 +300,8 @@ and no third-party scripts.
 
 The directory's claim is that these are endpoints an agent can call, so
 `content/health.json` records whether they still answer. `check-health.yml`
-probes every `mcp_endpoint_url` and `agent_card_url` twice a day and commits the
+probes every `mcp_endpoint_url`, `api_url` and `agent_card_url` twice a day and
+commits the
 verdict; the build then withholds any endpoint a fresh report found dead.
 
 ```bash
@@ -338,6 +373,80 @@ Entry home pages are deliberately not probed. They are human destinations, and
 a site that rejects a bare user agent would demote itself for serving exactly
 the right page.
 
+**The status fields, in `agents.json`.** Withholding keeps a URL off the pages;
+`status` is the same verdict said as data, so an agent can filter without having
+to notice an absent field:
+
+- `status` — `up`, `down` or `unknown`, decided by a report this build trusts
+  (`Report.Fresh`: stamped in the past and younger than `StaleAfter`). `unknown`
+  is published rather than folded into `down`, because an entry nobody has
+  checked has not failed a check, and rather than folded into `up`, because
+  nobody is promised a liveness the site never observed. An entry that
+  publishes nothing worth probing is `unknown` forever, on purpose.
+- `last_ok` — when the entry was last seen answering. It records the same
+  observation as `last_checked` under the name a reader looks for, and both are
+  absent when nothing has ever answered.
+- `response_ms` — the machine endpoint's median response time at the last sweep:
+  the median of the attempts that got an HTTP response, so one slow probe does
+  not stand for the service and one lucky probe does not flatter it. A 404
+  counts as an answer, a timeout does not, and the field is absent rather than
+  showing a dead service as a slow one.
+- `schemaVersion` — currently `1`, moved only when a field changes meaning or
+  disappears, so a cached reader re-reads on a bump instead of guessing. A new
+  optional field is not a new version.
+
+Both `status` and `response_ms` are gated on the same freshness rule as
+`last_checked`: a report this build no longer trusts publishes `unknown` and no
+timing, never a confident answer about the past.
+
+## Change feed
+
+An agent that reads `agents.json` once a day should not have to diff the whole
+file against yesterday's copy to learn what moved, so a build that changed the
+directory writes `changes.json` alongside it. `agents.json` links to it in the
+top-level object (`changes`), and `llms.txt` names it in prose, so a reader
+that arrived through either surface can find the third.
+
+```bash
+make generate   # writes content/changes.json, and public/changes.json from it
+```
+
+The published file carries `schemaVersion` (currently `1`), `domain`, and up
+to thirty records, newest first. One record is one build, so several
+differences at once land together:
+
+- `added` — the slugs that arrived since the last build that recorded
+  something.
+- `removed` — the slugs that left.
+- `changed` — the slugs that stayed, with the exact field names `agents.json`
+  now publishes differently, so a subscriber re-fetches only what moved.
+
+Three rules are deliberate, and each is tested:
+
+- **The feed is committed history, and only a snapshot build writes it.**
+  `content/changes.json` lives in git like every other committed input, and
+  `public/changes.json` is rendered from it. A build that fetched live values
+  publishes the committed records and appends nothing: its diff would be
+  against numbers this repository does not own, and the next snapshot build
+  would record them moving straight back. A build that changed nothing does
+  not rewrite the file at all, byte for byte, which is what lets CI check the
+  feed is in sync by checking a clean diff rather than parsing JSON in the
+  shell — `test.yml` fails with a line saying to run `make generate`.
+- **Health verdicts are not listing changes.** `status`, `last_ok`,
+  `response_ms`, `last_checked` and the endpoint-unreachable fields move on
+  every sweep; recording them would fill the feed with verdicts the next sweep
+  supersedes. An endpoint an outage has withheld is not a change either: the
+  feed records the URL the entry publishes, so a service having a bad
+  afternoon does not make its own address disappear from the history.
+- **A first build records what exists as arrived, and a feed from another
+  `schemaVersion` is refused rather than overwritten.** The bootstrap is how a
+  new deployment learns its own baseline; overwriting a schema this build does
+  not understand would trade a loud refusal for a silent gap.
+
+A refresh's own record is carried by `refresh-live.yml`, which runs the same
+`make generate` in the same snapshot mode before committing, so the job that
+changes the directory is also the job that records it.
+
 ## Keeping the entries honest
 
 An entry can be wrong in two ways, and they need different machinery.
@@ -351,6 +460,27 @@ entry against the service can. So each curated entry carries `last_verified`,
 and after `content.ReviewWindow` (180 days) the site marks it *due for review* on
 its page and in the index. `review-entries.yml` lists the overdue ones on the
 first of each month and opens or bumps a single issue.
+
+**Two dates, two claims.** Every surface publishes both, side by side:
+
+- `last_verified` is the human one: the date a person read the entry against the
+  service. Only a human sets it, only a human moves it, and `ReviewDue` judges on
+  it. A probe never touches it — a health check proves an endpoint answers, which
+  is a different claim from the summary, category and terms still describing what
+  the service does.
+- `last_checked` is the machine one: when an automated check last saw the entry's
+  endpoint answer. It advances on its own with every `make check`; it is absent
+  until a check has ever succeeded, so a build that never ran one cannot claim
+  one; and while an endpoint is withheld it holds the last success before the
+  outage rather than the check that keeps reporting the failure.
+
+The two are never derived from each other. The page labels them *Last verified*
+and *Endpoint checked*, the index shows `verified 2026-09-29 · endpoint checked
+2026-10-08`, `agents.json` carries `last_verified` and `last_checked`, and
+`llms.txt` prints `- Last verified:` followed by `- Endpoint checked:`. An entry
+with no successful check on record says exactly that on all three, because an
+absent date and an old date are different statements and neither reads well as a
+blank.
 
 `make review` prints the same list, tab-separated, as `<slug>\t<last_verified>`:
 
@@ -438,7 +568,10 @@ redirects. The 404 page names no canonical at all.
 The index `lastmod` is the newest entry `last_verified`. The site is also
 rebuilt for reasons that do not change the directory — a live snapshot refresh,
 a metrics cache hit — and a `lastmod` that moved on every rebuild would tell
-crawlers the listing changed when it did not.
+crawlers the listing changed when it did not. The same rule excludes probes:
+`last_checked` moves twice a day and says nothing about the listing, so a
+`lastmod` that followed it would have crawlers re-reading pages nobody has
+touched.
 
 ### Guidance is generated from the data
 

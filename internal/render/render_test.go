@@ -460,6 +460,22 @@ func deadEndpointSite(t *testing.T) Site {
 
 func strptr(s string) *string { return &s }
 
+func intp(v int) *int { return &v }
+
+func sameTime(a, b *time.Time) bool {
+	if a == nil || b == nil {
+		return a == b
+	}
+	return a.Equal(*b)
+}
+
+func sameInt(a, b *int) bool {
+	if a == nil || b == nil {
+		return a == b
+	}
+	return *a == *b
+}
+
 // A dead endpoint must not reach any surface an agent reads, or the site is
 // still telling it to call a URL the site itself could not reach.
 func TestDeadEndpointIsWithheldFromAgentsJSON(t *testing.T) {
@@ -692,12 +708,20 @@ func TestHowToCallReachesEverySurface(t *testing.T) {
 					Returns: "201 with a nonce.",
 				}},
 			},
-			Calls: []content.Call{{
-				Name: "route", Method: "POST", Path: "/agp/route",
-				ContentType: "application/json", Auth: "none",
-				Body:    map[string]any{"method": "agp/route"},
-				Returns: "-32200 while empty.",
-			}},
+			Calls: []content.Call{
+				{
+					Name: "route", Method: "POST", Path: "/agp/route",
+					ContentType: "application/json", Auth: "none",
+					Body:    map[string]any{"method": "agp/route"},
+					Returns: "-32200 while empty.",
+				},
+				{
+					Name: "open a trade", Method: "POST", Path: "/v1/trades",
+					ContentType: "application/json", Auth: "bearer",
+					Body:    map[string]any{"offerId": "<from the offer>"},
+					Returns: "a trade awaiting acceptance.",
+				},
+			},
 		},
 	})
 	s.GeneratedAt = time.Date(2026, 9, 29, 12, 0, 0, 0, time.UTC)
@@ -1007,5 +1031,619 @@ func TestAnEndpointThatHasNeverAnsweredSaysSoInsteadOfShowingNoDate(t *testing.T
 	}
 	if payload.Agents[0].LastOK != nil {
 		t.Errorf("endpoint_last_ok = %v, want the field omitted when there is no record", payload.Agents[0].LastOK)
+	}
+}
+
+// Two claims sit next to each other on every surface: a human read the entry,
+// and a machine watched the endpoint answer. The second has to advance on its
+// own while the first stays exactly where the person left it — including when
+// the first is overdue, because a stale review date is the finding and a probe
+// must not quietly wash it away.
+func TestTheCheckedDateAdvancesWhileTheReviewDateDoesNotMove(t *testing.T) {
+	e := entry("vtessera", "A marketplace.")
+	e.MCPEndpointURL = strptr("https://vtessera.example.com/mcp")
+	// Six months and a bit before GeneratedAt, so the entry is already due.
+	e.LastVerified = time.Date(2026, 3, 1, 0, 0, 0, 0, time.UTC)
+	s := site(t, e)
+
+	type dates struct {
+		lastVerified string
+		lastChecked  *string
+	}
+	datesFor := func(t *testing.T, s Site) dates {
+		t.Helper()
+		var payload struct {
+			Agents []struct {
+				LastVerified string  `json:"last_verified"`
+				LastChecked  *string `json:"last_checked"`
+			} `json:"agents"`
+		}
+		if err := json.Unmarshal([]byte(read(t, renderTo(t, s), "agents.json")), &payload); err != nil {
+			t.Fatal(err)
+		}
+		if len(payload.Agents) != 1 {
+			t.Fatalf("got %d entries", len(payload.Agents))
+		}
+		return dates{payload.Agents[0].LastVerified, payload.Agents[0].LastChecked}
+	}
+	stamp := func(d time.Time) string { return d.Format(time.RFC3339) }
+
+	dayOne := time.Date(2026, 9, 27, 6, 0, 0, 0, time.UTC)
+	dayTwo := dayOne.Add(24 * time.Hour)
+
+	s.HealthCheckedAt = &dayOne
+	first := datesFor(t, s)
+	s.HealthCheckedAt = &dayTwo
+	second := datesFor(t, s)
+
+	if first.lastVerified != "2026-03-01T00:00:00Z" {
+		t.Errorf("last_verified = %q, want the date a human filed", first.lastVerified)
+	}
+	if second.lastVerified != first.lastVerified {
+		t.Errorf("last_verified moved to %q on a second check; only a human may move it", second.lastVerified)
+	}
+	if first.lastChecked == nil || *first.lastChecked != stamp(dayOne) {
+		t.Errorf("last_checked = %v, want %s", first.lastChecked, stamp(dayOne))
+	}
+	if second.lastChecked == nil || *second.lastChecked != stamp(dayTwo) {
+		t.Errorf("last_checked = %v after a second day's check, want %s", second.lastChecked, stamp(dayTwo))
+	}
+
+	// The overdue verdict belongs to the review date alone, and must survive
+	// the probe moving underneath it.
+	page := read(t, renderTo(t, s), "vtessera/index.html")
+	if !strings.Contains(page, "due for review") {
+		t.Error("an entry last reviewed over six months ago is no longer marked due")
+	}
+	if !strings.Contains(page, "<dt>Last verified</dt><dd>2026-03-01") {
+		t.Error("the page dates the review from the curated date rather than the probe")
+	}
+	if want := "<dt>Endpoint checked</dt><dd>2026-09-28</dd>"; !strings.Contains(page, want) {
+		t.Errorf("the page does not carry the second day's check as %q", want)
+	}
+	if index := read(t, renderTo(t, s), "index.html"); !strings.Contains(index, "verified 2026-03-01") ||
+		!strings.Contains(index, "endpoint checked 2026-09-28") {
+		t.Error("the directory does not show both dates side by side")
+	}
+}
+
+// An entry with no trusted report behind it, or with nothing to probe at all,
+// is unchecked rather than up. Dating it would let a build that never ran a
+// check claim one, which is the same failure as a stale report demoting an
+// endpoint: a wrong answer that looks like a fact.
+func TestAnEntryNobodyHasCheckedSaysSoInsteadOfDatingItself(t *testing.T) {
+	probed := entry("registry", "A registry.")
+	probed.MCPEndpointURL = strptr("https://registry.example.com/mcp")
+	unprobed := entry("notes", "Some notes.")
+
+	for _, e := range []content.Entry{probed, unprobed} {
+		out := renderTo(t, site(t, e))
+
+		var payload struct {
+			Agents []struct {
+				LastChecked *string `json:"last_checked"`
+			} `json:"agents"`
+		}
+		if err := json.Unmarshal([]byte(read(t, out, "agents.json")), &payload); err != nil {
+			t.Fatal(err)
+		}
+		if payload.Agents[0].LastChecked != nil {
+			t.Errorf("%s: last_checked = %s with no check ever recorded", e.Slug, *payload.Agents[0].LastChecked)
+		}
+		if page := read(t, out, e.Slug+"/index.html"); !strings.Contains(page, "no successful check on record") {
+			t.Errorf("%s: the page neither dates the check nor explains its absence", e.Slug)
+		}
+		if llms := read(t, out, "llms.txt"); !strings.Contains(llms, "- Endpoint checked: no successful check on record\n") {
+			t.Errorf("%s: llms.txt neither dates the check nor explains its absence", e.Slug)
+		}
+	}
+}
+
+// The sitemap tells a crawler when the listing changed. A health check is not
+// that, and a lastmod that moved with every probe would have crawlers
+// re-reading a directory whose entries nobody has touched.
+func TestSitemapLastmodIgnoresTheProbe(t *testing.T) {
+	e := entry("vtessera", "A marketplace.")
+	e.MCPEndpointURL = strptr("https://vtessera.example.com/mcp")
+	s := site(t, e)
+	probed := time.Date(2026, 10, 8, 6, 0, 0, 0, time.UTC)
+	s.HealthCheckedAt = &probed
+
+	body := read(t, renderTo(t, s), "sitemap.xml")
+	if strings.Contains(body, "2026-10-08") {
+		t.Error("sitemap lastmod followed the probe instead of the content")
+	}
+	if !strings.Contains(body, "2026-09-20T00:00:00Z") {
+		t.Error("sitemap lastmod no longer carries the entry's last_verified")
+	}
+}
+
+// The checked date is a claim an agent may act on, so it has to be the same
+// number wherever it appears — including while the endpoint is down, where the
+// number is the last success rather than the check that is reporting failure.
+func TestTheCheckedDateAgreesAcrossTheThreeSurfaces(t *testing.T) {
+	const endpoint = "https://vtessera.example.com/mcp"
+	checked := func(t *testing.T, s Site) (jsonDate, llmsLine, pageDate string) {
+		t.Helper()
+		out := renderTo(t, s)
+		var payload struct {
+			Agents []struct {
+				LastChecked *string `json:"last_checked"`
+			} `json:"agents"`
+		}
+		if err := json.Unmarshal([]byte(read(t, out, "agents.json")), &payload); err != nil {
+			t.Fatal(err)
+		}
+		if payload.Agents[0].LastChecked != nil {
+			// agents.json carries the machine form; compare the date part,
+			// which is what the other two surfaces print.
+			jsonDate = strings.SplitN(*payload.Agents[0].LastChecked, "T", 2)[0]
+		}
+		for _, line := range strings.Split(read(t, out, "llms.txt"), "\n") {
+			if strings.HasPrefix(line, "- Endpoint checked: ") {
+				llmsLine = strings.TrimPrefix(line, "- Endpoint checked: ")
+				break
+			}
+		}
+		page := read(t, out, "vtessera/index.html")
+		const mark = "<dt>Endpoint checked</dt><dd>"
+		if i := strings.Index(page, mark); i >= 0 {
+			rest := page[i+len(mark):]
+			pageDate = rest[:strings.Index(rest, "<")]
+		}
+		return jsonDate, llmsLine, pageDate
+	}
+
+	// Up: the date is the sweep that just accepted the endpoint.
+	alive := entry("vtessera", "A marketplace.")
+	alive.MCPEndpointURL = strptr(endpoint)
+	up := site(t, alive)
+	sweep := time.Date(2026, 10, 8, 6, 0, 0, 0, time.UTC)
+	up.HealthCheckedAt = &sweep
+	gotJSON, gotLLMS, gotPage := checked(t, up)
+	if gotJSON != "2026-10-08" || gotLLMS != "2026-10-08" || gotPage != "2026-10-08" {
+		t.Errorf("an up endpoint reports checked as agents.json=%q llms.txt=%q page=%q, want one date on all three",
+			gotJSON, gotLLMS, gotPage)
+	}
+
+	// Down: the date is the last success before the outage, not the check
+	// that keeps reporting the failure.
+	down := deadEndpointSite(t)
+	lastOK := time.Date(2026, 10, 5, 14, 54, 0, 0, time.UTC)
+	down.EndpointLastAlive = map[string]time.Time{"vtessera": lastOK}
+	gotJSON, gotLLMS, gotPage = checked(t, down)
+	if gotJSON != "2026-10-05" || gotLLMS != "2026-10-05" || gotPage != "2026-10-05" {
+		t.Errorf("a down endpoint reports checked as agents.json=%q llms.txt=%q page=%q, want the last success on all three",
+			gotJSON, gotLLMS, gotPage)
+	}
+}
+
+// The only agents registered on the marketplace are this repository's own
+// probes, so every number in the banner is our test traffic. A heading that
+// presents it as outside usage is worse than no heading, because the number
+// looks the same either way and only the heading says what it measures.
+func TestTheBannerNamesWhoseActivityItIsShowing(t *testing.T) {
+	probe := live.ProbeAgents[0]
+	for _, tc := range []struct {
+		name     string
+		agents   []live.AgentUsage
+		want     string
+		wantLLMS string
+	}{
+		{
+			name:     "every contributing agent is ours",
+			agents:   []live.AgentUsage{{AgentID: probe, Delivered: 2}},
+			want:     "Test activity on vtessera",
+			wantLLMS: "## Test activity on vtessera",
+		},
+		{
+			// No apostrophe: html/template escapes it, and the assertion is
+			// about the claim rather than about the punctuation.
+			name: "ours are mixed with an outside agent",
+			agents: []live.AgentUsage{
+				{AgentID: probe, Delivered: 2},
+				{AgentID: "outside-agent", Delivered: 4},
+			},
+			want:     "What agents are doing on vtessera, including this repository",
+			wantLLMS: "include this repository's own probe agents",
+		},
+		{
+			name:     "nobody's ours",
+			agents:   []live.AgentUsage{{AgentID: "outside-agent", Delivered: 4}},
+			want:     "What agents are actually doing on vtessera",
+			wantLLMS: "## Marketplace usage",
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			s := site(t, entry("a1", "s"))
+			s.Metrics = &live.MetricsResponse{
+				Totals: live.Totals{Delivered: 6, Consumers: 2},
+				Agents: tc.agents,
+			}
+			page := read(t, renderTo(t, s), "index.html")
+			if !strings.Contains(page, tc.want) {
+				t.Errorf("banner headline does not state %q", tc.want)
+			}
+			llms := read(t, renderTo(t, s), "llms.txt")
+			if !strings.Contains(llms, tc.wantLLMS) {
+				t.Errorf("llms.txt does not carry %q", tc.wantLLMS)
+			}
+		})
+	}
+}
+
+// A delivery badge next to an entry says that entry has been exercised by
+// somebody. Ours exercising our own marketplace is not that, and the badge is
+// the one place a probe could otherwise pass itself off as a customer.
+func TestOurOwnProbesNeverEarnAnEntryABadge(t *testing.T) {
+	s := site(t, entry(live.ProbeAgents[0], "A marketplace."))
+	s.Metrics = &live.MetricsResponse{
+		Totals: live.Totals{Delivered: 9, Disputed: 1},
+		Agents: []live.AgentUsage{{AgentID: live.ProbeAgents[0], Delivered: 9}},
+	}
+	out := renderTo(t, s)
+
+	index := read(t, out, "index.html")
+	if strings.Contains(index, "9 delivered") {
+		t.Error("a probe agent's deliveries earned an entry a badge")
+	}
+	if !strings.Contains(index, "No entry currently carries a recorded usage count") {
+		t.Error("the index should say no entry carries a count rather than showing a probe's")
+	}
+	page := read(t, out, s.Entries[0].Slug+"/index.html")
+	if strings.Contains(page, "Deliveries recorded") {
+		t.Error("a probe agent's deliveries reached the entry page")
+	}
+
+	// An outside agent with the same figure still earns it, so the exclusion is
+	// about who traded rather than about the count. The entry has to carry the
+	// same identifier the join is keyed on, which is how badges work today.
+	outside := site(t, entry("outside-agent", "A marketplace."))
+	outside.Metrics = &live.MetricsResponse{
+		Totals: live.Totals{Delivered: 9},
+		Agents: []live.AgentUsage{{AgentID: "outside-agent", Delivered: 9}},
+	}
+	index = read(t, renderTo(t, outside), "index.html")
+	if !strings.Contains(index, "9 delivered") {
+		t.Error("an outside agent's deliveries should still badge the entry")
+	}
+}
+
+// Both kinds of endpoint used to be published under one label, so a JSON
+// document was advertised as an MCP endpoint and an agent that trusted the
+// label opened a session against it and got an HTTP 405. The label has to
+// follow what the endpoint speaks on every surface that prints it, or the
+// surfaces disagree about what to connect to.
+func TestAnEndpointIsLabelledByWhatItSpeaks(t *testing.T) {
+	api := entry("models-dev", "A JSON document.")
+	api.APIURL = strptr("https://models.dev/api.json")
+	mcp := entry("vtessera", "A marketplace.")
+	mcp.MCPEndpointURL = strptr("https://vtessera.example.com/mcp")
+	out := renderTo(t, site(t, api, mcp))
+
+	for _, tc := range []struct {
+		name, path, want, dontWant string
+	}{
+		{
+			name:     "entry page of a plain API names it as an API",
+			path:     "models-dev/index.html",
+			want:     "<dt>API endpoint</dt>",
+			dontWant: "<dt>MCP endpoint</dt>",
+		},
+		{
+			name:     "entry page of an MCP server names it as MCP",
+			path:     "vtessera/index.html",
+			want:     "<dt>MCP endpoint</dt>",
+			dontWant: "<dt>API endpoint</dt>",
+		},
+		{
+			name:     "llms.txt names a plain API as an API",
+			path:     "llms.txt",
+			want:     "- API endpoint: https://models.dev/api.json",
+			dontWant: "- MCP endpoint: https://models.dev/api.json",
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			body := read(t, out, tc.path)
+			if !strings.Contains(body, tc.want) {
+				t.Errorf("missing %q", tc.want)
+			}
+			if strings.Contains(body, tc.dontWant) {
+				t.Errorf("carries %q, which mislabels the endpoint", tc.dontWant)
+			}
+		})
+	}
+
+	// llms.txt carries both entries, so the MCP bullet is asserted against this
+	// file rather than the page that only holds one of them.
+	llms := read(t, out, "llms.txt")
+	if !strings.Contains(llms, "- MCP endpoint: https://vtessera.example.com/mcp") {
+		t.Error("llms.txt does not name the MCP endpoint as MCP")
+	}
+
+	var payload struct {
+		Agents []struct {
+			Slug           string  `json:"slug"`
+			MCPEndpointURL *string `json:"mcp_endpoint_url"`
+			APIURL         *string `json:"api_url"`
+		} `json:"agents"`
+	}
+	if err := json.Unmarshal([]byte(read(t, out, "agents.json")), &payload); err != nil {
+		t.Fatalf("agents.json: %v", err)
+	}
+	for _, a := range payload.Agents {
+		switch a.Slug {
+		case "models-dev":
+			if a.APIURL == nil || *a.APIURL != "https://models.dev/api.json" {
+				t.Errorf("api_url = %v, want the plain API published there", a.APIURL)
+			}
+			if a.MCPEndpointURL != nil {
+				t.Errorf("mcp_endpoint_url = %q, want null for an entry that speaks no MCP", *a.MCPEndpointURL)
+			}
+		case "vtessera":
+			if a.MCPEndpointURL == nil || *a.MCPEndpointURL != "https://vtessera.example.com/mcp" {
+				t.Errorf("mcp_endpoint_url = %v, want the MCP endpoint published there", a.MCPEndpointURL)
+			}
+			if a.APIURL != nil {
+				t.Errorf("api_url = %q, want absent for an entry with no plain API", *a.APIURL)
+			}
+		}
+	}
+}
+
+// Withholding must not erase the kind. A row that says only "endpoint
+// withheld" leaves the reader unable to tell whether the thing that did not
+// answer was a server to open a session against or a document to fetch, and
+// the withheld label is the one place the two could still be confused.
+func TestAWithheldEndpointKeepsItsKind(t *testing.T) {
+	e := entry("models-dev", "A JSON document.")
+	e.APIURL = strptr("https://models.dev/api.json")
+	s := site(t, e)
+	s.Unreachable = map[string]bool{"models-dev": true}
+	s.EndpointDetails = map[string]string{"models-dev": "GET https://models.dev/api.json = 500"}
+	checked := time.Date(2026, 9, 29, 6, 0, 0, 0, time.UTC)
+	s.HealthCheckedAt = &checked
+	out := renderTo(t, s)
+
+	page := read(t, out, "models-dev/index.html")
+	if !strings.Contains(page, "<dt>API endpoint</dt>") || !strings.Contains(page, "withheld") {
+		t.Errorf("the entry page should withhold an API endpoint under its own label")
+	}
+	if strings.Contains(page, "<dt>MCP endpoint</dt>") {
+		t.Error("the entry page claims an MCP endpoint this entry never had")
+	}
+	if strings.Contains(page, `href="https://models.dev/api.json"`) {
+		t.Error("the entry page still links a dead API")
+	}
+
+	llms := read(t, out, "llms.txt")
+	if !strings.Contains(llms, "- API endpoint: withheld") {
+		t.Error("llms.txt should withhold the API endpoint under its own label")
+	}
+	if strings.Contains(llms, "- API endpoint: https://") {
+		t.Error("llms.txt still lists a dead API as callable")
+	}
+	if strings.Contains(llms, "- MCP endpoint: withheld") {
+		t.Error("llms.txt withholds an MCP endpoint this entry never had")
+	}
+
+	var payload struct {
+		Agents []struct {
+			APIURL *string `json:"api_url"`
+			Down   bool    `json:"endpoint_unreachable"`
+			Reason string  `json:"endpoint_unreachable_reason"`
+		} `json:"agents"`
+	}
+	if err := json.Unmarshal([]byte(read(t, out, "agents.json")), &payload); err != nil {
+		t.Fatalf("agents.json: %v", err)
+	}
+	if len(payload.Agents) != 1 {
+		t.Fatalf("agents = %d, want one", len(payload.Agents))
+	}
+	if payload.Agents[0].APIURL != nil {
+		t.Errorf("agents.json still hands out a dead API: %q", *payload.Agents[0].APIURL)
+	}
+	if !payload.Agents[0].Down || payload.Agents[0].Reason == "" {
+		t.Error("the outage should still be reported as unreachable with a reason")
+	}
+}
+
+// agents.json, the entry page and llms.txt used to disagree about one call:
+// agents.json published auth "none" for POST /agp/route while the other two
+// said it requires a token, and the live endpoint answers 200 with no
+// Authorization header at all. Agents read whichever surface they land on, so
+// the label has to follow the declared value on every one of them.
+func TestEachCallIsLabelledWithTheAuthItDeclares(t *testing.T) {
+	s := site(t, content.Entry{
+		Slug: "vtessera", Name: "vtessera", Summary: "marketplace",
+		URL: "https://vtessera.fly.dev", Source: content.SourceCurated,
+		LastVerified: time.Date(2026, 9, 29, 0, 0, 0, 0, time.UTC),
+		HowToCall: &content.HowToCall{
+			Calls: []content.Call{
+				{Name: "route", Method: "POST", Path: "/agp/route", Auth: "none"},
+				{Name: "open a trade", Method: "POST", Path: "/v1/trades", Auth: "bearer"},
+			},
+		},
+	})
+	s.GeneratedAt = time.Date(2026, 9, 29, 12, 0, 0, 0, time.UTC)
+	out := renderTo(t, s)
+
+	for _, surface := range []struct {
+		name string
+		body string
+	}{
+		{"entry page", read(t, out, "vtessera/index.html")},
+		{"llms.txt", read(t, out, "llms.txt")},
+	} {
+		for _, tc := range []struct{ path, want string }{
+			{"POST /agp/route", "no token needed"},
+			{"POST /v1/trades", "requires a token"},
+		} {
+			line := lineContaining(surface.body, tc.path)
+			if line == "" {
+				t.Errorf("%s: nothing carries %q", surface.name, tc.path)
+				continue
+			}
+			if !strings.Contains(line, tc.want) {
+				t.Errorf("%s: the line for %s reads %q, want it to say %q",
+					surface.name, tc.path, strings.TrimSpace(line), tc.want)
+			}
+		}
+	}
+
+	// agents.json publishes the values verbatim and was the surface that was
+	// right all along; the fix is the other two reading it correctly.
+	var doc struct {
+		Agents []struct {
+			HowToCall *content.HowToCall `json:"how_to_call"`
+		} `json:"agents"`
+	}
+	body := read(t, out, "agents.json")
+	if err := json.Unmarshal([]byte(body), &doc); err != nil {
+		t.Fatalf("agents.json: %v", err)
+	}
+	if len(doc.Agents) != 1 || doc.Agents[0].HowToCall == nil || len(doc.Agents[0].HowToCall.Calls) != 2 {
+		t.Fatalf("agents.json dropped how_to_call or its calls")
+	}
+	calls := doc.Agents[0].HowToCall.Calls
+	if calls[0].Auth != "none" || calls[0].RequiresToken() {
+		t.Errorf("agents.json auth = %q for the call that needs none", calls[0].Auth)
+	}
+	if calls[1].Auth != "bearer" || !calls[1].RequiresToken() {
+		t.Errorf("agents.json auth = %q for the call that needs a token", calls[1].Auth)
+	}
+}
+
+func lineContaining(body, needle string) string {
+	for _, line := range strings.Split(body, "\n") {
+		if strings.Contains(line, needle) {
+			return line
+		}
+	}
+	return ""
+}
+
+// The three states an agent needs to skip a dead endpoint from agents.json
+// alone: one that answers, one that failed a check, and one nobody has checked.
+// "unknown" is published rather than folded into either of the others, because
+// not having been checked is not the same as having failed a check — and the
+// timing and the date travel with the verdict, so a precise number never
+// appears next to a status that disclaims the report it came from.
+func TestAgentsJSONPublishesWhatItCanProveAboutEachEntry(t *testing.T) {
+	healthy := entry("models-dev", "A registry.")
+	healthy.APIURL = strptr("https://models.dev/api.json")
+	dead := entry("vtessera", "A marketplace.")
+	dead.MCPEndpointURL = strptr("https://vtessera.example.com/mcp")
+	// A home page is a destination for a human, so nothing probes it and
+	// nothing can prove anything about it, report or no report.
+	unprobed := entry("notes", "Some notes.")
+
+	checked := time.Date(2026, 9, 29, 6, 0, 0, 0, time.UTC)
+	lastAlive := checked.Add(-24 * time.Hour)
+	s := site(t, healthy, dead, unprobed)
+	s.HealthCheckedAt = &checked
+	s.Unreachable = map[string]bool{"vtessera": true}
+	s.EndpointDetails = map[string]string{"vtessera": "GET https://vtessera.example.com/mcp = 404"}
+	s.EndpointLastAlive = map[string]time.Time{"vtessera": lastAlive}
+	s.EndpointResponseMS = map[string]int{"models-dev": 12}
+
+	out := renderTo(t, s)
+	var payload struct {
+		SchemaVersion int `json:"schemaVersion"`
+		Agents        []struct {
+			Slug       string     `json:"slug"`
+			Status     string     `json:"status"`
+			LastOK     *time.Time `json:"last_ok"`
+			ResponseMs *int       `json:"response_ms"`
+		} `json:"agents"`
+	}
+	if err := json.Unmarshal([]byte(read(t, out, "agents.json")), &payload); err != nil {
+		t.Fatal(err)
+	}
+	if payload.SchemaVersion != SchemaVersion {
+		t.Errorf("schemaVersion = %d, want %d, so a cached reader can tell a new contract from a new build", payload.SchemaVersion, SchemaVersion)
+	}
+	bySlug := map[string]int{}
+	for i, a := range payload.Agents {
+		bySlug[a.Slug] = i
+	}
+	for _, tc := range []struct {
+		slug       string
+		status     string
+		lastOK     *time.Time
+		responseMs *int
+	}{
+		{"models-dev", "up", &checked, intp(12)},
+		{"vtessera", "down", &lastAlive, nil},
+		{"notes", "unknown", nil, nil},
+	} {
+		a := payload.Agents[bySlug[tc.slug]]
+		if a.Status != tc.status {
+			t.Errorf("%s: status = %q, want %q", tc.slug, a.Status, tc.status)
+		}
+		if !sameTime(a.LastOK, tc.lastOK) {
+			t.Errorf("%s: last_ok = %v, want %v", tc.slug, a.LastOK, tc.lastOK)
+		}
+		if !sameInt(a.ResponseMs, tc.responseMs) {
+			t.Errorf("%s: response_ms = %v, want %v", tc.slug, a.ResponseMs, tc.responseMs)
+		}
+	}
+}
+
+// An entry nobody has checked has not answered a check and has not failed one
+// either. Folding that into "up" would promise a liveness the site never
+// observed; folding it into "down" would slander a service that may be fine.
+// The stray timing goes with it: a number next to "unknown" would be a claim
+// the status just disclaimed.
+func TestAnEntryNobodyHasCheckedPublishesUnknownNotUp(t *testing.T) {
+	e := entry("vtessera", "A marketplace.")
+	e.APIURL = strptr("https://vtessera.example.com/api")
+	s := site(t, e)
+	s.EndpointResponseMS = map[string]int{"vtessera": 12}
+
+	out := renderTo(t, s)
+	var payload struct {
+		Agents []struct {
+			Status     string  `json:"status"`
+			LastOK     *string `json:"last_ok"`
+			ResponseMs *int    `json:"response_ms"`
+		} `json:"agents"`
+	}
+	if err := json.Unmarshal([]byte(read(t, out, "agents.json")), &payload); err != nil {
+		t.Fatal(err)
+	}
+	got := payload.Agents[0]
+	if got.Status != "unknown" {
+		t.Errorf("status = %q, want %q", got.Status, "unknown")
+	}
+	if got.LastOK != nil {
+		t.Errorf("last_ok = %s, want the field absent when nothing has been checked", *got.LastOK)
+	}
+	if got.ResponseMs != nil {
+		t.Errorf("response_ms = %d, want the timing dropped with the verdict it came from", *got.ResponseMs)
+	}
+}
+
+// agents.json is the machine surface, but an agent arrives at it through this
+// prose. A reader that never opens the JSON still has to know what each field
+// means, that an absent one is a statement rather than an omission, and that
+// schemaVersion is the promise that a change of meaning is announced rather
+// than slipped in.
+func TestLLMsTxtDocumentsTheAgentsJSONFields(t *testing.T) {
+	out := renderTo(t, site(t, entry("vtessera", "A marketplace.")))
+	llms := read(t, out, "llms.txt")
+	for _, want := range []string{
+		"## agents.json fields",
+		"`schemaVersion`",
+		"`status`",
+		"`up` when a check inside the last 48 hours",
+		"`unknown` is not a\n  softer `up`",
+		"`last_ok`",
+		"`response_ms`",
+		"Absent when\n  none did, which is not the same as zero",
+	} {
+		if !strings.Contains(llms, want) {
+			t.Errorf("llms.txt does not document %q", want)
+		}
 	}
 }

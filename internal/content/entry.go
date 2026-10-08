@@ -10,17 +10,33 @@ import (
 )
 
 type Entry struct {
-	Slug           string     `json:"slug"`
-	Name           string     `json:"name"`
-	Summary        string     `json:"summary"`
-	URL            string     `json:"url"`
-	AgentCardURL   *string    `json:"agent_card_url"`
-	MCPEndpointURL *string    `json:"mcp_endpoint_url"`
-	Category       string     `json:"category,omitempty"`
-	Access         string     `json:"access,omitempty"`
-	Source         string     `json:"source"`
-	LastVerified   time.Time  `json:"last_verified"`
-	HowToCall      *HowToCall `json:"how_to_call,omitempty"`
+	Slug         string  `json:"slug"`
+	Name         string  `json:"name"`
+	Summary      string  `json:"summary"`
+	URL          string  `json:"url"`
+	AgentCardURL *string `json:"agent_card_url"`
+	// MCPEndpointURL is an endpoint that speaks MCP: a server an agent opens a
+	// session against. It is now a narrower field than it started out — it used
+	// to hold any URL the service wanted an agent to call, which put a plain
+	// JSON document and a protocol endpoint under one label. An agent that
+	// trusts the label and posts an MCP initialize to models.dev/api.json gets
+	// an HTTP 405, and a directory that hands out that label has mis-described
+	// every consumer that believes it. See APIURL for the other half.
+	//
+	// Deprecated: the field is being narrowed rather than removed, and it stays
+	// published for one release so consumers reading it do not break on a
+	// missing key. Values that do not speak MCP have moved to APIURL.
+	MCPEndpointURL *string `json:"mcp_endpoint_url"`
+	// APIURL is a plain HTTP endpoint an agent calls directly — a JSON API to
+	// fetch or POST to, with no MCP session and no server to run. It answers
+	// the same question MCPEndpointURL does ("which address do I call?") for
+	// services that do not speak MCP, which is most of them.
+	APIURL       *string    `json:"api_url,omitempty"`
+	Category     string     `json:"category,omitempty"`
+	Access       string     `json:"access,omitempty"`
+	Source       string     `json:"source"`
+	LastVerified time.Time  `json:"last_verified"`
+	HowToCall    *HowToCall `json:"how_to_call,omitempty"`
 }
 
 // HowToCall is what a reader needs in order to actually make a call, rather
@@ -72,6 +88,33 @@ type Call struct {
 	Auth        string         `json:"auth,omitempty"`
 	Body        map[string]any `json:"body,omitempty"`
 	Returns     string         `json:"returns,omitempty"`
+}
+
+// RequiresToken reports whether a call needs a credential before it works.
+//
+// The data states this in words, and "none" is a statement rather than an
+// absence: an entry whose call takes no token declares exactly that, so a
+// renderer testing Auth for non-emptiness reads the declaration as a
+// credential and tells every reader a token is required. Only a named
+// credential counts. Getting this wrong is not cosmetic — agents skip calls
+// they believe they cannot make.
+func (c Call) RequiresToken() bool {
+	return c.Auth != "" && !strings.EqualFold(c.Auth, "none")
+}
+
+// MachineEndpoint is the URL an agent would actually call: an MCP endpoint
+// when the entry publishes one, otherwise a plain API. Nil when it publishes
+// neither, because a homepage is a destination for a human, not a call an
+// agent can make.
+//
+// One answer to one question, so every surface that has to choose — the
+// directory card, the response time in agents.json — chooses the same way
+// instead of each picking its own favourite.
+func (e Entry) MachineEndpoint() *string {
+	if e.MCPEndpointURL != nil {
+		return e.MCPEndpointURL
+	}
+	return e.APIURL
 }
 
 const (
@@ -132,6 +175,11 @@ func (e Entry) Validate() error {
 	if e.MCPEndpointURL != nil {
 		if err := absoluteHTTP(*e.MCPEndpointURL); err != nil {
 			return fmt.Errorf("mcp_endpoint_url: %w", err)
+		}
+	}
+	if e.APIURL != nil {
+		if err := absoluteHTTP(*e.APIURL); err != nil {
+			return fmt.Errorf("api_url: %w", err)
 		}
 	}
 	if e.Source != SourceCurated && e.Source != SourceLive {

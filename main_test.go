@@ -152,15 +152,16 @@ func generate(t *testing.T, dir string, client *http.Client, baseURL string, ext
 func testConfig(t *testing.T, dir string) config {
 	t.Helper()
 	return config{
-		domain:     "agent-ai-tool.com",
-		contentDir: filepath.Join(dir, "content", "entries"),
-		cacheDir:   filepath.Join(dir, "content"),
-		outDir:     filepath.Join(dir, "public"),
-		assetsDir:  filepath.Join(dir, "assets"),
-		healthPath: filepath.Join(dir, "content", "health.json"),
-		attempts:   1,
-		timeout:    5 * time.Second,
-		now:        time.Date(2026, 9, 27, 22, 30, 0, 0, time.UTC),
+		domain:      "agent-ai-tool.com",
+		contentDir:  filepath.Join(dir, "content", "entries"),
+		cacheDir:    filepath.Join(dir, "content"),
+		outDir:      filepath.Join(dir, "public"),
+		assetsDir:   filepath.Join(dir, "assets"),
+		healthPath:  filepath.Join(dir, "content", "health.json"),
+		changesPath: filepath.Join(dir, "content", "changes.json"),
+		attempts:    1,
+		timeout:     5 * time.Second,
+		now:         time.Date(2026, 9, 27, 22, 30, 0, 0, time.UTC),
 	}
 }
 
@@ -373,6 +374,8 @@ func TestCheckWritesAReportAndABuildWithholdsWhatItFoundDead(t *testing.T) {
 		Agents []struct {
 			MCPEndpointURL *string `json:"mcp_endpoint_url"`
 			EndpointDown   bool    `json:"endpoint_unreachable"`
+			Status         string  `json:"status"`
+			ResponseMs     *int    `json:"response_ms"`
 		} `json:"agents"`
 	}
 	if err := json.Unmarshal([]byte(agents), &payload); err != nil {
@@ -385,6 +388,18 @@ func TestCheckWritesAReportAndABuildWithholdsWhatItFoundDead(t *testing.T) {
 	}
 	if !strings.Contains(agents, `"endpoint_unreachable": true`) {
 		t.Errorf("agents.json should mark the entry as unreachable: %s", agents)
+	}
+	// Withholding is the page staying quiet; status is the same verdict said
+	// out loud, so an agent that filters on it skips the entry without having
+	// to notice an absent field.
+	if payload.Agents[0].Status != "down" {
+		t.Errorf("status = %q, want %q, the verdict the check just reached", payload.Agents[0].Status, "down")
+	}
+	// The 404 was an answer, so the sweep measured how long it took to get one.
+	// The timing has to survive the report file on its way to agents.json or
+	// the field only ever works inside a single process.
+	if payload.Agents[0].ResponseMs == nil {
+		t.Error("response_ms should survive the report file: a 404 is still an answer, and a measured one")
 	}
 }
 
@@ -408,7 +423,9 @@ func TestCheckThenRecoveryRepublishesTheEndpoint(t *testing.T) {
 }
 
 // With no report committed, everything is published: the site must not suppress
-// services on the strength of a check that has never run.
+// services on the strength of a check that has never run. The status says the
+// same thing in the affirmative — unknown, not up — so a reader filtering on
+// status is not promised a liveness nobody observed either.
 func TestNoReportMeansNoWithholding(t *testing.T) {
 	dir := workspace(t)
 	endpoint := "https://never-checked.example/mcp"
@@ -418,6 +435,10 @@ func TestNoReportMeansNoWithholding(t *testing.T) {
 	}
 	if agents := readFile(t, dir, filepath.Join("public", "agents.json")); !strings.Contains(agents, endpoint) {
 		t.Error("an unchecked endpoint should still be published")
+	}
+	agents := readFile(t, dir, filepath.Join("public", "agents.json"))
+	if !strings.Contains(agents, `"status": "unknown"`) {
+		t.Errorf("an unchecked entry should say its status is unknown: %s", agents)
 	}
 }
 
@@ -596,4 +617,102 @@ func planWith(t *testing.T, dir, previous string) string {
 		cfg.previous = previous
 		return cfg.run(&http.Client{Timeout: cfg.timeout})
 	}))
+}
+
+// The change feed's contract, through the same path a contributor's
+// `make generate` takes: two consecutive builds with a real difference produce
+// one correct record, and the committed file a reader fetches carries it so
+// the next build starts from here instead of from nothing.
+func TestTwoBuildsWithARealDifferenceProduceAFeedEntry(t *testing.T) {
+	dir := workspace(t)
+	// A second entry, so the one record can name all three kinds of
+	// difference at once: something arriving, something leaving, and something
+	// that stayed but now publishes a different value.
+	leaving := `{
+	  "slug": "registry",
+	  "name": "registry",
+	  "summary": "A registry.",
+	  "url": "https://registry.example",
+	  "source": "curated",
+	  "last_verified": "2026-09-20T00:00:00Z"
+	}`
+	if err := os.WriteFile(filepath.Join(dir, "content", "entries", "registry.json"), []byte(leaving), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := generate(t, dir, nil, ""); err != nil {
+		t.Fatal(err)
+	}
+
+	curated := filepath.Join(dir, "content", "entries", "vtessera.json")
+	raw, err := os.ReadFile(curated)
+	if err != nil {
+		t.Fatal(err)
+	}
+	reworded := strings.Replace(string(raw),
+		`"summary": "A2A agent marketplace."`,
+		`"summary": "A2A agent marketplace, reworded."`, 1)
+	if reworded == string(raw) {
+		t.Fatal("could not reword the curated entry")
+	}
+	if err := os.WriteFile(curated, []byte(reworded), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	arriving := `{
+	  "slug": "catalog",
+	  "name": "catalog",
+	  "summary": "A catalog.",
+	  "url": "https://catalog.example",
+	  "source": "curated",
+	  "last_verified": "2026-09-20T00:00:00Z"
+	}`
+	if err := os.WriteFile(filepath.Join(dir, "content", "entries", "catalog.json"), []byte(arriving), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Remove(filepath.Join(dir, "content", "entries", "registry.json")); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := generate(t, dir, nil, ""); err != nil {
+		t.Fatal(err)
+	}
+
+	var feed struct {
+		SchemaVersion int `json:"schemaVersion"`
+		Records       []struct {
+			Added   []string `json:"added"`
+			Removed []string `json:"removed"`
+			Changed []struct {
+				Slug   string   `json:"slug"`
+				Fields []string `json:"fields"`
+			} `json:"changed"`
+		} `json:"records"`
+	}
+	if err := json.Unmarshal([]byte(readFile(t, dir, filepath.Join("public", "changes.json"))), &feed); err != nil {
+		t.Fatal(err)
+	}
+	if feed.SchemaVersion != 1 {
+		t.Errorf("schemaVersion = %d, want 1", feed.SchemaVersion)
+	}
+	if len(feed.Records) != 2 {
+		t.Fatalf("published %d records, want the bootstrap record and this build's", len(feed.Records))
+	}
+	rec := feed.Records[0]
+	if strings.Join(rec.Added, ",") != "catalog" {
+		t.Errorf("added = %v, want the entry that arrived", rec.Added)
+	}
+	if strings.Join(rec.Removed, ",") != "registry" {
+		t.Errorf("removed = %v, want the entry that left", rec.Removed)
+	}
+	if len(rec.Changed) != 1 || rec.Changed[0].Slug != "vtessera" ||
+		strings.Join(rec.Changed[0].Fields, ",") != "summary" {
+		t.Errorf("changed = %+v, want vtessera's summary", rec.Changed)
+	}
+	if boot := feed.Records[1].Added; strings.Join(boot, ",") != "registry,vtessera" {
+		t.Errorf("bootstrap added = %v, want both entries that existed then", boot)
+	}
+
+	committed := readFile(t, dir, filepath.Join("content", "changes.json"))
+	if !strings.Contains(committed, `"catalog"`) || !strings.Contains(committed, `"registry"`) {
+		t.Error("the committed feed does not carry the record the reader fetches")
+	}
 }

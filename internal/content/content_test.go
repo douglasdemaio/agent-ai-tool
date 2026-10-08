@@ -90,6 +90,8 @@ func TestValidateRejectsUnusableFields(t *testing.T) {
 		"ftp url":              {func(e *Entry) { e.URL = "ftp://example.com" }, "http or https"},
 		"empty url":            {func(e *Entry) { e.URL = "" }, "must not be empty"},
 		"bad agent card url":   {func(e *Entry) { bad := "not a url"; e.AgentCardURL = &bad }, "absolute"},
+		"bad mcp endpoint url": {func(e *Entry) { bad := "not a url"; e.MCPEndpointURL = &bad }, "mcp_endpoint_url"},
+		"bad api url":          {func(e *Entry) { bad := "not a url"; e.APIURL = &bad }, "api_url"},
 		"unknown source":       {func(e *Entry) { e.Source = "scraped" }, "source"},
 		"uppercase slug":       {func(e *Entry) { e.Slug = "VteSSera" }, "slug"},
 		"slug with underscore": {func(e *Entry) { e.Slug = "vtes_sera" }, "slug"},
@@ -184,6 +186,27 @@ func TestReviewDue(t *testing.T) {
 	for _, tc := range cases {
 		if got := tc.entry.ReviewDue(now); got != tc.expect {
 			t.Errorf("%s: ReviewDue = %v, want %v", tc.name, got, tc.expect)
+		}
+	}
+}
+
+// The auth field is stated in words, so "none" has to be read as a statement
+// rather than as a value. Getting this backwards is what made the pages claim
+// a token was required for a call the entry itself declared open.
+func TestACallThatDeclaresNoAuthNeedsNoToken(t *testing.T) {
+	for _, tc := range []struct {
+		auth string
+		want bool
+	}{
+		{"none", false},
+		{"None", false},
+		{"", false},
+		{"bearer", true},
+		{"signature", true},
+	} {
+		call := Call{Auth: tc.auth}
+		if got := call.RequiresToken(); got != tc.want {
+			t.Errorf("RequiresToken(auth=%q) = %v, want %v", tc.auth, got, tc.want)
 		}
 	}
 }

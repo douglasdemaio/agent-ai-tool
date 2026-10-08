@@ -60,16 +60,47 @@ func (s Site) schemaOrg(v entryView) map[string]any {
 }
 
 type jsonEntry struct {
-	Slug           string             `json:"slug"`
-	Name           string             `json:"name"`
-	Summary        string             `json:"summary"`
-	URL            string             `json:"url"`
-	AgentCardURL   *string            `json:"agent_card_url"`
-	MCPEndpointURL *string            `json:"mcp_endpoint_url"`
-	Category       string             `json:"category,omitempty"`
-	Access         string             `json:"access,omitempty"`
-	Source         string             `json:"source"`
-	LastVerified   time.Time          `json:"last_verified"`
+	Slug         string  `json:"slug"`
+	Name         string  `json:"name"`
+	Summary      string  `json:"summary"`
+	URL          string  `json:"url"`
+	AgentCardURL *string `json:"agent_card_url"`
+	// MCPEndpointURL is published for one release more under its old meaning
+	// narrowed to what the name says: an endpoint that speaks MCP, and nothing
+	// else. Consumers that read it for the address of any machine endpoint now
+	// also have to read api_url, because the values that never spoke MCP have
+	// moved there rather than continue to be advertised as a session an agent
+	// could open. It stays in the file so a key lookup does not break, but it
+	// is null for every entry whose only endpoint is a plain HTTP API.
+	MCPEndpointURL *string `json:"mcp_endpoint_url"`
+	// APIURL is a plain HTTP endpoint an agent calls directly: a JSON API with
+	// no MCP session behind it.
+	APIURL       *string   `json:"api_url,omitempty"`
+	Category     string    `json:"category,omitempty"`
+	Access       string    `json:"access,omitempty"`
+	Source       string    `json:"source"`
+	LastVerified time.Time `json:"last_verified"`
+	// LastChecked is when an automated check last saw this entry's endpoint
+	// answer, and is absent when none ever has. It is deliberately separate
+	// from LastVerified: that one is a human's word that the entry still
+	// describes the service, this one is a machine's word that the endpoint
+	// answered, and a reader deciding whether to call needs the second without
+	// being misled into thinking the first was refreshed by it.
+	LastChecked *time.Time `json:"last_checked,omitempty"`
+	// Status is what this build can prove about the entry: "up", "down" or
+	// "unknown". It is the one field an agent needs to skip a dead endpoint
+	// without fetching anything else, and "unknown" is published rather than
+	// folded into "down" because not having been checked is not the same as
+	// having failed a check.
+	Status string `json:"status"`
+	// LastOK is when the entry was last seen answering. It records the same
+	// observation as LastChecked — a check counts only when it saw an answer —
+	// and carries its own name so a reader can ask the question without having
+	// to know that. Both are absent when nothing has ever answered.
+	LastOK *time.Time `json:"last_ok,omitempty"`
+	// ResponseMs is the machine endpoint's median response time at the last
+	// sweep, in milliseconds, and is absent when no attempt got a response.
+	ResponseMs     *int               `json:"response_ms,omitempty"`
 	HowToCall      *content.HowToCall `json:"how_to_call,omitempty"`
 	Page           string             `json:"page"`
 	Delivered      *int               `json:"delivered,omitempty"`
@@ -91,16 +122,23 @@ func (s Site) jsonEntries(views []entryView) []jsonEntry {
 			Summary:      v.Entry.Summary,
 			URL:          v.Entry.URL,
 			AgentCardURL: v.Entry.AgentCardURL,
-			// The endpoint as rendered, not as filed. An agent reading this
-			// file must not be handed a URL the site itself has just failed to
-			// reach.
-			MCPEndpointURL: v.Endpoint,
-			Category:       v.Entry.Category,
-			Access:         v.Entry.Access,
-			Source:         v.Entry.Source,
-			LastVerified:   v.Entry.LastVerified,
-			Page:           s.canonical(v.Entry.Slug),
-			HowToCall:      v.Entry.HowToCall,
+			Category:     v.Entry.Category,
+			Access:       v.Entry.Access,
+			Source:       v.Entry.Source,
+			LastVerified: v.Entry.LastVerified,
+			LastChecked:  v.LastChecked,
+			Status:       s.statusFor(v.Entry),
+			LastOK:       v.LastChecked,
+			ResponseMs:   s.responseMS(v.Entry),
+			Page:         s.canonical(v.Entry.Slug),
+			HowToCall:    v.Entry.HowToCall,
+		}
+		// The endpoints as rendered, not as filed. An agent reading this file
+		// must not be handed a URL the site itself has just failed to reach;
+		// a withheld one is reported by the flags below instead.
+		if !v.Unreachable {
+			entry.MCPEndpointURL = v.MCPEndpoint
+			entry.APIURL = v.APIEndpoint
 		}
 		if v.Unreachable {
 			entry.EndpointDown = true
@@ -116,12 +154,21 @@ func (s Site) jsonEntries(views []entryView) []jsonEntry {
 	return out
 }
 
+// SchemaVersion is the shape of agents.json. It moves only when a field
+// changes meaning or is removed, so a reader that caches the file can tell a
+// new contract from a new build and re-read on the one that matters. A new
+// optional field is not a new version: a reader that ignores it is still
+// reading the file correctly.
+const SchemaVersion = 1
+
 func (s Site) agentsJSON(views []entryView) map[string]any {
 	out := map[string]any{
-		"domain":      s.Domain,
-		"generatedAt": s.GeneratedAt.UTC().Format(time.RFC3339),
-		"description": "Every entry on this directory, with the endpoints an agent needs to connect to each one.",
-		"agents":      s.jsonEntries(views),
+		"schemaVersion": SchemaVersion,
+		"domain":        s.Domain,
+		"generatedAt":   s.GeneratedAt.UTC().Format(time.RFC3339),
+		"description":   "Every entry on this directory, with the endpoints an agent needs to connect to each one.",
+		"changes":       s.canonical("") + "changes.json",
+		"agents":        s.jsonEntries(views),
 	}
 	// The machine counterpart of the block every page carries, and one object
 	// rather than one per entry: the verdicts are about the marketplace, not about
@@ -203,13 +250,13 @@ func (s Site) directoryCard(views []entryView) map[string]any {
 			"description": v.Entry.Summary,
 			"tags":        []string{v.Entry.Category},
 		}
-		if v.Endpoint != nil {
-			skill["endpoint"] = *v.Endpoint
-		} else if v.Unreachable {
+		if v.Unreachable {
 			// A withheld endpoint is recorded as withheld rather than pointed
 			// at the home page, so an agent never mistakes a browsing URL for
 			// something it can call.
 			skill["endpointUnavailable"] = true
+		} else if u := v.Entry.MachineEndpoint(); u != nil {
+			skill["endpoint"] = *u
 		} else {
 			skill["endpoint"] = v.Entry.URL
 		}
@@ -260,8 +307,8 @@ func (s Site) llms(views []entryView) string {
 	var b strings.Builder
 	fmt.Fprintf(&b, "# %s\n\n", s.Domain)
 	b.WriteString("A directory of tools an AI agent can actually connect to. Each entry names the\n")
-	b.WriteString("endpoint an agent should call, plus the agent card and MCP endpoint when the\n")
-	b.WriteString("service publishes them.\n\n")
+	b.WriteString("endpoint an agent should call, plus the agent card and the MCP endpoint or\n")
+	b.WriteString("plain API endpoint when the service publishes them.\n\n")
 	fmt.Fprintf(&b, "For machine-readable data fetch %sagents.json; that single file\n", s.canonical(""))
 	b.WriteString("carries every entry and its endpoints. This file is for a reader skimming prose.\n\n")
 	b.WriteString("## How to use this efficiently (one fetch)\n\n")
@@ -287,6 +334,43 @@ func (s Site) llms(views []entryView) string {
 	b.WriteString("for e in d[\"agents\"]:\n")
 	b.WriteString("    print(e[\"slug\"], e[\"url\"], e.get(\"delivered\"))\n")
 	b.WriteString("```\n\n")
+	fmt.Fprintf(&b, "The change feed at %schanges.json lists what moved: the\n", s.canonical(""))
+	b.WriteString("last 30 builds that changed something, newest first, each naming the\n")
+	b.WriteString("entries added, removed or changed and the fields that moved. It records\n")
+	b.WriteString("listing changes only: a health verdict is already live in the `status`\n")
+	b.WriteString("field below, so a record here means the directory itself moved.\n\n")
+	// The field glossary. agents.json is the machine surface and llms.txt is
+	// the prose one, but one reader sees both: naming the fields here means an
+	// agent that found the file from this page does not have to guess which
+	// fields are safe to filter on, or what an absent one means.
+	b.WriteString("## agents.json fields\n\n")
+	b.WriteString("Top level: `schemaVersion` is the shape of the file — `1` today — and\n")
+	b.WriteString("moves only when a field changes meaning or disappears, so a cached\n")
+	b.WriteString("reader re-reads on a bump instead of guessing. `generatedAt` is when this\n")
+	b.WriteString("build ran, `domain` is this directory, `changes` links this directory\n")
+	b.WriteString("change feed, and `verification` carries the marketplace key verdicts.\n\n")
+	b.WriteString("Per entry:\n\n")
+	b.WriteString("- `status` — `up` when a check inside the last 48 hours found no complaint,\n")
+	b.WriteString("  `down` when one found the endpoint dead, `unknown` when nothing has been\n")
+	b.WriteString("  checked recently or the entry publishes nothing to probe. Skip anything\n")
+	b.WriteString("  that is not `up` when you need a live endpoint: `unknown` is not a\n")
+	b.WriteString("  softer `up`.\n")
+	b.WriteString("- `last_ok` — when the entry was last seen answering (RFC 3339), absent\n")
+	b.WriteString("  when it never has been. `last_checked` records the same observation\n")
+	b.WriteString("  under the name the pages print.\n")
+	b.WriteString("- `response_ms` — how long the machine endpoint took to answer at the last\n")
+	b.WriteString("  sweep: the median of the attempts that got an HTTP response. Absent when\n")
+	b.WriteString("  none did, which is not the same as zero.\n")
+	b.WriteString("- `last_verified` — the date a human last read the entry against the\n")
+	b.WriteString("  service; probes never move it.\n")
+	b.WriteString("- `mcp_endpoint_url` (deprecated, kept for one release) and `api_url` —\n")
+	b.WriteString("  what to call, while `agent_card_url` is the card and `page` this\n")
+	b.WriteString("  directory's own page. A withheld endpoint is omitted and marked by\n")
+	b.WriteString("  `endpoint_unreachable`, with `endpoint_unreachable_reason` and\n")
+	b.WriteString("  `endpoint_last_ok` saying what failed and when it last worked.\n")
+	b.WriteString("- `delivered` — completed trades for that entry, absent rather than zero\n")
+	b.WriteString("  when nobody has traded. `how_to_call` is the request shape, and\n")
+	b.WriteString("  `source` whether a human curated the entry.\n\n")
 	b.WriteString("## Entries\n\n")
 	stepNum := 1
 	for _, v := range views {
@@ -297,11 +381,24 @@ func (s Site) llms(views []entryView) string {
 		if v.Entry.AgentCardURL != nil {
 			fmt.Fprintf(&b, "- Agent card: %s\n", *v.Entry.AgentCardURL)
 		}
-		if v.Endpoint != nil {
-			fmt.Fprintf(&b, "- MCP endpoint: %s\n", *v.Endpoint)
+		endpoints := []struct {
+			label string
+			url   *string
+		}{
+			{"MCP endpoint", v.MCPEndpoint},
+			{"API endpoint", v.APIEndpoint},
 		}
-		if v.Unreachable {
-			b.WriteString("- MCP endpoint: withheld, it did not answer a recent health check\n")
+		for _, ep := range endpoints {
+			if ep.url == nil {
+				continue
+			}
+			if v.Unreachable {
+				fmt.Fprintf(&b, "- %s: withheld, it did not answer a recent health check\n", ep.label)
+			} else {
+				fmt.Fprintf(&b, "- %s: %s\n", ep.label, *ep.url)
+			}
+		}
+		if v.Unreachable && (v.MCPEndpoint != nil || v.APIEndpoint != nil) {
 			if v.EndpointDetail != "" {
 				fmt.Fprintf(&b, "  (%s)\n", v.EndpointDetail)
 			}
@@ -315,6 +412,11 @@ func (s Site) llms(views []entryView) string {
 			fmt.Fprintf(&b, "- Category: %s\n", v.Entry.Category)
 		}
 		fmt.Fprintf(&b, "- Last verified: %s\n", v.Entry.LastVerified.UTC().Format("2006-01-02"))
+		if v.LastChecked != nil {
+			fmt.Fprintf(&b, "- Endpoint checked: %s\n", v.LastChecked.UTC().Format("2006-01-02"))
+		} else {
+			b.WriteString("- Endpoint checked: no successful check on record\n")
+		}
 		if v.Usage != nil {
 			fmt.Fprintf(&b, "- Deliveries recorded: %d\n", v.Usage.Delivered)
 		}
@@ -349,7 +451,7 @@ func (s Site) llms(views []entryView) string {
 			}
 			for _, c := range h.Calls {
 				auth := "no token needed"
-				if c.Auth != "" {
+				if c.RequiresToken() {
 					auth = "requires a token"
 				}
 				fmt.Fprintf(&b, "\n- %s — %s %s (%s)", c.Name, c.Method, c.Path, auth)
@@ -365,7 +467,19 @@ func (s Site) llms(views []entryView) string {
 		stepNum = i
 	}
 	if s.Metrics != nil {
-		b.WriteString("## Marketplace usage\n\n")
+		switch {
+		case s.Metrics.AllProbes():
+			b.WriteString("## Test activity on vtessera\n\n")
+			b.WriteString("Every figure below comes from this repository's own probe agents, so it\n")
+			b.WriteString("measures our tests rather than outside use of the marketplace. No agent\n")
+			b.WriteString("that is not ours has traded yet.\n\n")
+		case s.Metrics.AnyProbes():
+			b.WriteString("## Marketplace usage\n\n")
+			b.WriteString("These totals include this repository's own probe agents; vtessera does\n")
+			b.WriteString("not publish a split between them and anyone else.\n\n")
+		default:
+			b.WriteString("## Marketplace usage\n\n")
+		}
 		fmt.Fprintf(&b, "Recorded across the vtessera marketplace: %d delivered, %d disputed,\n", s.Metrics.Totals.Delivered, s.Metrics.Totals.Disputed)
 		fmt.Fprintf(&b, "%d cancelled, across %d distinct consumers and %d distinct services in use.\n", s.Metrics.Totals.Cancelled, s.Metrics.Totals.Consumers, s.Metrics.Totals.Services)
 	}

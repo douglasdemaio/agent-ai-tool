@@ -73,6 +73,13 @@ type Endpoint struct {
 	// this run, so the date stays put while the outage continues instead of
 	// resetting to the check that keeps noticing it.
 	LastAliveAt *time.Time `json:"last_alive_at,omitempty"`
+	// ResponseMs is how long the service took to answer, in milliseconds: the
+	// median of this run's attempts that got an HTTP response, so one unlucky
+	// probe does not stand for the service and neither does the luckiest. It
+	// is absent when no attempt got an answer, because a timeout is not a
+	// response time and reporting one would make a dead endpoint look slow
+	// rather than gone.
+	ResponseMs *int `json:"response_ms,omitempty"`
 }
 
 // Status is one probe's result. A 429 counts as alive: the service is there and
@@ -158,6 +165,9 @@ func Targets(entries []content.Entry) map[string][]string {
 		var urls []string
 		if e.MCPEndpointURL != nil {
 			urls = append(urls, *e.MCPEndpointURL)
+		}
+		if e.APIURL != nil {
+			urls = append(urls, *e.APIURL)
 		}
 		if e.AgentCardURL != nil {
 			urls = append(urls, *e.AgentCardURL)
@@ -255,6 +265,7 @@ func probe(ctx context.Context, client *http.Client, url string, opts Options) E
 	result := Endpoint{URL: url}
 	epCtx, cancel := context.WithTimeout(ctx, opts.budget())
 	defer cancel()
+	var answeredTimes []int
 
 loop:
 	for i := 0; i < opts.Attempts; i++ {
@@ -273,11 +284,21 @@ loop:
 			case <-time.After(opts.Interval):
 			}
 		}
-		status, detail := attempt(epCtx, client, url, opts.Timeout)
+		start := time.Now()
+		status, detail, answered := attempt(epCtx, client, url, opts.Timeout)
+		if answered {
+			took := int(time.Since(start) / time.Millisecond)
+			answeredTimes = append(answeredTimes, took)
+		}
 		result.Attempts = append(result.Attempts, status.code())
 		if detail != "" {
 			result.Detail = detail
 		}
+	}
+	if len(answeredTimes) > 0 {
+		sort.Ints(answeredTimes)
+		median := answeredTimes[len(answeredTimes)/2]
+		result.ResponseMs = &median
 	}
 	alive := 0
 	for _, code := range result.Attempts {
@@ -294,13 +315,16 @@ loop:
 	return result
 }
 
-func attempt(ctx context.Context, client *http.Client, url string, timeout time.Duration) (Status, string) {
+// attempt probes once. The bool reports whether an HTTP response arrived at
+// all, which is a different fact from whether it was a good one: a 404 is an
+// answer and counts for the response time, a connection refused is not.
+func attempt(ctx context.Context, client *http.Client, url string, timeout time.Duration) (Status, string, bool) {
 	reqCtx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
 	req, err := http.NewRequestWithContext(reqCtx, http.MethodGet, url, nil)
 	if err != nil {
-		return StatusFailed, err.Error()
+		return StatusFailed, err.Error(), false
 	}
 	req.Header.Set("Accept", "application/json")
 	// Identify the check honestly so an operator reading upstream logs knows
@@ -309,7 +333,7 @@ func attempt(ctx context.Context, client *http.Client, url string, timeout time.
 
 	resp, err := client.Do(req)
 	if err != nil {
-		return StatusFailed, err.Error()
+		return StatusFailed, err.Error(), false
 	}
 	defer resp.Body.Close()
 	// The body is drained and closed so the connection can be reused; its
@@ -318,11 +342,11 @@ func attempt(ctx context.Context, client *http.Client, url string, timeout time.
 
 	switch {
 	case resp.StatusCode >= 200 && resp.StatusCode < 300:
-		return StatusAlive, ""
+		return StatusAlive, "", true
 	case resp.StatusCode == http.StatusTooManyRequests:
-		return StatusRateLimited, fmt.Sprintf("GET %s = 429", url)
+		return StatusRateLimited, fmt.Sprintf("GET %s = 429", url), true
 	default:
-		return StatusFailed, fmt.Sprintf("GET %s = %d", url, resp.StatusCode)
+		return StatusFailed, fmt.Sprintf("GET %s = %d", url, resp.StatusCode), true
 	}
 }
 
@@ -427,18 +451,29 @@ func Read(path string) Report {
 	return report
 }
 
-// Unreachable lists the entries whose advertised endpoints are currently judged
-// dead. Only endpoints proven dead by a report newer than StaleAfter count; a
-// stale or absent report demotes nothing, because the site should not keep
-// suppressing a service on the strength of a check it no longer trusts.
-func (r Report) Unreachable(now time.Time) map[string]bool {
+// Fresh reports whether the report is still trusted as evidence about the
+// present: stamped in the past and younger than StaleAfter.
+//
+// Everything that publishes a verdict — which endpoints are withheld, when an
+// entry was last checked, what status it carries — asks this first. A report
+// that fails it is history: it still says what was true when it was written,
+// and must not keep speaking for now.
+func (r Report) Fresh(now time.Time) bool {
 	// A report stamped in the future is not evidence about the present. This
 	// happens for real, not only in tests: the report is written by one build
 	// and read by another whose clock differs, or by a run using a pinned
 	// generation time. Treating it as fresh would let a report be trusted
 	// indefinitely, so it is discarded like a stale one.
 	age := now.Sub(r.CheckedAt)
-	if r.CheckedAt.IsZero() || age < 0 || age > StaleAfter {
+	return !r.CheckedAt.IsZero() && age >= 0 && age <= StaleAfter
+}
+
+// Unreachable lists the entries whose advertised endpoints are currently judged
+// dead. Only endpoints proven dead by a report that is still Fresh count: a
+// stale or absent report demotes nothing, because the site should not keep
+// suppressing a service on the strength of a check it no longer trusts.
+func (r Report) Unreachable(now time.Time) map[string]bool {
+	if !r.Fresh(now) {
 		return nil
 	}
 	out := make(map[string]bool)
@@ -452,6 +487,34 @@ func (r Report) Unreachable(now time.Time) map[string]bool {
 	}
 	if len(out) == 0 {
 		return nil
+	}
+	return out
+}
+
+// ResponseTimes reads how long each entry's machine endpoint took to answer,
+// keyed by slug. The machine endpoint is the one an agent would call — an MCP
+// endpoint when the entry publishes one, otherwise the plain API — and the
+// agent card is deliberately not a candidate: how fast a card answers says
+// nothing about how fast the service does.
+//
+// Entries absent from the map published no measurable answer: no endpoint, no
+// probe, or one that never got a response. That is the same statement the
+// absence of the field makes in agents.json.
+func (r Report) ResponseTimes(entries []content.Entry) map[string]int {
+	var out map[string]int
+	for _, e := range entries {
+		u := e.MachineEndpoint()
+		if u == nil {
+			continue
+		}
+		endpoint, ok := r.Endpoints[e.Slug+" "+*u]
+		if !ok || endpoint.ResponseMs == nil {
+			continue
+		}
+		if out == nil {
+			out = make(map[string]int)
+		}
+		out[e.Slug] = *endpoint.ResponseMs
 	}
 	return out
 }

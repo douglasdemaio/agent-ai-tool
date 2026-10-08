@@ -33,6 +33,15 @@ type Site struct {
 	MetricsErr          error
 	GeneratedAt         time.Time
 	AssetsDir           string
+	// ChangesPath is the committed change feed — the history a reader fetches
+	// to catch up, and the baseline this build diffs against. Empty means the
+	// directory publishes no feed, so no changes.json is written at all
+	// rather than an empty one that would read as "nothing has ever changed".
+	ChangesPath string
+	// RecordChanges permits a write back to ChangesPath, and is set only for
+	// builds that read committed data. See updateChangeFeed for why a build
+	// that fetched fresh values publishes the feed without adding to it.
+	RecordChanges bool
 	// Unreachable names entries whose advertised endpoints a recent health
 	// check could not reach. Their endpoints are withheld from every published
 	// surface rather than advertised as callable, because the directory's claim
@@ -50,6 +59,11 @@ type Site struct {
 	// which is a different statement from being up and is rendered as such
 	// rather than as a missing date.
 	EndpointLastAlive map[string]time.Time
+	// EndpointResponseMS is how long each entry's machine endpoint took to
+	// answer at the last sweep, keyed by slug. An entry absent from the map
+	// published no measurable answer, and agents.json omits the field rather
+	// than printing a zero that reads as instant.
+	EndpointResponseMS map[string]int
 
 	// Marketplace is the marketplace's own account of itself, and the only source
 	// of the key that AgentReports is checked against. It is nil when nothing has
@@ -115,18 +129,6 @@ func (s Site) VerifyAgents() []live.AgentVerification {
 	return out
 }
 
-// endpointFor returns the machine endpoint an entry advertises, or nil when the
-// entry has none or a recent check says it cannot be reached.
-func (s Site) endpointFor(e content.Entry) *string {
-	if e.MCPEndpointURL == nil {
-		return nil
-	}
-	if s.Unreachable[e.Slug] {
-		return nil
-	}
-	return e.MCPEndpointURL
-}
-
 type usage struct {
 	Delivered int
 	Disputed  int
@@ -174,9 +176,16 @@ type entryView struct {
 	// template's truthiness test is concerned, which would let an empty
 	// marketplace look like a working one.
 	LiveEmpty bool
-	// Endpoint is the machine endpoint this entry advertises, withheld when a
-	// recent health check could not reach it.
-	Endpoint *string
+	// MCPEndpoint is the entry's MCP endpoint — one an agent opens a session
+	// against — and APIEndpoint is a plain HTTP endpoint it calls directly,
+	// such as a JSON document to fetch. Neither is removed when a check fails:
+	// Unreachable and EndpointDetail say that, and an address silently dropped
+	// would leave a withheld row with no label to show, so the page could not
+	// tell a dead MCP server from a dead JSON API. What agents.json publishes
+	// is nilled on the same rule as before: a URL the site has just failed to
+	// reach must not be handed out as if it worked.
+	MCPEndpoint *string
+	APIEndpoint *string
 	// Unreachable reports that the endpoint is withheld, so the page can say
 	// why rather than silently omitting a field an agent expects.
 	Unreachable bool
@@ -188,6 +197,14 @@ type entryView struct {
 	// A withheld endpoint without one is a service nobody has seen work, which
 	// says more than an empty date would.
 	LastAlive *time.Time
+	// LastChecked is when an automated check last saw this entry's endpoint
+	// answer: the sweep that just judged it, or the last sweep that did while
+	// it is down. It is a machine's observation about reachability and carries
+	// no claim that the summary, category or terms still describe the service —
+	// which is the claim Entry.LastVerified makes and only a human can make
+	// again. The two are shown side by side precisely so neither is read as the
+	// other, and it is nil when nothing has ever checked this entry.
+	LastChecked *time.Time
 	// ReviewDue reports that a curated entry has gone too long without a human
 	// confirming it still describes reality. The health check proves an
 	// endpoint answers; it cannot prove the summary is still true.
@@ -314,22 +331,53 @@ func (s Site) usageByAgent() map[string]usage {
 	}
 	out := make(map[string]usage, len(s.Metrics.Agents))
 	for _, a := range s.Metrics.Agents {
+		if live.IsProbeAgent(a.AgentID) {
+			// Our own test agents must never earn an entry a delivery badge.
+			// The banner is labelled as test activity; a badge next to an
+			// entry is a claim about that entry being exercised, and ours
+			// exercising it is not that.
+			continue
+		}
 		out[a.AgentID] = usage{Delivered: a.Delivered, Disputed: a.Disputed, Cancelled: a.Cancelled}
 	}
 	return out
 }
 
+// MetricsLead is the banner's headline, and its job is to name whose activity
+// the numbers describe.
+//
+// vtessera publishes aggregate totals and cannot split them by who produced
+// them, so while any of our own probe agents have traded, the figures include
+// our tests. The honest options are therefore to say so or to show nothing:
+// what the directory may not do is print the same totals under a heading that
+// invites a reader to take them as outside usage.
+func (s Site) MetricsLead() string {
+	if s.Metrics == nil {
+		return ""
+	}
+	switch {
+	case s.Metrics.AllProbes():
+		return "Test activity on vtessera — our own probe agents, no outside usage yet"
+	case s.Metrics.AnyProbes():
+		return "What agents are doing on vtessera, including this repository's own test agents"
+	default:
+		return "What agents are actually doing on vtessera"
+	}
+}
+
 // viewFor builds a view and applies the health verdict. The curated entry keeps
-// its own mcp_endpoint_url: the source file stays the record of what the service
-// publishes, while the rendered site withholds an endpoint a check could not
-// reach. Editing the JSON to remove a URL would lose that distinction the next
-// time the service came back.
+// its own endpoint URLs as filed: the source file stays the record of what the
+// service publishes, while the rendered site withholds an endpoint a check could
+// not reach. Editing the JSON to remove a URL would lose that distinction the
+// next time the service came back.
 func (s Site) viewFor(e content.Entry) entryView {
 	view := entryView{
 		Entry:           e,
-		Endpoint:        s.endpointFor(e),
+		MCPEndpoint:     e.MCPEndpointURL,
+		APIEndpoint:     e.APIURL,
 		Unreachable:     s.Unreachable[e.Slug],
 		HealthCheckedAt: s.HealthCheckedAt,
+		LastChecked:     s.lastChecked(e),
 	}
 	if view.Unreachable {
 		if detail, ok := s.endpointDetail(e.Slug); ok {
@@ -340,6 +388,75 @@ func (s Site) viewFor(e content.Entry) entryView {
 		}
 	}
 	return view
+}
+
+// statusFor is what this build can prove about an entry right now.
+//
+// "up" and "down" come from a report this build trusts; "unknown" is the honest
+// answer when there is none, when the report has aged past StaleAfter, or when
+// the entry publishes nothing worth probing. Unknown is not a softer word for
+// up: an agent that needs a live endpoint skips it exactly as it skips down,
+// which is the whole point of the third state.
+func (s Site) statusFor(e content.Entry) string {
+	if s.HealthCheckedAt == nil {
+		return "unknown"
+	}
+	if e.MachineEndpoint() == nil && e.AgentCardURL == nil {
+		return "unknown"
+	}
+	if s.Unreachable[e.Slug] {
+		return "down"
+	}
+	return "up"
+}
+
+// responseMS is how long this entry's machine endpoint took to answer, or nil
+// when the sweep measured nothing it could publish — no endpoint, no probe, or
+// no response at all.
+func (s Site) responseMS(e content.Entry) *int {
+	// The same gate as the status: a timing measured by a report this build no
+	// longer trusts must not outlive the verdict it came with, or agents.json
+	// publishes a precise number next to "unknown".
+	if s.HealthCheckedAt == nil {
+		return nil
+	}
+	ms, ok := s.EndpointResponseMS[e.Slug]
+	if !ok {
+		return nil
+	}
+	return &ms
+}
+
+// lastChecked is when the last automated check saw this entry's endpoints
+// answer, or nil when none ever has.
+//
+// Three cases, and the difference between them is the whole point: an entry
+// with nothing to probe has no check at all; an entry whose endpoint a fresh
+// report accepts is dated by that report; an entry currently withheld is dated
+// by the last answer before the outage, carried across reports so the number
+// does not reset to whichever check keeps noticing the failure. An entry
+// published without a trusted report is unchecked, not up — a HealthCheckedAt
+// of nil means no sweep has been believed recently, and claiming a check on
+// that would be the same mistake as letting a stale report demote.
+//
+// Entry.LastVerified is never read here and never written by anything this
+// touches. The probe can observe an HTTP response; only a human can confirm
+// that the entry still describes the service.
+func (s Site) lastChecked(e content.Entry) *time.Time {
+	if e.MCPEndpointURL == nil && e.APIURL == nil && e.AgentCardURL == nil {
+		return nil
+	}
+	if !s.Unreachable[e.Slug] {
+		if s.HealthCheckedAt == nil {
+			return nil
+		}
+		when := *s.HealthCheckedAt
+		return &when
+	}
+	if when, ok := s.EndpointLastAlive[e.Slug]; ok {
+		return &when
+	}
+	return nil
 }
 
 func (s Site) endpointDetail(slug string) (string, bool) {
@@ -505,6 +622,16 @@ func (s Site) Render(outDir string) error {
 	if err != nil {
 		return err
 	}
+	// The feed is settled before anything is written: it is the one output
+	// that also reads and rewrites a committed file, so a failure here must
+	// happen before half a site is on disk.
+	var changes []ChangeRecord
+	if s.ChangesPath != "" {
+		changes, err = s.updateChangeFeed(s.ChangesPath, views)
+		if err != nil {
+			return err
+		}
+	}
 	tmpl, err := template.New("site").Funcs(template.FuncMap{
 		"age":    humanAge,
 		"verify": func(t time.Time) string { return t.UTC().Format("2006-01-02") },
@@ -575,6 +702,11 @@ func (s Site) Render(outDir string) error {
 	}
 	if err := s.writeJSON(filepath.Join(outDir, "agents.json"), s.agentsJSON(views)); err != nil {
 		return err
+	}
+	if s.ChangesPath != "" {
+		if err := s.writeJSON(filepath.Join(outDir, "changes.json"), s.changeFeedJSON(changes)); err != nil {
+			return err
+		}
 	}
 	if err := s.writeJSON(filepath.Join(outDir, ".well-known", "agent-card.json"), s.directoryCard(views)); err != nil {
 		return err
