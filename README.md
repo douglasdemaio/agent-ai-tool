@@ -352,6 +352,27 @@ and after `content.ReviewWindow` (180 days) the site marks it *due for review* o
 its page and in the index. `review-entries.yml` lists the overdue ones on the
 first of each month and opens or bumps a single issue.
 
+**Two dates, two claims.** Every surface publishes both, side by side:
+
+- `last_verified` is the human one: the date a person read the entry against the
+  service. Only a human sets it, only a human moves it, and `ReviewDue` judges on
+  it. A probe never touches it — a health check proves an endpoint answers, which
+  is a different claim from the summary, category and terms still describing what
+  the service does.
+- `last_checked` is the machine one: when an automated check last saw the entry's
+  endpoint answer. It advances on its own with every `make check`; it is absent
+  until a check has ever succeeded, so a build that never ran one cannot claim
+  one; and while an endpoint is withheld it holds the last success before the
+  outage rather than the check that keeps reporting the failure.
+
+The two are never derived from each other. The page labels them *Last verified*
+and *Endpoint checked*, the index shows `verified 2026-09-29 · endpoint checked
+2026-10-08`, `agents.json` carries `last_verified` and `last_checked`, and
+`llms.txt` prints `- Last verified:` followed by `- Endpoint checked:`. An entry
+with no successful check on record says exactly that on all three, because an
+absent date and an old date are different statements and neither reads well as a
+blank.
+
 `make review` prints the same list, tab-separated, as `<slug>\t<last_verified>`:
 
 ```bash
@@ -438,7 +459,10 @@ redirects. The 404 page names no canonical at all.
 The index `lastmod` is the newest entry `last_verified`. The site is also
 rebuilt for reasons that do not change the directory — a live snapshot refresh,
 a metrics cache hit — and a `lastmod` that moved on every rebuild would tell
-crawlers the listing changed when it did not.
+crawlers the listing changed when it did not. The same rule excludes probes:
+`last_checked` moves twice a day and says nothing about the listing, so a
+`lastmod` that followed it would have crawlers re-reading pages nobody has
+touched.
 
 ### Guidance is generated from the data
 

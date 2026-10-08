@@ -26,6 +26,11 @@ func (s Site) sitemap(views []entryView) []byte {
 	// The site is rebuilt for reasons that do not change the directory (a live
 	// snapshot refresh, a metrics cache hit), and a lastmod that moves on every
 	// rebuild tells crawlers the listing changes when it did not.
+	//
+	// It follows content, not probes: an endpoint answering a health check
+	// says nothing about the listing, so last_checked is deliberately not
+	// consulted here. last_verified moves only when a human re-reads an entry,
+	// which is the event a crawler waiting for a real change wants.
 	var newest time.Time
 	for _, v := range views {
 		if v.Entry.LastVerified.After(newest) {

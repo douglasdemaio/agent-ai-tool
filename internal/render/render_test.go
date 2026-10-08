@@ -1009,3 +1009,187 @@ func TestAnEndpointThatHasNeverAnsweredSaysSoInsteadOfShowingNoDate(t *testing.T
 		t.Errorf("endpoint_last_ok = %v, want the field omitted when there is no record", payload.Agents[0].LastOK)
 	}
 }
+
+// Two claims sit next to each other on every surface: a human read the entry,
+// and a machine watched the endpoint answer. The second has to advance on its
+// own while the first stays exactly where the person left it — including when
+// the first is overdue, because a stale review date is the finding and a probe
+// must not quietly wash it away.
+func TestTheCheckedDateAdvancesWhileTheReviewDateDoesNotMove(t *testing.T) {
+	e := entry("vtessera", "A marketplace.")
+	e.MCPEndpointURL = strptr("https://vtessera.example.com/mcp")
+	// Six months and a bit before GeneratedAt, so the entry is already due.
+	e.LastVerified = time.Date(2026, 3, 1, 0, 0, 0, 0, time.UTC)
+	s := site(t, e)
+
+	type dates struct {
+		lastVerified string
+		lastChecked  *string
+	}
+	datesFor := func(t *testing.T, s Site) dates {
+		t.Helper()
+		var payload struct {
+			Agents []struct {
+				LastVerified string  `json:"last_verified"`
+				LastChecked  *string `json:"last_checked"`
+			} `json:"agents"`
+		}
+		if err := json.Unmarshal([]byte(read(t, renderTo(t, s), "agents.json")), &payload); err != nil {
+			t.Fatal(err)
+		}
+		if len(payload.Agents) != 1 {
+			t.Fatalf("got %d entries", len(payload.Agents))
+		}
+		return dates{payload.Agents[0].LastVerified, payload.Agents[0].LastChecked}
+	}
+	stamp := func(d time.Time) string { return d.Format(time.RFC3339) }
+
+	dayOne := time.Date(2026, 9, 27, 6, 0, 0, 0, time.UTC)
+	dayTwo := dayOne.Add(24 * time.Hour)
+
+	s.HealthCheckedAt = &dayOne
+	first := datesFor(t, s)
+	s.HealthCheckedAt = &dayTwo
+	second := datesFor(t, s)
+
+	if first.lastVerified != "2026-03-01T00:00:00Z" {
+		t.Errorf("last_verified = %q, want the date a human filed", first.lastVerified)
+	}
+	if second.lastVerified != first.lastVerified {
+		t.Errorf("last_verified moved to %q on a second check; only a human may move it", second.lastVerified)
+	}
+	if first.lastChecked == nil || *first.lastChecked != stamp(dayOne) {
+		t.Errorf("last_checked = %v, want %s", first.lastChecked, stamp(dayOne))
+	}
+	if second.lastChecked == nil || *second.lastChecked != stamp(dayTwo) {
+		t.Errorf("last_checked = %v after a second day's check, want %s", second.lastChecked, stamp(dayTwo))
+	}
+
+	// The overdue verdict belongs to the review date alone, and must survive
+	// the probe moving underneath it.
+	page := read(t, renderTo(t, s), "vtessera/index.html")
+	if !strings.Contains(page, "due for review") {
+		t.Error("an entry last reviewed over six months ago is no longer marked due")
+	}
+	if !strings.Contains(page, "<dt>Last verified</dt><dd>2026-03-01") {
+		t.Error("the page dates the review from the curated date rather than the probe")
+	}
+	if want := "<dt>Endpoint checked</dt><dd>2026-09-28</dd>"; !strings.Contains(page, want) {
+		t.Errorf("the page does not carry the second day's check as %q", want)
+	}
+	if index := read(t, renderTo(t, s), "index.html"); !strings.Contains(index, "verified 2026-03-01") ||
+		!strings.Contains(index, "endpoint checked 2026-09-28") {
+		t.Error("the directory does not show both dates side by side")
+	}
+}
+
+// An entry with no trusted report behind it, or with nothing to probe at all,
+// is unchecked rather than up. Dating it would let a build that never ran a
+// check claim one, which is the same failure as a stale report demoting an
+// endpoint: a wrong answer that looks like a fact.
+func TestAnEntryNobodyHasCheckedSaysSoInsteadOfDatingItself(t *testing.T) {
+	probed := entry("registry", "A registry.")
+	probed.MCPEndpointURL = strptr("https://registry.example.com/mcp")
+	unprobed := entry("notes", "Some notes.")
+
+	for _, e := range []content.Entry{probed, unprobed} {
+		out := renderTo(t, site(t, e))
+
+		var payload struct {
+			Agents []struct {
+				LastChecked *string `json:"last_checked"`
+			} `json:"agents"`
+		}
+		if err := json.Unmarshal([]byte(read(t, out, "agents.json")), &payload); err != nil {
+			t.Fatal(err)
+		}
+		if payload.Agents[0].LastChecked != nil {
+			t.Errorf("%s: last_checked = %s with no check ever recorded", e.Slug, *payload.Agents[0].LastChecked)
+		}
+		if page := read(t, out, e.Slug+"/index.html"); !strings.Contains(page, "no successful check on record") {
+			t.Errorf("%s: the page neither dates the check nor explains its absence", e.Slug)
+		}
+		if llms := read(t, out, "llms.txt"); !strings.Contains(llms, "- Endpoint checked: no successful check on record\n") {
+			t.Errorf("%s: llms.txt neither dates the check nor explains its absence", e.Slug)
+		}
+	}
+}
+
+// The sitemap tells a crawler when the listing changed. A health check is not
+// that, and a lastmod that moved with every probe would have crawlers
+// re-reading a directory whose entries nobody has touched.
+func TestSitemapLastmodIgnoresTheProbe(t *testing.T) {
+	e := entry("vtessera", "A marketplace.")
+	e.MCPEndpointURL = strptr("https://vtessera.example.com/mcp")
+	s := site(t, e)
+	probed := time.Date(2026, 10, 8, 6, 0, 0, 0, time.UTC)
+	s.HealthCheckedAt = &probed
+
+	body := read(t, renderTo(t, s), "sitemap.xml")
+	if strings.Contains(body, "2026-10-08") {
+		t.Error("sitemap lastmod followed the probe instead of the content")
+	}
+	if !strings.Contains(body, "2026-09-20T00:00:00Z") {
+		t.Error("sitemap lastmod no longer carries the entry's last_verified")
+	}
+}
+
+// The checked date is a claim an agent may act on, so it has to be the same
+// number wherever it appears — including while the endpoint is down, where the
+// number is the last success rather than the check that is reporting failure.
+func TestTheCheckedDateAgreesAcrossTheThreeSurfaces(t *testing.T) {
+	const endpoint = "https://vtessera.example.com/mcp"
+	checked := func(t *testing.T, s Site) (jsonDate, llmsLine, pageDate string) {
+		t.Helper()
+		out := renderTo(t, s)
+		var payload struct {
+			Agents []struct {
+				LastChecked *string `json:"last_checked"`
+			} `json:"agents"`
+		}
+		if err := json.Unmarshal([]byte(read(t, out, "agents.json")), &payload); err != nil {
+			t.Fatal(err)
+		}
+		if payload.Agents[0].LastChecked != nil {
+			// agents.json carries the machine form; compare the date part,
+			// which is what the other two surfaces print.
+			jsonDate = strings.SplitN(*payload.Agents[0].LastChecked, "T", 2)[0]
+		}
+		for _, line := range strings.Split(read(t, out, "llms.txt"), "\n") {
+			if strings.HasPrefix(line, "- Endpoint checked: ") {
+				llmsLine = strings.TrimPrefix(line, "- Endpoint checked: ")
+				break
+			}
+		}
+		page := read(t, out, "vtessera/index.html")
+		const mark = "<dt>Endpoint checked</dt><dd>"
+		if i := strings.Index(page, mark); i >= 0 {
+			rest := page[i+len(mark):]
+			pageDate = rest[:strings.Index(rest, "<")]
+		}
+		return jsonDate, llmsLine, pageDate
+	}
+
+	// Up: the date is the sweep that just accepted the endpoint.
+	alive := entry("vtessera", "A marketplace.")
+	alive.MCPEndpointURL = strptr(endpoint)
+	up := site(t, alive)
+	sweep := time.Date(2026, 10, 8, 6, 0, 0, 0, time.UTC)
+	up.HealthCheckedAt = &sweep
+	gotJSON, gotLLMS, gotPage := checked(t, up)
+	if gotJSON != "2026-10-08" || gotLLMS != "2026-10-08" || gotPage != "2026-10-08" {
+		t.Errorf("an up endpoint reports checked as agents.json=%q llms.txt=%q page=%q, want one date on all three",
+			gotJSON, gotLLMS, gotPage)
+	}
+
+	// Down: the date is the last success before the outage, not the check
+	// that keeps reporting the failure.
+	down := deadEndpointSite(t)
+	lastOK := time.Date(2026, 10, 5, 14, 54, 0, 0, time.UTC)
+	down.EndpointLastAlive = map[string]time.Time{"vtessera": lastOK}
+	gotJSON, gotLLMS, gotPage = checked(t, down)
+	if gotJSON != "2026-10-05" || gotLLMS != "2026-10-05" || gotPage != "2026-10-05" {
+		t.Errorf("a down endpoint reports checked as agents.json=%q llms.txt=%q page=%q, want the last success on all three",
+			gotJSON, gotLLMS, gotPage)
+	}
+}

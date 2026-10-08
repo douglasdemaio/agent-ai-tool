@@ -188,6 +188,14 @@ type entryView struct {
 	// A withheld endpoint without one is a service nobody has seen work, which
 	// says more than an empty date would.
 	LastAlive *time.Time
+	// LastChecked is when an automated check last saw this entry's endpoint
+	// answer: the sweep that just judged it, or the last sweep that did while
+	// it is down. It is a machine's observation about reachability and carries
+	// no claim that the summary, category or terms still describe the service —
+	// which is the claim Entry.LastVerified makes and only a human can make
+	// again. The two are shown side by side precisely so neither is read as the
+	// other, and it is nil when nothing has ever checked this entry.
+	LastChecked *time.Time
 	// ReviewDue reports that a curated entry has gone too long without a human
 	// confirming it still describes reality. The health check proves an
 	// endpoint answers; it cannot prove the summary is still true.
@@ -330,6 +338,7 @@ func (s Site) viewFor(e content.Entry) entryView {
 		Endpoint:        s.endpointFor(e),
 		Unreachable:     s.Unreachable[e.Slug],
 		HealthCheckedAt: s.HealthCheckedAt,
+		LastChecked:     s.lastChecked(e),
 	}
 	if view.Unreachable {
 		if detail, ok := s.endpointDetail(e.Slug); ok {
@@ -340,6 +349,38 @@ func (s Site) viewFor(e content.Entry) entryView {
 		}
 	}
 	return view
+}
+
+// lastChecked is when the last automated check saw this entry's endpoints
+// answer, or nil when none ever has.
+//
+// Three cases, and the difference between them is the whole point: an entry
+// with nothing to probe has no check at all; an entry whose endpoint a fresh
+// report accepts is dated by that report; an entry currently withheld is dated
+// by the last answer before the outage, carried across reports so the number
+// does not reset to whichever check keeps noticing the failure. An entry
+// published without a trusted report is unchecked, not up — a HealthCheckedAt
+// of nil means no sweep has been believed recently, and claiming a check on
+// that would be the same mistake as letting a stale report demote.
+//
+// Entry.LastVerified is never read here and never written by anything this
+// touches. The probe can observe an HTTP response; only a human can confirm
+// that the entry still describes the service.
+func (s Site) lastChecked(e content.Entry) *time.Time {
+	if e.MCPEndpointURL == nil && e.AgentCardURL == nil {
+		return nil
+	}
+	if !s.Unreachable[e.Slug] {
+		if s.HealthCheckedAt == nil {
+			return nil
+		}
+		when := *s.HealthCheckedAt
+		return &when
+	}
+	if when, ok := s.EndpointLastAlive[e.Slug]; ok {
+		return &when
+	}
+	return nil
 }
 
 func (s Site) endpointDetail(slug string) (string, bool) {

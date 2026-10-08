@@ -26,7 +26,7 @@
       <p class="entry-meta">
         <span class="tag source-{{.Entry.Source}}">{{.Entry.Source}}</span>
         {{if .Entry.Category}}<span class="tag">{{.Entry.Category}}</span>{{end}}
-        <span class="verified">verified {{verify .Entry.LastVerified}}</span>
+        <span class="verified">verified {{verify .Entry.LastVerified}}</span>{{if .LastChecked}} &middot; <span class="verified">endpoint checked {{verify .LastChecked}}</span>{{end}}
       </p>
     </li>
     {{end}}

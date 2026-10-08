@@ -27,6 +27,7 @@
     {{end}}
     <dt>Source</dt><dd><span class="tag source-{{.View.Entry.Source}}">{{.View.Entry.Source}}</span></dd>
     <dt>Last verified</dt><dd>{{verify .View.Entry.LastVerified}}{{if .View.ReviewDue}} <span class="due">due for review &mdash; not confirmed against the service in over six months</span>{{end}}</dd>
+    <dt>Endpoint checked</dt><dd>{{if .View.LastChecked}}{{verify .View.LastChecked}}{{else}}<span class="entry-meta">no successful check on record</span>{{end}}</dd>
     {{if .View.Usage}}
     <dt>Deliveries recorded</dt>
     <dd>{{.View.Usage.Delivered}}{{if .View.Usage.Disputed}} &middot; {{.View.Usage.Disputed}} disputed{{end}}{{if .View.Usage.Cancelled}} &middot; {{.View.Usage.Cancelled}} cancelled{{end}}</dd>

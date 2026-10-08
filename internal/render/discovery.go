@@ -60,16 +60,23 @@ func (s Site) schemaOrg(v entryView) map[string]any {
 }
 
 type jsonEntry struct {
-	Slug           string             `json:"slug"`
-	Name           string             `json:"name"`
-	Summary        string             `json:"summary"`
-	URL            string             `json:"url"`
-	AgentCardURL   *string            `json:"agent_card_url"`
-	MCPEndpointURL *string            `json:"mcp_endpoint_url"`
-	Category       string             `json:"category,omitempty"`
-	Access         string             `json:"access,omitempty"`
-	Source         string             `json:"source"`
-	LastVerified   time.Time          `json:"last_verified"`
+	Slug           string    `json:"slug"`
+	Name           string    `json:"name"`
+	Summary        string    `json:"summary"`
+	URL            string    `json:"url"`
+	AgentCardURL   *string   `json:"agent_card_url"`
+	MCPEndpointURL *string   `json:"mcp_endpoint_url"`
+	Category       string    `json:"category,omitempty"`
+	Access         string    `json:"access,omitempty"`
+	Source         string    `json:"source"`
+	LastVerified   time.Time `json:"last_verified"`
+	// LastChecked is when an automated check last saw this entry's endpoint
+	// answer, and is absent when none ever has. It is deliberately separate
+	// from LastVerified: that one is a human's word that the entry still
+	// describes the service, this one is a machine's word that the endpoint
+	// answered, and a reader deciding whether to call needs the second without
+	// being misled into thinking the first was refreshed by it.
+	LastChecked    *time.Time         `json:"last_checked,omitempty"`
 	HowToCall      *content.HowToCall `json:"how_to_call,omitempty"`
 	Page           string             `json:"page"`
 	Delivered      *int               `json:"delivered,omitempty"`
@@ -99,6 +106,7 @@ func (s Site) jsonEntries(views []entryView) []jsonEntry {
 			Access:         v.Entry.Access,
 			Source:         v.Entry.Source,
 			LastVerified:   v.Entry.LastVerified,
+			LastChecked:    v.LastChecked,
 			Page:           s.canonical(v.Entry.Slug),
 			HowToCall:      v.Entry.HowToCall,
 		}
@@ -315,6 +323,11 @@ func (s Site) llms(views []entryView) string {
 			fmt.Fprintf(&b, "- Category: %s\n", v.Entry.Category)
 		}
 		fmt.Fprintf(&b, "- Last verified: %s\n", v.Entry.LastVerified.UTC().Format("2006-01-02"))
+		if v.LastChecked != nil {
+			fmt.Fprintf(&b, "- Endpoint checked: %s\n", v.LastChecked.UTC().Format("2006-01-02"))
+		} else {
+			b.WriteString("- Endpoint checked: no successful check on record\n")
+		}
 		if v.Usage != nil {
 			fmt.Fprintf(&b, "- Deliveries recorded: %d\n", v.Usage.Delivered)
 		}
