@@ -846,3 +846,101 @@ func TestASuspendedAgentIsMarkedTheSameWayARetiredOneIs(t *testing.T) {
 		t.Error("an agent with no status counts as withdrawn")
 	}
 }
+
+// agents.json, llms.txt and the entry page are three views of one render pass.
+// An agent reading two of them must never get two different answers about the
+// facts it acts on: whether it may call the endpoint, what the endpoint is,
+// and when the entry was last checked.
+func TestTheThreeDiscoverySurfacesCannotDisagree(t *testing.T) {
+	const endpoint = "https://vtessera.example.com/mcp"
+	const verified = "2026-09-20"
+
+	reachable := entry("vtessera", "A marketplace.")
+	reachable.MCPEndpointURL = strptr(endpoint)
+
+	for _, tc := range []struct {
+		name       string
+		s          Site
+		advertised bool
+	}{
+		{"a reachable endpoint is named on all three surfaces", site(t, reachable), true},
+		{"a withheld endpoint is withheld on all three surfaces", deadEndpointSite(t), false},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			out := renderTo(t, tc.s)
+
+			var payload struct {
+				GeneratedAt string `json:"generatedAt"`
+				Agents      []struct {
+					MCPEndpointURL *string `json:"mcp_endpoint_url"`
+					EndpointDown   bool    `json:"endpoint_unreachable"`
+					Reason         string  `json:"endpoint_unreachable_reason"`
+					LastVerified   string  `json:"last_verified"`
+				} `json:"agents"`
+			}
+			if err := json.Unmarshal([]byte(read(t, out, "agents.json")), &payload); err != nil {
+				t.Fatal(err)
+			}
+			if payload.GeneratedAt == "" {
+				t.Error("agents.json carries no generatedAt, so a reader cannot age it")
+			}
+			if len(payload.Agents) != 1 {
+				t.Fatalf("got %d entries", len(payload.Agents))
+			}
+			got := payload.Agents[0]
+			llms := read(t, out, "llms.txt")
+			page := read(t, out, "vtessera/index.html")
+
+			if !strings.HasPrefix(got.LastVerified, verified) {
+				t.Errorf("agents.json last_verified = %q, want %s", got.LastVerified, verified)
+			}
+			if !strings.Contains(llms, "- Last verified: "+verified+"\n") {
+				t.Error("llms.txt reports a different last verified date")
+			}
+			if !strings.Contains(page, "<dd>"+verified+"</dd>") {
+				t.Error("the entry page reports a different last verified date")
+			}
+
+			if tc.advertised {
+				if got.MCPEndpointURL == nil || *got.MCPEndpointURL != endpoint {
+					t.Errorf("agents.json endpoint = %v, want %s", got.MCPEndpointURL, endpoint)
+				}
+				if got.EndpointDown {
+					t.Error("agents.json marks a reachable endpoint unreachable")
+				}
+				if !strings.Contains(llms, "- MCP endpoint: "+endpoint+"\n") {
+					t.Error("llms.txt does not name the endpoint agents.json carries")
+				}
+				if !strings.Contains(page, `href="`+endpoint+`"`) {
+					t.Error("the entry page does not link the endpoint agents.json carries")
+				}
+				return
+			}
+
+			if got.MCPEndpointURL != nil {
+				t.Errorf("agents.json still advertises a dead endpoint: %q", *got.MCPEndpointURL)
+			}
+			if !got.EndpointDown {
+				t.Error("agents.json does not mark the endpoint unreachable")
+			}
+			if got.Reason == "" {
+				t.Fatal("agents.json carries no failure reason to compare")
+			}
+			if !strings.Contains(llms, got.Reason) {
+				t.Error("llms.txt does not carry the failure reason agents.json carries")
+			}
+			if !strings.Contains(page, got.Reason) {
+				t.Error("the entry page does not carry the failure reason agents.json carries")
+			}
+			if strings.Contains(llms, "- MCP endpoint: "+endpoint) {
+				t.Error("llms.txt names a dead endpoint as callable")
+			}
+			if strings.Contains(page, `href="`+endpoint+`"`) {
+				t.Error("the entry page links a dead endpoint")
+			}
+			if !strings.Contains(llms, "withheld") || !strings.Contains(page, "withheld") {
+				t.Error("the withheld state is not stated on every surface")
+			}
+		})
+	}
+}

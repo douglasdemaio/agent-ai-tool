@@ -3,8 +3,6 @@ name: Build and deploy Pages
 on:
   push:
     branches: [main]
-    paths-ignore:
-      - 'content/live-*.json'
   workflow_dispatch:
 
 permissions:
@@ -29,9 +27,13 @@ jobs:
       - name: Verify
         run: make vet test
       - name: Generate
-        # No VTESSERA_BASE_URL secret is configured yet, so the live section
-        # renders from the committed snapshot or stays absent. That is
-        # deliberate: the site must publish whether or not vtessera is up.
+        # agents.json, llms.txt and every page are written in one pass, and
+        # this pass reads the live feed so the whole directory moves together.
+        # With the secret unset the pass falls back to the committed snapshot
+        # and then to absence, so the site publishes whether or not vtessera
+        # is reachable.
+        env:
+          VTESSERA_BASE_URL: ${{ secrets.VTESSERA_BASE_URL }}
         run: make generate
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
