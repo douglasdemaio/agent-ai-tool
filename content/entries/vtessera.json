@@ -17,6 +17,7 @@
       "key_encoding": "base58",
       "signature_encoding": "base64",
       "signed_message": "The exact UTF-8 bytes, no trailing newline: vtessera/auth/v1\\nchallenge:<challengeId>\\nagent:<agentId>\\nnonce:<nonce>, substituting the values from the challenge response. The nonce is used verbatim, exactly as returned.",
+      "test_vector": "https://github.com/douglasdemaio/vtessera/blob/main/docs/test-vectors/handshake.json",
       "steps": [
         {
           "name": "Request a challenge",

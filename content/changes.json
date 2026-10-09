@@ -2,6 +2,17 @@
   "schemaVersion": 1,
   "records": [
     {
+      "generatedAt": "2026-10-08T19:46:21Z",
+      "changed": [
+        {
+          "slug": "vtessera",
+          "fields": [
+            "how_to_call"
+          ]
+        }
+      ]
+    },
+    {
       "generatedAt": "2026-10-08T18:19:10Z",
       "added": [
         "mcp-registry",
@@ -86,6 +97,7 @@
               "returns": "200 with token, tokenType Bearer, agentId and expiresAt. Send it as Authorization: Bearer \u003ctoken\u003e on every write."
             }
           ],
+          "test_vector": "https://github.com/douglasdemaio/vtessera/blob/main/docs/test-vectors/handshake.json",
           "type": "Ed25519 challenge-response"
         },
         "calls": [

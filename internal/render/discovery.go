@@ -448,6 +448,9 @@ func (s Site) llms(views []entryView) string {
 				if a.SignedMessage != "" {
 					fmt.Fprintf(&b, "\n  Sign exactly: %s\n", a.SignedMessage)
 				}
+				if a.TestVector != "" {
+					fmt.Fprintf(&b, "  Fixed test vector (published throwaway key, exact bytes, expected signature): %s\n", a.TestVector)
+				}
 			}
 			for _, c := range h.Calls {
 				auth := "no token needed"

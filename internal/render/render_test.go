@@ -702,6 +702,7 @@ func TestHowToCallReachesEverySurface(t *testing.T) {
 				Type: "Ed25519 challenge-response", KeyEncoding: "base58",
 				SignatureEncoding: "base64",
 				SignedMessage:     "vtessera/auth/v1\\nchallenge:<challengeId>",
+				TestVector:        "https://example.com/test-vectors/handshake.json",
 				Steps: []content.AuthStep{{
 					Name: "challenge", Method: "POST", Path: "/v1/auth/challenge",
 					Body:    map[string]any{"agentId": "<base58 pubkey>"},
@@ -734,7 +735,7 @@ func TestHowToCallReachesEverySurface(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, want := range []string{"How to call it", "Getting a token", "/v1/auth/challenge", "/agp/route", "Ed25519 challenge-response"} {
+	for _, want := range []string{"How to call it", "Getting a token", "/v1/auth/challenge", "/agp/route", "Ed25519 challenge-response", "https://example.com/test-vectors/handshake.json"} {
 		if !strings.Contains(string(page), want) {
 			t.Errorf("entry page missing %q", want)
 		}
@@ -744,7 +745,7 @@ func TestHowToCallReachesEverySurface(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, want := range []string{"/v1/auth/challenge", "/agp/route", "base58-encoded", "requires a token"} {
+	for _, want := range []string{"/v1/auth/challenge", "/agp/route", "base58-encoded", "requires a token", "https://example.com/test-vectors/handshake.json"} {
 		if !strings.Contains(string(llms), want) {
 			t.Errorf("llms.txt missing %q", want)
 		}
