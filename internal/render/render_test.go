@@ -446,6 +446,13 @@ func TestGuidanceRecommendsBadgedEntriesWhenAnyExist(t *testing.T) {
 	}
 }
 
+func TestLLMsTellsAgentsToRevalidateWithTheETag(t *testing.T) {
+	llms := read(t, renderTo(t, site(t, entry("vtessera", "A marketplace."))), "llms.txt")
+	if !strings.Contains(llms, "If-None-Match") || !strings.Contains(llms, "304 Not Modified") {
+		t.Error("llms.txt should tell agents to send If-None-Match and honour 304")
+	}
+}
+
 func deadEndpointSite(t *testing.T) Site {
 	t.Helper()
 	e := entry("vtessera", "A marketplace.")

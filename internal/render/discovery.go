@@ -318,7 +318,10 @@ func (s Site) llms(views []entryView) string {
 	b.WriteString("`last_verified`. Use the `registry` entry to find connectable tools and\n")
 	b.WriteString("the `marketplace` entry (vtessera) to settle work with signed,\n")
 	b.WriteString("non-custodial receipts. Cache by `generatedAt`; snapshots refresh daily\n")
-	b.WriteString("and are marked stale after 14 days, so re-fetch at most once a day.\n\n")
+	b.WriteString("and are marked stale after 14 days, so re-fetch at most once a day.\n")
+	b.WriteString("Every file is served with an `ETag`; send it back as `If-None-Match`\n")
+	b.WriteString("and treat `304 Not Modified` as \"use the copy you already have\" rather\n")
+	b.WriteString("than downloading the body again.\n\n")
 	if s.badgedCount(views) == 0 {
 		b.WriteString("No entry currently carries a `delivered` count. Treat the field as\n")
 		b.WriteString("absent rather than as zero, and judge an entry on its endpoint and\n")
