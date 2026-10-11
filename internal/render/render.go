@@ -181,8 +181,8 @@ type entryView struct {
 	// trust prose. The frame is a property of the entry, not of how the build
 	// feels about it.
 	Marketplace bool
-	Usage *usage
-	Live  []liveRow
+	Usage       *usage
+	Live        []liveRow
 	// LiveAllProbes reports whether every agent currently registered on the
 	// marketplace is one of this repository's own test accounts. It is false
 	// when the feed is absent or empty; then the page says nothing rather than
@@ -241,8 +241,8 @@ type verification struct {
 	// Known is false when no marketplace answered. That is not the same as
 	// nothing to say: the block renders as explicitly unverified rather than
 	// disappearing, so an absent feed never reads as an absence of problems.
-	Known          bool
-	Key            string
+	Known bool
+	Key   string
 	// Keys is the ordered keyring the marketplace publishes, current first.
 	// It is what a reader checks a receipt against; Key is Keys but guaranteed
 	// to be populated on its own, so a surface that names one current key never

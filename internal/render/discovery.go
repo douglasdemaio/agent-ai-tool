@@ -189,24 +189,24 @@ func (s Site) agentsJSON(views []entryView) map[string]any {
 // words the page uses, so an agent that reads both is not translating between two
 // vocabularies and guessing which one is authoritative.
 type jsonVerification struct {
-	MarketplaceKey string              `json:"marketplace_key"`
+	MarketplaceKey string `json:"marketplace_key"`
 	// VerificationKeys is the ordered keyring, current first, that receipts are
 	// checked against. MarketplaceKey is its current member; the list exists so
 	// a reader can verify old receipts after a rotation without fetching the
 	// marketplace.
-	VerificationKeys []string            `json:"verification_keys,omitempty"`
-	CanonicalForm    string              `json:"canonical_form"`
-	Cluster          string              `json:"cluster,omitempty"`
+	VerificationKeys []string `json:"verification_keys,omitempty"`
+	CanonicalForm    string   `json:"canonical_form"`
+	Cluster          string   `json:"cluster,omitempty"`
 	// Version and Status are the live marketplace's report of itself, drawn
 	// from /healthz by this build rather than copied from a file.
-	Version          string              `json:"version,omitempty"`
-	Status           string              `json:"status,omitempty"`
-	GenesisHash      string              `json:"genesis_hash,omitempty"`
-	Sandbox          bool                `json:"sandbox,omitempty"`
-	FetchedAt        string              `json:"fetched_at,omitempty"`
-	FromCache        bool                `json:"from_cache,omitempty"`
-	Summary          string              `json:"summary"`
-	Agents           []jsonVerifiedAgent `json:"agents"`
+	Version     string              `json:"version,omitempty"`
+	Status      string              `json:"status,omitempty"`
+	GenesisHash string              `json:"genesis_hash,omitempty"`
+	Sandbox     bool                `json:"sandbox,omitempty"`
+	FetchedAt   string              `json:"fetched_at,omitempty"`
+	FromCache   bool                `json:"from_cache,omitempty"`
+	Summary     string              `json:"summary"`
+	Agents      []jsonVerifiedAgent `json:"agents"`
 }
 
 type jsonVerifiedAgent struct {
