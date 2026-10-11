@@ -37,6 +37,70 @@ type Entry struct {
 	Source       string     `json:"source"`
 	LastVerified time.Time  `json:"last_verified"`
 	HowToCall    *HowToCall `json:"how_to_call,omitempty"`
+	// Specs is the operator-declared technical surface of the service: how it
+	// settles, what its limits are, and where its documentation lives. It is
+	// kept apart from Summary because the two answer different questions — a
+	// summary is the sentence a reader or search engine skims, while specs is
+	// the detail an integrator reads next. Nothing in it is claimed about the
+	// run state of the service; that comes from the live feed (status,
+	// version, keys, cluster, genesis hash), so the two never have to agree.
+	Specs *Specs `json:"specs,omitempty"`
+}
+
+// Specs is what an operator declares about how a service works. Only
+// operator-declared, stable facts belong here: anything a live feed reports
+// (an address changing, a version bump, a new key) is drawn from the feed at
+// render time instead, because a static claim about live state rots.
+type Specs struct {
+	// SettlementModes are the ways a trade can settle, and are published as
+	// the domain vocabulary rather than invented words for the page.
+	SettlementModes []string `json:"settlement_modes,omitempty"`
+	// NonCustodial declares that the service never holds a party's funds — a
+	// property of the settlement design, not an observation about a ledger.
+	NonCustodial bool `json:"non_custodial,omitempty"`
+	// Onchain names what follows an on-chain settlement. The cluster and
+	// genesis hash are deliberately not here: they are live facts reported by
+	// the feed, not a stable design detail, and transcribing them into a file
+	// would be a second copy that could drift from the first.
+	Onchain *Onchain `json:"onchain,omitempty"`
+	// Limits are the operator-declared spending caps and rate limits, so an
+	// agent can decide whether a service is worth calling before it calls.
+	Limits *Limits `json:"limits,omitempty"`
+	// Documentation carries the where-to-read links: quickstart guides, fixed
+	// test vectors. Each value is a URL this build does not verify, so the
+	// page presents them as pointers rather than as facts about their content.
+	Documentation *Documentation `json:"documentation,omitempty"`
+}
+
+// Onchain is the part of a settlement design that belongs in a declarative
+// file: a fixed fee payable to the buyer's own signing of the transaction.
+type Onchain struct {
+	FeeLamports int64 `json:"fee_lamports,omitempty"`
+}
+
+// Limits are the numbers an agent can budget against before it calls.
+type Limits struct {
+	SpendCapUSDPerTrade int        `json:"spend_cap_usd_per_trade,omitempty"`
+	SpendCapUSDPerDay   int        `json:"spend_cap_usd_per_day,omitempty"`
+	RateLimit           *RateLimit `json:"rate_limit,omitempty"`
+}
+
+type RateLimit struct {
+	Agent *RateLimitBucket `json:"agent,omitempty"`
+	IP    *RateLimitBucket `json:"ip,omitempty"`
+}
+
+type RateLimitBucket struct {
+	RPS   int `json:"rps,omitempty"`
+	Burst int `json:"burst,omitempty"`
+}
+
+type Documentation struct {
+	QuickstartPython     string `json:"quickstart_python,omitempty"`
+	QuickstartTypeScript string `json:"quickstart_typescript,omitempty"`
+	TestVectorHandshake  string `json:"test_vector_handshake,omitempty"`
+	SigningKeyRotation   string `json:"signing_key_rotation,omitempty"`
+	ThreatModel          string `json:"threat_model,omitempty"`
 }
 
 // HowToCall is what a reader needs in order to actually make a call, rather
@@ -196,6 +260,71 @@ func (e Entry) Validate() error {
 	if e.HowToCall != nil {
 		if err := e.HowToCall.validate(); err != nil {
 			return fmt.Errorf("how_to_call: %w", err)
+		}
+	}
+	if e.Specs != nil {
+		if err := e.Specs.validate(); err != nil {
+			return fmt.Errorf("specs: %w", err)
+		}
+	}
+	return nil
+}
+
+// validate keeps a published spec honest the same way how_to_call does: a
+// declared number is a promise, so a zero dressed as a value, a settlement mode
+// that is not one, or a documentation link that is not a URL must fail the
+// build rather than reach a reader.
+func (s *Specs) validate() error {
+	allowed := map[string]bool{"offchain": true, "onchain": true}
+	for i, mode := range s.SettlementModes {
+		if !allowed[mode] {
+			return fmt.Errorf("settlement_modes[%d] %q must be %q or %q", i, mode, "offchain", "onchain")
+		}
+	}
+	if s.Onchain != nil && s.Onchain.FeeLamports < 0 {
+		return fmt.Errorf("onchain.fee_lamports must not be negative")
+	}
+	if s.Limits != nil {
+		if s.Limits.SpendCapUSDPerTrade < 0 {
+			return fmt.Errorf("limits.spend_cap_usd_per_trade must not be negative")
+		}
+		if s.Limits.SpendCapUSDPerDay < 0 {
+			return fmt.Errorf("limits.spend_cap_usd_per_day must not be negative")
+		}
+		if s.Limits.RateLimit != nil {
+			for _, slot := range []struct {
+				name string
+				b    *RateLimitBucket
+			}{{"agent", s.Limits.RateLimit.Agent}, {"ip", s.Limits.RateLimit.IP}} {
+				if slot.b == nil {
+					continue
+				}
+				if slot.b.RPS < 0 {
+					return fmt.Errorf("limits.rate_limit.%s.rps must not be negative", slot.name)
+				}
+				if slot.b.Burst < 0 {
+					return fmt.Errorf("limits.rate_limit.%s.burst must not be negative", slot.name)
+				}
+			}
+		}
+	}
+	if s.Documentation != nil {
+		for _, link := range []struct {
+			name string
+			url  string
+		}{
+			{"documentation.quickstart_python", s.Documentation.QuickstartPython},
+			{"documentation.quickstart_typescript", s.Documentation.QuickstartTypeScript},
+			{"documentation.test_vector_handshake", s.Documentation.TestVectorHandshake},
+			{"documentation.signing_key_rotation", s.Documentation.SigningKeyRotation},
+			{"documentation.threat_model", s.Documentation.ThreatModel},
+		} {
+			if link.url == "" {
+				continue
+			}
+			if err := absoluteHTTP(link.url); err != nil {
+				return fmt.Errorf("%s: %w", link.name, err)
+			}
 		}
 	}
 	return nil

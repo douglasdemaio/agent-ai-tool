@@ -54,10 +54,14 @@ type Health struct {
 	Status          string `json:"status"`
 	Version         string `json:"version,omitempty"`
 	VerificationKey string `json:"verificationKey"`
-	Cluster         string `json:"cluster,omitempty"`
-	GenesisHash     string `json:"genesisHash,omitempty"`
-	SettlementTier  string `json:"settlementTier,omitempty"`
-	Sandbox         bool   `json:"sandbox,omitempty"`
+	// VerificationKeys is the ordered keyring the marketplace publishes, current
+	// first. It may be absent from an older /healthz; VerificationKey is the
+	// current key either way, and a reader falls back to it.
+	VerificationKeys []string `json:"verificationKeys,omitempty"`
+	Cluster          string   `json:"cluster,omitempty"`
+	GenesisHash      string   `json:"genesisHash,omitempty"`
+	SettlementTier   string   `json:"settlementTier,omitempty"`
+	Sandbox          bool     `json:"sandbox,omitempty"`
 }
 
 func ValidateHealth(body []byte) error {
