@@ -140,6 +140,12 @@ type usage struct {
 type liveRow struct {
 	Agent live.Agent
 	Usage *usage
+	// Test marks an agent this repository registered itself. It is rendered as
+	// a visible "test account" tag because an agent row otherwise reads as a
+	// real seller, and listing our own probes alongside a stranger's listings
+	// without saying which is which would let a reader mistake our tests for
+	// outside usage.
+	Test bool
 }
 
 // Withdrawn reports an agent the marketplace has taken off its listings.
@@ -169,8 +175,19 @@ func (r liveRow) WithdrawnReason() string {
 
 type entryView struct {
 	Entry content.Entry
-	Usage *usage
-	Live  []liveRow
+	// Marketplace marks the entry that IS the marketplace (vtessera), as
+	// opposed to the other entries that are listed in it. The page carries
+	// sections only the marketplace has: a status box, a get-started path, and
+	// trust prose. The frame is a property of the entry, not of how the build
+	// feels about it.
+	Marketplace bool
+	Usage       *usage
+	Live        []liveRow
+	// LiveAllProbes reports whether every agent currently registered on the
+	// marketplace is one of this repository's own test accounts. It is false
+	// when the feed is absent or empty; then the page says nothing rather than
+	// guessing.
+	LiveAllProbes bool
 	// LiveEmpty distinguishes a feed that answered and reported no agents from
 	// one that was never consulted. A nil Live covers both as far as the
 	// template's truthiness test is concerned, which would let an empty
@@ -224,11 +241,17 @@ type verification struct {
 	// Known is false when no marketplace answered. That is not the same as
 	// nothing to say: the block renders as explicitly unverified rather than
 	// disappearing, so an absent feed never reads as an absence of problems.
-	Known          bool
-	Key            string
+	Known bool
+	Key   string
+	// Keys is the ordered keyring the marketplace publishes, current first.
+	// It is what a reader checks a receipt against; Key is Keys but guaranteed
+	// to be populated on its own, so a surface that names one current key never
+	// has to reason about the list's length.
+	Keys           []string
 	Status         string
 	Version        string
 	Cluster        string
+	GenesisHash    string
 	SettlementTier string
 	Sandbox        bool
 	FromCache      bool
@@ -286,6 +309,16 @@ func (v verification) ClusterOrUnknown() string {
 	return v.Cluster
 }
 
+// RetiredKeys is the keyring without the current key, so the page can show
+// what still verifies old receipts without repeating the key it checks the
+// day's signatures against.
+func (v verification) RetiredKeys() []string {
+	if len(v.Keys) <= 1 {
+		return nil
+	}
+	return v.Keys[1:]
+}
+
 type pageData struct {
 	Site        Site
 	Title       string
@@ -315,7 +348,7 @@ func (s Site) MetricsUnavailable() bool {
 func rowsFor(agents []live.Agent, byAgent map[string]usage) []liveRow {
 	rows := make([]liveRow, 0, len(agents))
 	for _, agent := range agents {
-		row := liveRow{Agent: agent}
+		row := liveRow{Agent: agent, Test: live.IsProbeAgent(agent.ID)}
 		if u, ok := byAgent[agent.ID]; ok && u.Delivered >= live.BadgeFloor {
 			copied := u
 			row.Usage = &copied
@@ -323,6 +356,21 @@ func rowsFor(agents []live.Agent, byAgent map[string]usage) []liveRow {
 		rows = append(rows, row)
 	}
 	return rows
+}
+
+// allProbes reports whether every listed agent is one of this repository's own
+// test agents. An empty list is not a claim that everyone registered is ours:
+// no evidence says nothing about who is trading.
+func allProbes(rows []liveRow) bool {
+	if len(rows) == 0 {
+		return false
+	}
+	for _, row := range rows {
+		if !row.Test {
+			return false
+		}
+	}
+	return true
 }
 
 func (s Site) usageByAgent() map[string]usage {
@@ -484,9 +532,17 @@ func (s Site) verificationBlock() verification {
 	if s.Marketplace != nil {
 		block.Known = true
 		block.Key = s.Marketplace.VerificationKey
+		// The keyring may predate /healthz reporting it; VerificationKey is
+		// current either way, so the list falls back to it rather than reading
+		// as "no keys to check receipts against".
+		block.Keys = s.Marketplace.VerificationKeys
+		if len(block.Keys) == 0 {
+			block.Keys = []string{block.Key}
+		}
 		block.Status = s.Marketplace.Status
 		block.Version = s.Marketplace.Version
 		block.Cluster = s.Marketplace.Cluster
+		block.GenesisHash = s.Marketplace.GenesisHash
 		block.SettlementTier = s.Marketplace.SettlementTier
 		block.Sandbox = s.Marketplace.Sandbox
 		block.FromCache = s.MarketplaceFromCache
@@ -541,6 +597,7 @@ func (s Site) resolve() ([]entryView, error) {
 
 	for _, e := range s.Entries {
 		view := s.viewFor(e)
+		view.Marketplace = e.Slug == LiveSlug
 		if u, ok := byAgent[e.Slug]; ok && u.Delivered >= live.BadgeFloor {
 			copied := u
 			view.Usage = &copied
@@ -555,6 +612,7 @@ func (s Site) resolve() ([]entryView, error) {
 				view.Entry.Source = content.SourceLive
 				view.Entry.LastVerified = s.liveVerified()
 				view.Live = rowsFor(agents, byAgent)
+				view.LiveAllProbes = allProbes(view.Live)
 				view.LiveEmpty = len(agents) == 0
 			}
 		}
@@ -575,6 +633,7 @@ func (s Site) resolve() ([]entryView, error) {
 		if len(agents) == 0 {
 			return views, nil
 		}
+		rows := rowsFor(agents, byAgent)
 		view := entryView{
 			Entry: content.Entry{
 				Slug:         LiveSlug,
@@ -584,7 +643,9 @@ func (s Site) resolve() ([]entryView, error) {
 				Source:       content.SourceLive,
 				LastVerified: s.liveVerified(),
 			},
-			Live: rowsFor(agents, byAgent),
+			Marketplace:   true,
+			Live:          rows,
+			LiveAllProbes: allProbes(rows),
 		}
 		if u, ok := byAgent[LiveSlug]; ok && u.Delivered >= live.BadgeFloor {
 			copied := u
@@ -668,7 +729,7 @@ func (s Site) Render(outDir string) error {
 
 	home := base
 	home.Title = s.Domain
-	home.Description = "A directory of tools an AI agent can actually connect to: registries, marketplaces, and compute services. Fetch agents.json once."
+	home.Description = "The home of vtessera, a marketplace where AI agents hire each other's services for signed, non-custodial receipts, plus three curated tools to find, choose and run a model. Fetch agents.json once."
 	home.Canonical = s.canonical("")
 	home.Views = views
 	home.BadgedCount = s.badgedCount(views)

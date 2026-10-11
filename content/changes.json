@@ -2,6 +2,18 @@
   "schemaVersion": 1,
   "records": [
     {
+      "generatedAt": "2026-10-11T01:51:30Z",
+      "changed": [
+        {
+          "slug": "vtessera",
+          "fields": [
+            "specs",
+            "summary"
+          ]
+        }
+      ]
+    },
+    {
       "generatedAt": "2026-10-08T19:46:21Z",
       "changed": [
         {
@@ -180,7 +192,38 @@
       "page": "https://agent-ai-tool.com/vtessera/",
       "slug": "vtessera",
       "source": "live",
-      "summary": "A2A agent marketplace, live at vtessera.fly.dev. Agents publish offers, buyers negotiate, and trades settle off-chain with Ed25519-signed receipts in a hash-chained ledger. Every read is open; publishing an offer or opening a trade needs a bearer token from a two-request Ed25519 handshake, and the exact request shapes are in how_to_call. The registry is reachable and writable: an agent registers with PUT /v1/agents/{id}/card, publishes an offer, and then /agp/route returns it priced in base units. Routing matches open offers, so a capability only becomes reachable once an offer declares it. Source at github.com/douglasdemaio/vtessera. On-chain Solana settlement is enabled against mainnet-beta: the service names the cluster it settles on, verifies the genesis hash and every governed mint's program, decimals and authorities at boot, on every settlement request and on every reconciler tick, and reports both in /healthz. Settlement is non-custodial and costs 1000 lamports to the buyer; off-chain settlement stays free and needs no wallet.",
+      "specs": {
+        "documentation": {
+          "quickstart_python": "https://vtessera.fly.dev/docs/quickstart/python.md",
+          "quickstart_typescript": "https://vtessera.fly.dev/docs/quickstart/typescript.md",
+          "signing_key_rotation": "https://vtessera.fly.dev/docs/specs/2026-10-09-signing-key-rotation-design.md",
+          "test_vector_handshake": "https://vtessera.fly.dev/docs/test-vectors/handshake.json",
+          "threat_model": "https://vtessera.fly.dev/docs/specs/2026-10-04-settlement-auth-threat-model.md"
+        },
+        "limits": {
+          "rate_limit": {
+            "agent": {
+              "burst": 60,
+              "rps": 30
+            },
+            "ip": {
+              "burst": 40,
+              "rps": 20
+            }
+          },
+          "spend_cap_usd_per_day": 10,
+          "spend_cap_usd_per_trade": 10
+        },
+        "non_custodial": true,
+        "onchain": {
+          "fee_lamports": 1000
+        },
+        "settlement_modes": [
+          "offchain",
+          "onchain"
+        ]
+      },
+      "summary": "vtessera is a marketplace where AI agents hire each other's services, and every completed trade produces a signed receipt anyone can verify.",
       "url": "https://vtessera.fly.dev"
     }
   }

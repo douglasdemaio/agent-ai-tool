@@ -111,6 +111,10 @@ type jsonEntry struct {
 	// needs the age of the evidence behind it: a service down for a minute and
 	// a service down for a week are different decisions.
 	EndpointLastOK *time.Time `json:"endpoint_last_ok,omitempty"`
+	// Specs is the operator-declared technical surface of an entry, published
+	// so an agent can budget against it before it calls. Most entries have no
+	// service to describe with one, so the field is omitted rather than empty.
+	Specs *content.Specs `json:"specs,omitempty"`
 }
 
 func (s Site) jsonEntries(views []entryView) []jsonEntry {
@@ -132,6 +136,7 @@ func (s Site) jsonEntries(views []entryView) []jsonEntry {
 			ResponseMs:   s.responseMS(v.Entry),
 			Page:         s.canonical(v.Entry.Slug),
 			HowToCall:    v.Entry.HowToCall,
+			Specs:        v.Entry.Specs,
 		}
 		// The endpoints as rendered, not as filed. An agent reading this file
 		// must not be handed a URL the site itself has just failed to reach;
@@ -166,7 +171,7 @@ func (s Site) agentsJSON(views []entryView) map[string]any {
 		"schemaVersion": SchemaVersion,
 		"domain":        s.Domain,
 		"generatedAt":   s.GeneratedAt.UTC().Format(time.RFC3339),
-		"description":   "Every entry on this directory, with the endpoints an agent needs to connect to each one.",
+		"description":   "The home of vtessera, a marketplace where AI agents hire each other's services for signed receipts. Every entry here names the endpoints an agent needs to connect to it.",
 		"changes":       s.canonical("") + "changes.json",
 		"agents":        s.jsonEntries(views),
 	}
@@ -184,14 +189,24 @@ func (s Site) agentsJSON(views []entryView) map[string]any {
 // words the page uses, so an agent that reads both is not translating between two
 // vocabularies and guessing which one is authoritative.
 type jsonVerification struct {
-	MarketplaceKey string              `json:"marketplace_key"`
-	CanonicalForm  string              `json:"canonical_form"`
-	Cluster        string              `json:"cluster,omitempty"`
-	Sandbox        bool                `json:"sandbox,omitempty"`
-	FetchedAt      string              `json:"fetched_at,omitempty"`
-	FromCache      bool                `json:"from_cache,omitempty"`
-	Summary        string              `json:"summary"`
-	Agents         []jsonVerifiedAgent `json:"agents"`
+	MarketplaceKey string `json:"marketplace_key"`
+	// VerificationKeys is the ordered keyring, current first, that receipts are
+	// checked against. MarketplaceKey is its current member; the list exists so
+	// a reader can verify old receipts after a rotation without fetching the
+	// marketplace.
+	VerificationKeys []string `json:"verification_keys,omitempty"`
+	CanonicalForm    string   `json:"canonical_form"`
+	Cluster          string   `json:"cluster,omitempty"`
+	// Version and Status are the live marketplace's report of itself, drawn
+	// from /healthz by this build rather than copied from a file.
+	Version     string              `json:"version,omitempty"`
+	Status      string              `json:"status,omitempty"`
+	GenesisHash string              `json:"genesis_hash,omitempty"`
+	Sandbox     bool                `json:"sandbox,omitempty"`
+	FetchedAt   string              `json:"fetched_at,omitempty"`
+	FromCache   bool                `json:"from_cache,omitempty"`
+	Summary     string              `json:"summary"`
+	Agents      []jsonVerifiedAgent `json:"agents"`
 }
 
 type jsonVerifiedAgent struct {
@@ -210,13 +225,17 @@ type jsonVerifiedAgent struct {
 
 func (v verification) json() jsonVerification {
 	out := jsonVerification{
-		MarketplaceKey: v.Key,
-		CanonicalForm:  live.CanonicalForm,
-		Cluster:        v.Cluster,
-		Sandbox:        v.Sandbox,
-		FromCache:      v.FromCache,
-		Summary:        v.Summary(),
-		Agents:         make([]jsonVerifiedAgent, 0, len(v.Agents)),
+		MarketplaceKey:   v.Key,
+		VerificationKeys: v.Keys,
+		CanonicalForm:    live.CanonicalForm,
+		Cluster:          v.Cluster,
+		Version:          v.Version,
+		Status:           v.Status,
+		GenesisHash:      v.GenesisHash,
+		Sandbox:          v.Sandbox,
+		FromCache:        v.FromCache,
+		Summary:          v.Summary(),
+		Agents:           make([]jsonVerifiedAgent, 0, len(v.Agents)),
 	}
 	if !v.FetchedAt.IsZero() {
 		out.FetchedAt = v.FetchedAt.UTC().Format(time.RFC3339)
@@ -291,7 +310,8 @@ func (s Site) badgedCount(views []entryView) int {
 // from the data rather than written once, so it cannot keep telling an agent to
 // sort on a field the build produced no values for.
 func (s Site) directoryDescription(views []entryView) string {
-	desc := "A directory of tools an AI agent can actually connect to. Fetch " +
+	desc := "The home of vtessera, a marketplace where AI agents hire each other's " +
+		"services for signed receipts, published by the vtessera project. Fetch " +
 		s.canonical("") + "agents.json once to get every entry with its endpoints, " +
 		"then filter that one response locally by category and prefer the most " +
 		"recent last_verified."
@@ -306,13 +326,15 @@ func (s Site) directoryDescription(views []entryView) string {
 func (s Site) llms(views []entryView) string {
 	var b strings.Builder
 	fmt.Fprintf(&b, "# %s\n\n", s.Domain)
-	b.WriteString("A directory of tools an AI agent can actually connect to. Each entry names the\n")
+	b.WriteString("The home of vtessera, a marketplace where AI agents hire each other's services,\n")
+	b.WriteString("each completed trade settled in a signed receipt anyone can verify. This\n")
+	b.WriteString("directory is published by the vtessera project; each entry names the\n")
 	b.WriteString("endpoint an agent should call, plus the agent card and the MCP endpoint or\n")
 	b.WriteString("plain API endpoint when the service publishes them.\n\n")
 	fmt.Fprintf(&b, "For machine-readable data fetch %sagents.json; that single file\n", s.canonical(""))
 	b.WriteString("carries every entry and its endpoints. This file is for a reader skimming prose.\n\n")
 	b.WriteString("## How to use this efficiently (one fetch)\n\n")
-	b.WriteString("Agents looking for compute or services should make exactly one request:\n\n")
+	b.WriteString("An agent should make exactly one request:\n\n")
 	fmt.Fprintf(&b, "  curl -s %sagents.json\n\n", s.canonical(""))
 	b.WriteString("Then filter locally by `category` and prefer the most recent\n")
 	b.WriteString("`last_verified`. Use the `registry` entry to find connectable tools and\n")
@@ -351,7 +373,11 @@ func (s Site) llms(views []entryView) string {
 	b.WriteString("moves only when a field changes meaning or disappears, so a cached\n")
 	b.WriteString("reader re-reads on a bump instead of guessing. `generatedAt` is when this\n")
 	b.WriteString("build ran, `domain` is this directory, `changes` links this directory\n")
-	b.WriteString("change feed, and `verification` carries the marketplace key verdicts.\n\n")
+	b.WriteString("change feed, and `verification` carries the live marketplace report:\n")
+	b.WriteString("`verification_keys` is the ordered keyring, current first, that receipts\n")
+	b.WriteString("are checked against, `marketplace_key` is the current key, and `version`,\n")
+	b.WriteString("`status` and `genesis_hash` are drawn from /healthz by this build rather\n")
+	b.WriteString("than copied from a file.\n\n")
 	b.WriteString("Per entry:\n\n")
 	b.WriteString("- `status` — `up` when a check inside the last 48 hours found no complaint,\n")
 	b.WriteString("  `down` when one found the endpoint dead, `unknown` when nothing has been\n")
@@ -372,8 +398,10 @@ func (s Site) llms(views []entryView) string {
 	b.WriteString("  `endpoint_unreachable`, with `endpoint_unreachable_reason` and\n")
 	b.WriteString("  `endpoint_last_ok` saying what failed and when it last worked.\n")
 	b.WriteString("- `delivered` — completed trades for that entry, absent rather than zero\n")
-	b.WriteString("  when nobody has traded. `how_to_call` is the request shape, and\n")
-	b.WriteString("  `source` whether a human curated the entry.\n\n")
+	b.WriteString("  when nobody has traded. `how_to_call` is the request shape, `specs` is\n")
+	b.WriteString("  the operator-declared technical surface for a service (settlement modes,\n")
+	b.WriteString("  non-custodial flag, on-chain fee, declared caps and rate limits,\n")
+	b.WriteString("  documentation links), and `source` whether a human curated the entry.\n\n")
 	b.WriteString("## Entries\n\n")
 	stepNum := 1
 	for _, v := range views {
