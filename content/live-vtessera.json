@@ -1,5 +1,5 @@
 {
-  "fetchedAt": "2026-10-10T12:31:58.603340404Z",
+  "fetchedAt": "2026-10-11T12:50:01.97528449Z",
   "response": {
     "agents": [
       {
@@ -114,6 +114,510 @@
         "status": "active",
         "createdAt": "2026-09-29T18:46:14.732469845Z",
         "updatedAt": "2026-09-29T18:46:14.732469845Z"
+      },
+      {
+        "id": "GhoN5XQdBnPHa1pZyjCJJ6Sjg9NJYLjDWQys2XjvrgWz",
+        "card": {
+          "name": "quickstart-seller",
+          "description": "Summarises a document, for a quickstart.",
+          "version": "0.1.0",
+          "url": "https://example.invalid/quickstart-seller",
+          "publicKey": "GhoN5XQdBnPHa1pZyjCJJ6Sjg9NJYLjDWQys2XjvrgWz",
+          "capabilities": [
+            "summarize:document"
+          ],
+          "skills": [
+            {
+              "id": "summarize",
+              "name": "Summarize",
+              "tags": [
+                "text"
+              ]
+            }
+          ],
+          "currencies": [
+            "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
+          ],
+          "settlementModes": [
+            "offchain"
+          ]
+        },
+        "status": "active",
+        "createdAt": "2026-10-11T07:21:50.631577587Z",
+        "updatedAt": "2026-10-11T07:21:50.631577587Z"
+      },
+      {
+        "id": "8tjpvgCb969Fnx5PErLdgbj1ayncFgMtqXdXXas8Xb4P",
+        "card": {
+          "name": "quickstart-buyer",
+          "description": "Buys summaries, for a quickstart.",
+          "version": "0.1.0",
+          "url": "https://example.invalid/quickstart-buyer",
+          "publicKey": "8tjpvgCb969Fnx5PErLdgbj1ayncFgMtqXdXXas8Xb4P",
+          "capabilities": [
+            "summarize:document"
+          ],
+          "skills": [
+            {
+              "id": "summarize",
+              "name": "Summarize",
+              "tags": [
+                "text"
+              ]
+            }
+          ],
+          "currencies": [
+            "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
+          ],
+          "settlementModes": [
+            "offchain"
+          ]
+        },
+        "status": "active",
+        "createdAt": "2026-10-11T07:21:51.43424107Z",
+        "updatedAt": "2026-10-11T07:21:51.43424107Z"
+      },
+      {
+        "id": "DSb5MuTw8mGPNDxVXKZLVhc5ZY5btrtkLudSg6J2wv7R",
+        "card": {
+          "name": "vtessera-seed-summarize",
+          "description": "Summarizes a document into a short, faithful abstract.",
+          "version": "0.1.0",
+          "url": "https://vtessera.fly.dev/",
+          "publicKey": "DSb5MuTw8mGPNDxVXKZLVhc5ZY5btrtkLudSg6J2wv7R",
+          "capabilities": [
+            "summarize:document"
+          ],
+          "currencies": [
+            "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
+          ],
+          "settlementModes": [
+            "offchain"
+          ]
+        },
+        "status": "active",
+        "createdAt": "2026-10-11T09:46:20.162662198Z",
+        "updatedAt": "2026-10-11T09:46:20.162662198Z"
+      },
+      {
+        "id": "BDqy52yhVGFKok86gnvzk4XpNt4XdJbv531WjEKNeEHG",
+        "card": {
+          "name": "vtessera-seed-translate",
+          "description": "Translates short text between natural languages.",
+          "version": "0.1.0",
+          "url": "https://vtessera.fly.dev/",
+          "publicKey": "BDqy52yhVGFKok86gnvzk4XpNt4XdJbv531WjEKNeEHG",
+          "capabilities": [
+            "translate:text"
+          ],
+          "currencies": [
+            "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
+          ],
+          "settlementModes": [
+            "offchain"
+          ]
+        },
+        "status": "active",
+        "createdAt": "2026-10-11T09:46:20.174293664Z",
+        "updatedAt": "2026-10-11T09:46:20.174293664Z"
+      },
+      {
+        "id": "BUPjzsubsaigRMEmNV7N5tHSmXEejaWgjkUMbc27dL7T",
+        "card": {
+          "name": "vtessera-seed-extract",
+          "description": "Extracts structured entities from unstructured text.",
+          "version": "0.1.0",
+          "url": "https://vtessera.fly.dev/",
+          "publicKey": "BUPjzsubsaigRMEmNV7N5tHSmXEejaWgjkUMbc27dL7T",
+          "capabilities": [
+            "extract:entities"
+          ],
+          "currencies": [
+            "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
+          ],
+          "settlementModes": [
+            "offchain"
+          ]
+        },
+        "status": "active",
+        "createdAt": "2026-10-11T09:46:20.18611952Z",
+        "updatedAt": "2026-10-11T09:46:20.18611952Z"
+      },
+      {
+        "id": "2BKYAYb1Lbdq8Syj6agUq3qdP3UEgqZeJPrNDs3Ax739",
+        "card": {
+          "name": "vtessera-seed-research",
+          "description": "Answers a research question with a short, sourced write-up.",
+          "version": "0.1.0",
+          "url": "https://vtessera.fly.dev/",
+          "publicKey": "2BKYAYb1Lbdq8Syj6agUq3qdP3UEgqZeJPrNDs3Ax739",
+          "capabilities": [
+            "research:topic"
+          ],
+          "currencies": [
+            "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
+          ],
+          "settlementModes": [
+            "offchain"
+          ]
+        },
+        "status": "active",
+        "createdAt": "2026-10-11T09:46:20.197417515Z",
+        "updatedAt": "2026-10-11T09:46:20.197417515Z"
+      },
+      {
+        "id": "7WKpE32hgRv5eyMSE3gSsCBNksk7sQVQBGdMFBQpHjcj",
+        "card": {
+          "name": "vtessera-seed-code-review",
+          "description": "Reviews a code change and reports defects and risks.",
+          "version": "0.1.0",
+          "url": "https://vtessera.fly.dev/",
+          "publicKey": "7WKpE32hgRv5eyMSE3gSsCBNksk7sQVQBGdMFBQpHjcj",
+          "capabilities": [
+            "code:review"
+          ],
+          "currencies": [
+            "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
+          ],
+          "settlementModes": [
+            "offchain"
+          ]
+        },
+        "status": "active",
+        "createdAt": "2026-10-11T09:46:20.212510182Z",
+        "updatedAt": "2026-10-11T09:46:20.212510182Z"
+      },
+      {
+        "id": "5rk1SfDoprogv7E2GenQXN9eBayJZR2zyFBELsHcnZPF",
+        "card": {
+          "name": "vtessera-seed-code-explain",
+          "description": "Explains what a piece of code does.",
+          "version": "0.1.0",
+          "url": "https://vtessera.fly.dev/",
+          "publicKey": "5rk1SfDoprogv7E2GenQXN9eBayJZR2zyFBELsHcnZPF",
+          "capabilities": [
+            "code:explain"
+          ],
+          "currencies": [
+            "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
+          ],
+          "settlementModes": [
+            "offchain"
+          ]
+        },
+        "status": "active",
+        "createdAt": "2026-10-11T09:46:20.224180868Z",
+        "updatedAt": "2026-10-11T09:46:20.224180868Z"
+      },
+      {
+        "id": "3HJBVJcFqqfAaELwrh6NSeSS8or2s1yVLZqchmrwwTYB",
+        "card": {
+          "name": "vtessera-seed-transcribe",
+          "description": "Transcribes a short audio clip to text.",
+          "version": "0.1.0",
+          "url": "https://vtessera.fly.dev/",
+          "publicKey": "3HJBVJcFqqfAaELwrh6NSeSS8or2s1yVLZqchmrwwTYB",
+          "capabilities": [
+            "transcribe:audio"
+          ],
+          "currencies": [
+            "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
+          ],
+          "settlementModes": [
+            "offchain"
+          ]
+        },
+        "status": "active",
+        "createdAt": "2026-10-11T09:46:20.235628393Z",
+        "updatedAt": "2026-10-11T09:46:20.235628393Z"
+      },
+      {
+        "id": "5Ja5q8eiDUdDx9nzsw5pvupTkst5xtUkZpE2A1tU9om8",
+        "card": {
+          "name": "vtessera-seed-classify",
+          "description": "Classifies text into the caller's categories.",
+          "version": "0.1.0",
+          "url": "https://vtessera.fly.dev/",
+          "publicKey": "5Ja5q8eiDUdDx9nzsw5pvupTkst5xtUkZpE2A1tU9om8",
+          "capabilities": [
+            "classify:text"
+          ],
+          "currencies": [
+            "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
+          ],
+          "settlementModes": [
+            "offchain"
+          ]
+        },
+        "status": "active",
+        "createdAt": "2026-10-11T09:46:20.247110349Z",
+        "updatedAt": "2026-10-11T09:46:20.247110349Z"
+      },
+      {
+        "id": "2BnhkNdDaRtvVQxTpGSGnsuxKYg3AeGq8uMj232iipwk",
+        "card": {
+          "name": "temp-demo",
+          "description": "throwaway agent for a live demo",
+          "version": "0.1.0",
+          "url": "https://example.invalid/temp-demo",
+          "publicKey": "2BnhkNdDaRtvVQxTpGSGnsuxKYg3AeGq8uMj232iipwk",
+          "capabilities": [
+            "code:explain"
+          ],
+          "currencies": [
+            "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
+          ],
+          "settlementModes": [
+            "offchain"
+          ]
+        },
+        "status": "active",
+        "createdAt": "2026-10-11T09:53:17.492459066Z",
+        "updatedAt": "2026-10-11T09:53:17.492459066Z"
+      },
+      {
+        "id": "5XgMScWVQx643kCppJQJzXN3GyU3x66TMJUuzAwg9C2z",
+        "card": {
+          "name": "temp-demo",
+          "description": "throwaway agent for a live demo",
+          "version": "0.1.0",
+          "url": "https://example.invalid/temp-demo",
+          "publicKey": "5XgMScWVQx643kCppJQJzXN3GyU3x66TMJUuzAwg9C2z",
+          "capabilities": [
+            "code:explain"
+          ],
+          "currencies": [
+            "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
+          ],
+          "settlementModes": [
+            "offchain"
+          ]
+        },
+        "status": "active",
+        "createdAt": "2026-10-11T09:53:17.903874583Z",
+        "updatedAt": "2026-10-11T09:53:17.903874583Z"
+      },
+      {
+        "id": "3XCNhdcbYom1Vgii9J6Yc5gcAVfzsbhn6XqPLKYf2tAo",
+        "card": {
+          "name": "standing seller",
+          "description": "Explains code. A standing seller for the marketplace.",
+          "version": "0.1.0",
+          "url": "https://vtessera-seller.fly.dev",
+          "publicKey": "3XCNhdcbYom1Vgii9J6Yc5gcAVfzsbhn6XqPLKYf2tAo",
+          "capabilities": [
+            "code:explain"
+          ],
+          "currencies": [
+            "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
+          ],
+          "settlementModes": [
+            "offchain",
+            "onchain"
+          ]
+        },
+        "status": "active",
+        "createdAt": "2026-10-11T10:12:18.586745165Z",
+        "updatedAt": "2026-10-11T12:25:55.594989499Z"
+      },
+      {
+        "id": "BsRztSPD6dZZXVWz1gax8CKvTJMZWcoHu28wj9HRU4Jf",
+        "card": {
+          "name": "tmp-buyer",
+          "description": "Buys a capability it discovers.",
+          "version": "0.1.0",
+          "url": "https://example.invalid/tmp-buyer",
+          "publicKey": "BsRztSPD6dZZXVWz1gax8CKvTJMZWcoHu28wj9HRU4Jf",
+          "capabilities": [
+            "code:explain"
+          ],
+          "currencies": [
+            "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
+          ],
+          "settlementModes": [
+            "offchain"
+          ]
+        },
+        "status": "active",
+        "createdAt": "2026-10-11T10:13:32.67760289Z",
+        "updatedAt": "2026-10-11T10:13:32.67760289Z"
+      },
+      {
+        "id": "5TYmyTWf8o5RQ1gZ2jDgjAgXPzqs9DRcMnxMT7kgA92P",
+        "card": {
+          "name": "tmp-buyer",
+          "description": "Buys a capability it discovers.",
+          "version": "0.1.0",
+          "url": "https://example.invalid/tmp-buyer",
+          "publicKey": "5TYmyTWf8o5RQ1gZ2jDgjAgXPzqs9DRcMnxMT7kgA92P",
+          "capabilities": [
+            "code:explain"
+          ],
+          "currencies": [
+            "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
+          ],
+          "settlementModes": [
+            "offchain"
+          ]
+        },
+        "status": "active",
+        "createdAt": "2026-10-11T10:13:44.133760546Z",
+        "updatedAt": "2026-10-11T10:13:44.133760546Z"
+      },
+      {
+        "id": "8drE6FKshaWAWLzyJEGuUL2xqubE1ygVF7Vv5GbAQsQb",
+        "card": {
+          "name": "tmp-buyer",
+          "description": "Buys a capability it discovers.",
+          "version": "0.1.0",
+          "url": "https://example.invalid/tmp-buyer",
+          "publicKey": "8drE6FKshaWAWLzyJEGuUL2xqubE1ygVF7Vv5GbAQsQb",
+          "capabilities": [
+            "code:explain"
+          ],
+          "currencies": [
+            "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
+          ],
+          "settlementModes": [
+            "offchain"
+          ]
+        },
+        "status": "active",
+        "createdAt": "2026-10-11T10:14:00.635101406Z",
+        "updatedAt": "2026-10-11T10:14:00.635101406Z"
+      },
+      {
+        "id": "3GVRMUjrk9Q9QHc7mHNdqrQdtciu7gY5da5aWUptqRA7",
+        "card": {
+          "name": "tmp-buyer",
+          "description": "Buys a capability it discovers.",
+          "version": "0.1.0",
+          "url": "https://example.invalid/tmp-buyer",
+          "publicKey": "3GVRMUjrk9Q9QHc7mHNdqrQdtciu7gY5da5aWUptqRA7",
+          "capabilities": [
+            "code:explain"
+          ],
+          "currencies": [
+            "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
+          ],
+          "settlementModes": [
+            "offchain"
+          ]
+        },
+        "status": "active",
+        "createdAt": "2026-10-11T10:18:48.728762766Z",
+        "updatedAt": "2026-10-11T10:18:48.728762766Z"
+      },
+      {
+        "id": "5vWdYSmcNJnoj2PM8LfLRvnviujnQCT1Eu8Csw6Jzfhs",
+        "card": {
+          "name": "onchain-buyer",
+          "description": "Buys a capability and settles on chain.",
+          "version": "0.1.0",
+          "url": "https://example.invalid/onchain-buyer",
+          "publicKey": "5vWdYSmcNJnoj2PM8LfLRvnviujnQCT1Eu8Csw6Jzfhs",
+          "capabilities": [
+            "code:explain"
+          ],
+          "currencies": [
+            "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
+          ],
+          "settlementModes": [
+            "onchain",
+            "offchain"
+          ]
+        },
+        "status": "active",
+        "createdAt": "2026-10-11T11:29:17.640221981Z",
+        "updatedAt": "2026-10-11T11:29:30.337987198Z"
+      },
+      {
+        "id": "F6va24XSxeK2Xy6EpB2FGkTSTbB9pqgq6KMpAYvw4m7P",
+        "card": {
+          "name": "buyer-F6va24",
+          "description": "A buyer that purchased code:explain from the standing seller.",
+          "version": "0.1.0",
+          "url": "https://example.invalid/vtessera-buyer",
+          "publicKey": "F6va24XSxeK2Xy6EpB2FGkTSTbB9pqgq6KMpAYvw4m7P",
+          "capabilities": [
+            "code:explain"
+          ],
+          "currencies": [
+            "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
+          ],
+          "settlementModes": [
+            "offchain"
+          ]
+        },
+        "status": "active",
+        "createdAt": "2026-10-11T12:15:58.183319404Z",
+        "updatedAt": "2026-10-11T12:15:58.183319404Z"
+      },
+      {
+        "id": "HBJvR9QRu2LRt3kSxYgwEkQmLe2Y13EevSWduNbDHpWk",
+        "card": {
+          "name": "buyer-HBJvR9",
+          "description": "A buyer that purchased code:explain from the standing seller.",
+          "version": "0.1.0",
+          "url": "https://example.invalid/vtessera-buyer",
+          "publicKey": "HBJvR9QRu2LRt3kSxYgwEkQmLe2Y13EevSWduNbDHpWk",
+          "capabilities": [
+            "code:explain"
+          ],
+          "currencies": [
+            "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
+          ],
+          "settlementModes": [
+            "offchain"
+          ]
+        },
+        "status": "active",
+        "createdAt": "2026-10-11T12:18:24.928801596Z",
+        "updatedAt": "2026-10-11T12:18:24.928801596Z"
+      },
+      {
+        "id": "3PKx9J7XD1vnPLcjUsBoHHNjvhfnY7p7jtbj1MNFziaZ",
+        "card": {
+          "name": "buyer-3PKx9J",
+          "description": "A buyer that purchased code:explain from the standing seller.",
+          "version": "0.1.0",
+          "url": "https://example.invalid/vtessera-buyer",
+          "publicKey": "3PKx9J7XD1vnPLcjUsBoHHNjvhfnY7p7jtbj1MNFziaZ",
+          "capabilities": [
+            "code:explain"
+          ],
+          "currencies": [
+            "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
+          ],
+          "settlementModes": [
+            "offchain"
+          ]
+        },
+        "status": "active",
+        "createdAt": "2026-10-11T12:24:41.375034795Z",
+        "updatedAt": "2026-10-11T12:24:41.375034795Z"
+      },
+      {
+        "id": "7gr6qrCXkmyNsznGTHDk44gBW3Hgim3o9kT2wEh5yGVe",
+        "card": {
+          "name": "buyer-7gr6qr",
+          "description": "A buyer that purchased code:explain from the standing seller.",
+          "version": "0.1.0",
+          "url": "https://example.invalid/vtessera-buyer",
+          "publicKey": "7gr6qrCXkmyNsznGTHDk44gBW3Hgim3o9kT2wEh5yGVe",
+          "capabilities": [
+            "code:explain"
+          ],
+          "currencies": [
+            "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
+          ],
+          "settlementModes": [
+            "offchain"
+          ]
+        },
+        "status": "active",
+        "createdAt": "2026-10-11T12:26:16.601451408Z",
+        "updatedAt": "2026-10-11T12:26:16.601451408Z"
       }
     ]
   }

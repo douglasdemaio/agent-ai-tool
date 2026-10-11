@@ -1,5 +1,5 @@
 {
-  "fetchedAt": "2026-10-10T12:31:58.798782859Z",
+  "fetchedAt": "2026-10-11T12:50:02.179063303Z",
   "response": {
     "agp": {
       "extension": "https://github.com/a2aproject/a2a-samples/tree/main/extensions/agp",
@@ -10,6 +10,9 @@
     "settlementTier": "beta",
     "status": "ok",
     "verificationKey": "5LRpM9wpvPfRYuQAC7oNdyaQa6sakpMcnZeR9FS5CgjB",
+    "verificationKeys": [
+      "5LRpM9wpvPfRYuQAC7oNdyaQa6sakpMcnZeR9FS5CgjB"
+    ],
     "version": "0.1.0-dev"
   }
 }

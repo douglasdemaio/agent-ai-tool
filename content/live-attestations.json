@@ -1,5 +1,5 @@
 {
-  "fetchedAt": "2026-10-10T12:32:00.02419583Z",
+  "fetchedAt": "2026-10-11T12:50:07.852873275Z",
   "response": {
     "agents": [
       {
@@ -107,6 +107,570 @@
             "attested": false,
             "valid": false,
             "keyId": "5bPBmVAC9Ywbn6B4aAC3gEduwFq1zHtRXRFPrmh2ZVQw"
+          }
+        }
+      },
+      {
+        "agentId": "GhoN5XQdBnPHa1pZyjCJJ6Sjg9NJYLjDWQys2XjvrgWz",
+        "attestation": {
+          "agentId": "GhoN5XQdBnPHa1pZyjCJJ6Sjg9NJYLjDWQys2XjvrgWz",
+          "recorded": true,
+          "canonicalForm": "vtessera/attest/v1",
+          "marketplace": {
+            "attested": true,
+            "valid": true,
+            "keyId": "5LRpM9wpvPfRYuQAC7oNdyaQa6sakpMcnZeR9FS5CgjB",
+            "signature": {
+              "alg": "Ed25519",
+              "keyId": "5LRpM9wpvPfRYuQAC7oNdyaQa6sakpMcnZeR9FS5CgjB",
+              "digest": "f955a917db71f51bc99d1578174f33c88faf04df89e730e3d889eb30ec88620c",
+              "value": "BeYKZQosTIfOIbn0SJweGEu/5QkInyLGG/ovj9VNiej8nFUcdyHPrfoT3luu5KhpCUA0FMhEGpTjPDYViN6ODA==",
+              "signedAt": "2026-10-11T07:21:50.631577587Z"
+            }
+          },
+          "agent": {
+            "attested": true,
+            "valid": true,
+            "keyId": "GhoN5XQdBnPHa1pZyjCJJ6Sjg9NJYLjDWQys2XjvrgWz",
+            "signature": {
+              "alg": "Ed25519",
+              "keyId": "GhoN5XQdBnPHa1pZyjCJJ6Sjg9NJYLjDWQys2XjvrgWz",
+              "digest": "6450db6060f333148ffb4c593e3c72edeee9b3e320991bf99b948bd782be4c9e",
+              "value": "JUKHLV3j+Mb9J5WYhFch6SlXsSP0RbmiuXJEpTGDi+NxNdS4K+ZIsTgcuo28mevP54cpgz48jEOKNe+9MLMlAQ==",
+              "signedAt": "2026-10-11T07:21:50Z"
+            }
+          }
+        }
+      },
+      {
+        "agentId": "8tjpvgCb969Fnx5PErLdgbj1ayncFgMtqXdXXas8Xb4P",
+        "attestation": {
+          "agentId": "8tjpvgCb969Fnx5PErLdgbj1ayncFgMtqXdXXas8Xb4P",
+          "recorded": true,
+          "canonicalForm": "vtessera/attest/v1",
+          "marketplace": {
+            "attested": true,
+            "valid": true,
+            "keyId": "5LRpM9wpvPfRYuQAC7oNdyaQa6sakpMcnZeR9FS5CgjB",
+            "signature": {
+              "alg": "Ed25519",
+              "keyId": "5LRpM9wpvPfRYuQAC7oNdyaQa6sakpMcnZeR9FS5CgjB",
+              "digest": "4c05369e6dbf543096e572f0be2a8b19067e2071911d6924a9782be4138bc874",
+              "value": "k3DIzxuPky/DYlaP067EcWn+84xpmLV3VPjImllO93TNKz79i/6qtEBofOH/oNfL2/x+fEuvuRireXpcaB5PBQ==",
+              "signedAt": "2026-10-11T07:21:51.43424107Z"
+            }
+          },
+          "agent": {
+            "attested": true,
+            "valid": true,
+            "keyId": "8tjpvgCb969Fnx5PErLdgbj1ayncFgMtqXdXXas8Xb4P",
+            "signature": {
+              "alg": "Ed25519",
+              "keyId": "8tjpvgCb969Fnx5PErLdgbj1ayncFgMtqXdXXas8Xb4P",
+              "digest": "a018f6aef7bfc081af89fad2c785b21bbc84b83191114be5fcf703b3dcd13b65",
+              "value": "Z6z6KLU7YDSbXd8QdboPyMoFI2dJGjehPoKsjsLPR5vSMg2RqMaMlUwA6zg6dvK2jpxsTsc6p0wQj7hqlgNyBw==",
+              "signedAt": "2026-10-11T07:21:50Z"
+            }
+          }
+        }
+      },
+      {
+        "agentId": "DSb5MuTw8mGPNDxVXKZLVhc5ZY5btrtkLudSg6J2wv7R",
+        "attestation": {
+          "agentId": "DSb5MuTw8mGPNDxVXKZLVhc5ZY5btrtkLudSg6J2wv7R",
+          "recorded": true,
+          "canonicalForm": "vtessera/attest/v1",
+          "marketplace": {
+            "attested": true,
+            "valid": true,
+            "keyId": "5LRpM9wpvPfRYuQAC7oNdyaQa6sakpMcnZeR9FS5CgjB",
+            "signature": {
+              "alg": "Ed25519",
+              "keyId": "5LRpM9wpvPfRYuQAC7oNdyaQa6sakpMcnZeR9FS5CgjB",
+              "digest": "a92012b6a5bd6cae7e6d59f3b3e4063c53f9e1d556a6b285233e63fb2edebea5",
+              "value": "MgSme0LXijWH1AOC1DEH2hj1S31wlgnd5XLDNl2Qozkau9EPDk2HEKOHjPcPcHgWtfs9vwoIa61TGMTwsINtDQ==",
+              "signedAt": "2026-10-11T09:46:20.162662198Z"
+            }
+          },
+          "agent": {
+            "attested": false,
+            "valid": false,
+            "keyId": "DSb5MuTw8mGPNDxVXKZLVhc5ZY5btrtkLudSg6J2wv7R"
+          }
+        }
+      },
+      {
+        "agentId": "BDqy52yhVGFKok86gnvzk4XpNt4XdJbv531WjEKNeEHG",
+        "attestation": {
+          "agentId": "BDqy52yhVGFKok86gnvzk4XpNt4XdJbv531WjEKNeEHG",
+          "recorded": true,
+          "canonicalForm": "vtessera/attest/v1",
+          "marketplace": {
+            "attested": true,
+            "valid": true,
+            "keyId": "5LRpM9wpvPfRYuQAC7oNdyaQa6sakpMcnZeR9FS5CgjB",
+            "signature": {
+              "alg": "Ed25519",
+              "keyId": "5LRpM9wpvPfRYuQAC7oNdyaQa6sakpMcnZeR9FS5CgjB",
+              "digest": "fbfa4868e3ed75fa786cb0829aec67f7ae0056fc1f6911837389af9c20ce6989",
+              "value": "oCEjf7viVRuZzL91JqO4KEBqIc4F11T/+hYt9UTXDibfkVIVoLkOQcdyO8Mkbzwy4mc69xzDlvWwOsnvmVfNCw==",
+              "signedAt": "2026-10-11T09:46:20.174293664Z"
+            }
+          },
+          "agent": {
+            "attested": false,
+            "valid": false,
+            "keyId": "BDqy52yhVGFKok86gnvzk4XpNt4XdJbv531WjEKNeEHG"
+          }
+        }
+      },
+      {
+        "agentId": "BUPjzsubsaigRMEmNV7N5tHSmXEejaWgjkUMbc27dL7T",
+        "attestation": {
+          "agentId": "BUPjzsubsaigRMEmNV7N5tHSmXEejaWgjkUMbc27dL7T",
+          "recorded": true,
+          "canonicalForm": "vtessera/attest/v1",
+          "marketplace": {
+            "attested": true,
+            "valid": true,
+            "keyId": "5LRpM9wpvPfRYuQAC7oNdyaQa6sakpMcnZeR9FS5CgjB",
+            "signature": {
+              "alg": "Ed25519",
+              "keyId": "5LRpM9wpvPfRYuQAC7oNdyaQa6sakpMcnZeR9FS5CgjB",
+              "digest": "f721a75546eeeb562640ca04c748c9c0e2657f331930430e71755e1bf9ecb490",
+              "value": "KFmZGL6+booUF9smDW8tWNYWVXPJmfqartmi5zQZ2DvkRVUbjS7RT/U6nyduwBirEukxb4DMks40y1zk5d7lCA==",
+              "signedAt": "2026-10-11T09:46:20.18611952Z"
+            }
+          },
+          "agent": {
+            "attested": false,
+            "valid": false,
+            "keyId": "BUPjzsubsaigRMEmNV7N5tHSmXEejaWgjkUMbc27dL7T"
+          }
+        }
+      },
+      {
+        "agentId": "2BKYAYb1Lbdq8Syj6agUq3qdP3UEgqZeJPrNDs3Ax739",
+        "attestation": {
+          "agentId": "2BKYAYb1Lbdq8Syj6agUq3qdP3UEgqZeJPrNDs3Ax739",
+          "recorded": true,
+          "canonicalForm": "vtessera/attest/v1",
+          "marketplace": {
+            "attested": true,
+            "valid": true,
+            "keyId": "5LRpM9wpvPfRYuQAC7oNdyaQa6sakpMcnZeR9FS5CgjB",
+            "signature": {
+              "alg": "Ed25519",
+              "keyId": "5LRpM9wpvPfRYuQAC7oNdyaQa6sakpMcnZeR9FS5CgjB",
+              "digest": "b571113f412741b5c99c2881f9047d0c0f3230cd179bd89b429e2211dd47c27c",
+              "value": "IwUNPEd+cZXw2Df4+GNJsEKc8P7okYZBsJUK2Avkp2TgsXSpg1NVD+BzwAi04bOaePHetaxMR/LKPGkz1TkIBA==",
+              "signedAt": "2026-10-11T09:46:20.197417515Z"
+            }
+          },
+          "agent": {
+            "attested": false,
+            "valid": false,
+            "keyId": "2BKYAYb1Lbdq8Syj6agUq3qdP3UEgqZeJPrNDs3Ax739"
+          }
+        }
+      },
+      {
+        "agentId": "7WKpE32hgRv5eyMSE3gSsCBNksk7sQVQBGdMFBQpHjcj",
+        "attestation": {
+          "agentId": "7WKpE32hgRv5eyMSE3gSsCBNksk7sQVQBGdMFBQpHjcj",
+          "recorded": true,
+          "canonicalForm": "vtessera/attest/v1",
+          "marketplace": {
+            "attested": true,
+            "valid": true,
+            "keyId": "5LRpM9wpvPfRYuQAC7oNdyaQa6sakpMcnZeR9FS5CgjB",
+            "signature": {
+              "alg": "Ed25519",
+              "keyId": "5LRpM9wpvPfRYuQAC7oNdyaQa6sakpMcnZeR9FS5CgjB",
+              "digest": "3549d69860935585fb0046d6e62977422fa16da1a93e16ec91b637caa6d810ba",
+              "value": "E/CCMgpR48s7kNFuPZpwKU4k97RAq+ThtzjLjUSBggxweN9IiqUVvIgxukcJUsWcYqRNSwzNtEG2306MnV/rCg==",
+              "signedAt": "2026-10-11T09:46:20.212510182Z"
+            }
+          },
+          "agent": {
+            "attested": false,
+            "valid": false,
+            "keyId": "7WKpE32hgRv5eyMSE3gSsCBNksk7sQVQBGdMFBQpHjcj"
+          }
+        }
+      },
+      {
+        "agentId": "5rk1SfDoprogv7E2GenQXN9eBayJZR2zyFBELsHcnZPF",
+        "attestation": {
+          "agentId": "5rk1SfDoprogv7E2GenQXN9eBayJZR2zyFBELsHcnZPF",
+          "recorded": true,
+          "canonicalForm": "vtessera/attest/v1",
+          "marketplace": {
+            "attested": true,
+            "valid": true,
+            "keyId": "5LRpM9wpvPfRYuQAC7oNdyaQa6sakpMcnZeR9FS5CgjB",
+            "signature": {
+              "alg": "Ed25519",
+              "keyId": "5LRpM9wpvPfRYuQAC7oNdyaQa6sakpMcnZeR9FS5CgjB",
+              "digest": "abcece237816f1d59bfbbd26d88e07992bf23e56e086b27873123c8679eba8d0",
+              "value": "TlhLT+l7WmQp8gQ4BJxiEL+nViJMjMxvWCfGFzb5j72Cb4yqNB0fwmPv4HB7mcPeif2Yxhn32Ue+nioNnf91AA==",
+              "signedAt": "2026-10-11T09:46:20.224180868Z"
+            }
+          },
+          "agent": {
+            "attested": false,
+            "valid": false,
+            "keyId": "5rk1SfDoprogv7E2GenQXN9eBayJZR2zyFBELsHcnZPF"
+          }
+        }
+      },
+      {
+        "agentId": "3HJBVJcFqqfAaELwrh6NSeSS8or2s1yVLZqchmrwwTYB",
+        "attestation": {
+          "agentId": "3HJBVJcFqqfAaELwrh6NSeSS8or2s1yVLZqchmrwwTYB",
+          "recorded": true,
+          "canonicalForm": "vtessera/attest/v1",
+          "marketplace": {
+            "attested": true,
+            "valid": true,
+            "keyId": "5LRpM9wpvPfRYuQAC7oNdyaQa6sakpMcnZeR9FS5CgjB",
+            "signature": {
+              "alg": "Ed25519",
+              "keyId": "5LRpM9wpvPfRYuQAC7oNdyaQa6sakpMcnZeR9FS5CgjB",
+              "digest": "d262d72fa7aa701c5525e17a876dd0670cd7afd1816ba8ca07317e47207cdace",
+              "value": "d2IKGEvsCw9BHBJjbzSdoGmRLwPbwElVtn4m0CJSFHDfUeQOf38FXwJh3Ev0yVewl6E9pC2AEiUi+dpxPHRrBg==",
+              "signedAt": "2026-10-11T09:46:20.235628393Z"
+            }
+          },
+          "agent": {
+            "attested": false,
+            "valid": false,
+            "keyId": "3HJBVJcFqqfAaELwrh6NSeSS8or2s1yVLZqchmrwwTYB"
+          }
+        }
+      },
+      {
+        "agentId": "5Ja5q8eiDUdDx9nzsw5pvupTkst5xtUkZpE2A1tU9om8",
+        "attestation": {
+          "agentId": "5Ja5q8eiDUdDx9nzsw5pvupTkst5xtUkZpE2A1tU9om8",
+          "recorded": true,
+          "canonicalForm": "vtessera/attest/v1",
+          "marketplace": {
+            "attested": true,
+            "valid": true,
+            "keyId": "5LRpM9wpvPfRYuQAC7oNdyaQa6sakpMcnZeR9FS5CgjB",
+            "signature": {
+              "alg": "Ed25519",
+              "keyId": "5LRpM9wpvPfRYuQAC7oNdyaQa6sakpMcnZeR9FS5CgjB",
+              "digest": "72a664de62c71884cc88ec5c8c0635337711d97c1d1a0f092eb423ea61cb3d25",
+              "value": "CUJeFmvc7ZsqH8IbyjStndSGHMYu/KRNlijNrfkSYpe6Kcg9nPT8cVzQKOf/cQmFcHJdQ2f5EW5q2SmjaWpDDA==",
+              "signedAt": "2026-10-11T09:46:20.247110349Z"
+            }
+          },
+          "agent": {
+            "attested": false,
+            "valid": false,
+            "keyId": "5Ja5q8eiDUdDx9nzsw5pvupTkst5xtUkZpE2A1tU9om8"
+          }
+        }
+      },
+      {
+        "agentId": "2BnhkNdDaRtvVQxTpGSGnsuxKYg3AeGq8uMj232iipwk",
+        "attestation": {
+          "agentId": "2BnhkNdDaRtvVQxTpGSGnsuxKYg3AeGq8uMj232iipwk",
+          "recorded": true,
+          "canonicalForm": "vtessera/attest/v1",
+          "marketplace": {
+            "attested": true,
+            "valid": true,
+            "keyId": "5LRpM9wpvPfRYuQAC7oNdyaQa6sakpMcnZeR9FS5CgjB",
+            "signature": {
+              "alg": "Ed25519",
+              "keyId": "5LRpM9wpvPfRYuQAC7oNdyaQa6sakpMcnZeR9FS5CgjB",
+              "digest": "f76075b841d5851f29b3b5af1f7af9b72630125822e8b1a01c8cf608af378650",
+              "value": "yDZDPgMUO65t0EegsqOLHWIe5XYe9wh1JmninNooJxVuhpiLboC2/94TrvLYdCrrCQL8UtZgnEzF2Ej94mnxCg==",
+              "signedAt": "2026-10-11T09:53:17.492459066Z"
+            }
+          },
+          "agent": {
+            "attested": false,
+            "valid": false,
+            "keyId": "2BnhkNdDaRtvVQxTpGSGnsuxKYg3AeGq8uMj232iipwk"
+          }
+        }
+      },
+      {
+        "agentId": "5XgMScWVQx643kCppJQJzXN3GyU3x66TMJUuzAwg9C2z",
+        "attestation": {
+          "agentId": "5XgMScWVQx643kCppJQJzXN3GyU3x66TMJUuzAwg9C2z",
+          "recorded": true,
+          "canonicalForm": "vtessera/attest/v1",
+          "marketplace": {
+            "attested": true,
+            "valid": true,
+            "keyId": "5LRpM9wpvPfRYuQAC7oNdyaQa6sakpMcnZeR9FS5CgjB",
+            "signature": {
+              "alg": "Ed25519",
+              "keyId": "5LRpM9wpvPfRYuQAC7oNdyaQa6sakpMcnZeR9FS5CgjB",
+              "digest": "fb7ec2a18111a44393833823b03cc3466164d9c1dd3f77882a7081c323747b4d",
+              "value": "JLfQAKwP02IpThrJMa/v6H9ALZKoL07UxLQrfpIyeYZPmOCK00MevDnbhaFzmKlIi1GwfNEreKuQcVijeXyjCg==",
+              "signedAt": "2026-10-11T09:53:17.903874583Z"
+            }
+          },
+          "agent": {
+            "attested": false,
+            "valid": false,
+            "keyId": "5XgMScWVQx643kCppJQJzXN3GyU3x66TMJUuzAwg9C2z"
+          }
+        }
+      },
+      {
+        "agentId": "3XCNhdcbYom1Vgii9J6Yc5gcAVfzsbhn6XqPLKYf2tAo",
+        "attestation": {
+          "agentId": "3XCNhdcbYom1Vgii9J6Yc5gcAVfzsbhn6XqPLKYf2tAo",
+          "recorded": true,
+          "canonicalForm": "vtessera/attest/v1",
+          "marketplace": {
+            "attested": true,
+            "valid": true,
+            "keyId": "5LRpM9wpvPfRYuQAC7oNdyaQa6sakpMcnZeR9FS5CgjB",
+            "signature": {
+              "alg": "Ed25519",
+              "keyId": "5LRpM9wpvPfRYuQAC7oNdyaQa6sakpMcnZeR9FS5CgjB",
+              "digest": "bdb120f8f333200cad50e95bfe4ec40b848730bb45704702a40787719aa5995c",
+              "value": "a7Dz9KlVPFUIKEt/BkuBvAeztX0b9L6laz5DODa05bmCUSHBGmq21a/bwwh2UWvEsN0+T6GI+rFoHDwdyEJRDw==",
+              "signedAt": "2026-10-11T12:25:55.594989499Z"
+            }
+          },
+          "agent": {
+            "attested": false,
+            "valid": false,
+            "keyId": "3XCNhdcbYom1Vgii9J6Yc5gcAVfzsbhn6XqPLKYf2tAo"
+          }
+        }
+      },
+      {
+        "agentId": "BsRztSPD6dZZXVWz1gax8CKvTJMZWcoHu28wj9HRU4Jf",
+        "attestation": {
+          "agentId": "BsRztSPD6dZZXVWz1gax8CKvTJMZWcoHu28wj9HRU4Jf",
+          "recorded": true,
+          "canonicalForm": "vtessera/attest/v1",
+          "marketplace": {
+            "attested": true,
+            "valid": true,
+            "keyId": "5LRpM9wpvPfRYuQAC7oNdyaQa6sakpMcnZeR9FS5CgjB",
+            "signature": {
+              "alg": "Ed25519",
+              "keyId": "5LRpM9wpvPfRYuQAC7oNdyaQa6sakpMcnZeR9FS5CgjB",
+              "digest": "14b2282721395126b32bcb865ff0cdfaa01cc1598d056a4abf34b45ec21d2114",
+              "value": "DX31lwKODfuMavWJezmXNW3UwQX2wPyR0DHtea4ERNNLLkJN0sjHJ5GSdWo/WNCqDDdT5xgBCEA5Q3vjEvYUAw==",
+              "signedAt": "2026-10-11T10:13:32.67760289Z"
+            }
+          },
+          "agent": {
+            "attested": false,
+            "valid": false,
+            "keyId": "BsRztSPD6dZZXVWz1gax8CKvTJMZWcoHu28wj9HRU4Jf"
+          }
+        }
+      },
+      {
+        "agentId": "5TYmyTWf8o5RQ1gZ2jDgjAgXPzqs9DRcMnxMT7kgA92P",
+        "attestation": {
+          "agentId": "5TYmyTWf8o5RQ1gZ2jDgjAgXPzqs9DRcMnxMT7kgA92P",
+          "recorded": true,
+          "canonicalForm": "vtessera/attest/v1",
+          "marketplace": {
+            "attested": true,
+            "valid": true,
+            "keyId": "5LRpM9wpvPfRYuQAC7oNdyaQa6sakpMcnZeR9FS5CgjB",
+            "signature": {
+              "alg": "Ed25519",
+              "keyId": "5LRpM9wpvPfRYuQAC7oNdyaQa6sakpMcnZeR9FS5CgjB",
+              "digest": "6ae582d38cbe2459333e76c1d7435202ebb01b6daf293022b6f6f52357d49f90",
+              "value": "lhY38RWBWPS1rr3UxR+h21gbAwRCoUvCkC4arjk4lHSRb3wAcWTHL9RRarglOjbHvzzY5uEfHDOeg5esGujnAw==",
+              "signedAt": "2026-10-11T10:13:44.133760546Z"
+            }
+          },
+          "agent": {
+            "attested": false,
+            "valid": false,
+            "keyId": "5TYmyTWf8o5RQ1gZ2jDgjAgXPzqs9DRcMnxMT7kgA92P"
+          }
+        }
+      },
+      {
+        "agentId": "8drE6FKshaWAWLzyJEGuUL2xqubE1ygVF7Vv5GbAQsQb",
+        "attestation": {
+          "agentId": "8drE6FKshaWAWLzyJEGuUL2xqubE1ygVF7Vv5GbAQsQb",
+          "recorded": true,
+          "canonicalForm": "vtessera/attest/v1",
+          "marketplace": {
+            "attested": true,
+            "valid": true,
+            "keyId": "5LRpM9wpvPfRYuQAC7oNdyaQa6sakpMcnZeR9FS5CgjB",
+            "signature": {
+              "alg": "Ed25519",
+              "keyId": "5LRpM9wpvPfRYuQAC7oNdyaQa6sakpMcnZeR9FS5CgjB",
+              "digest": "0a89c53b1f9d73895fc712b4a2846729a001ede7cbefa233825aed906af769e5",
+              "value": "UGgplSE0gl6qSGd7ZQCkPpicn65CIwhWmzl0FGBAiWLublS6qvitETT+aaYsNe3cgF9C9931yyX20uq21b5dAg==",
+              "signedAt": "2026-10-11T10:14:00.635101406Z"
+            }
+          },
+          "agent": {
+            "attested": false,
+            "valid": false,
+            "keyId": "8drE6FKshaWAWLzyJEGuUL2xqubE1ygVF7Vv5GbAQsQb"
+          }
+        }
+      },
+      {
+        "agentId": "3GVRMUjrk9Q9QHc7mHNdqrQdtciu7gY5da5aWUptqRA7",
+        "attestation": {
+          "agentId": "3GVRMUjrk9Q9QHc7mHNdqrQdtciu7gY5da5aWUptqRA7",
+          "recorded": true,
+          "canonicalForm": "vtessera/attest/v1",
+          "marketplace": {
+            "attested": true,
+            "valid": true,
+            "keyId": "5LRpM9wpvPfRYuQAC7oNdyaQa6sakpMcnZeR9FS5CgjB",
+            "signature": {
+              "alg": "Ed25519",
+              "keyId": "5LRpM9wpvPfRYuQAC7oNdyaQa6sakpMcnZeR9FS5CgjB",
+              "digest": "40b8dbb285432c2ea0f2ca15078c162cfa320b9f47c17ed6538bbffba18d56c2",
+              "value": "0Uu5L/eNAz93TemjnXe8iJpyB1gnM9jpBLy+87cRTUC601JOOF8W2z7I4Xxvx/M0yT6G7upmecLKfDwf4CZtAA==",
+              "signedAt": "2026-10-11T10:18:48.728762766Z"
+            }
+          },
+          "agent": {
+            "attested": false,
+            "valid": false,
+            "keyId": "3GVRMUjrk9Q9QHc7mHNdqrQdtciu7gY5da5aWUptqRA7"
+          }
+        }
+      },
+      {
+        "agentId": "5vWdYSmcNJnoj2PM8LfLRvnviujnQCT1Eu8Csw6Jzfhs",
+        "attestation": {
+          "agentId": "5vWdYSmcNJnoj2PM8LfLRvnviujnQCT1Eu8Csw6Jzfhs",
+          "recorded": true,
+          "canonicalForm": "vtessera/attest/v1",
+          "marketplace": {
+            "attested": true,
+            "valid": true,
+            "keyId": "5LRpM9wpvPfRYuQAC7oNdyaQa6sakpMcnZeR9FS5CgjB",
+            "signature": {
+              "alg": "Ed25519",
+              "keyId": "5LRpM9wpvPfRYuQAC7oNdyaQa6sakpMcnZeR9FS5CgjB",
+              "digest": "c9d12e5cdf83654ceaa963616cff24f1bcef92d67b4d86e4288c4758c812eb1f",
+              "value": "Skzs/OIsGvl+oeowihZSk57NNnHRuKBKeePfvykHO04DyDqg2QAbCcQy9xXFD77/LA101fPkyQ7s9bvsMtLZAQ==",
+              "signedAt": "2026-10-11T11:29:30.337987198Z"
+            }
+          },
+          "agent": {
+            "attested": false,
+            "valid": false,
+            "keyId": "5vWdYSmcNJnoj2PM8LfLRvnviujnQCT1Eu8Csw6Jzfhs"
+          }
+        }
+      },
+      {
+        "agentId": "F6va24XSxeK2Xy6EpB2FGkTSTbB9pqgq6KMpAYvw4m7P",
+        "attestation": {
+          "agentId": "F6va24XSxeK2Xy6EpB2FGkTSTbB9pqgq6KMpAYvw4m7P",
+          "recorded": true,
+          "canonicalForm": "vtessera/attest/v1",
+          "marketplace": {
+            "attested": true,
+            "valid": true,
+            "keyId": "5LRpM9wpvPfRYuQAC7oNdyaQa6sakpMcnZeR9FS5CgjB",
+            "signature": {
+              "alg": "Ed25519",
+              "keyId": "5LRpM9wpvPfRYuQAC7oNdyaQa6sakpMcnZeR9FS5CgjB",
+              "digest": "e3eadc24c98e3d829797889db4e886b21ad77e292df729d3fcce8c67819f8aef",
+              "value": "XjoV1WEgMllMczq9xpO56b8w1WxMO4+mn3cAp5gsqTG55cZv7Bk1i6YURNeL104V3KM08ZbJBhO8F4K04iwZAw==",
+              "signedAt": "2026-10-11T12:15:58.183319404Z"
+            }
+          },
+          "agent": {
+            "attested": false,
+            "valid": false,
+            "keyId": "F6va24XSxeK2Xy6EpB2FGkTSTbB9pqgq6KMpAYvw4m7P"
+          }
+        }
+      },
+      {
+        "agentId": "HBJvR9QRu2LRt3kSxYgwEkQmLe2Y13EevSWduNbDHpWk",
+        "attestation": {
+          "agentId": "HBJvR9QRu2LRt3kSxYgwEkQmLe2Y13EevSWduNbDHpWk",
+          "recorded": true,
+          "canonicalForm": "vtessera/attest/v1",
+          "marketplace": {
+            "attested": true,
+            "valid": true,
+            "keyId": "5LRpM9wpvPfRYuQAC7oNdyaQa6sakpMcnZeR9FS5CgjB",
+            "signature": {
+              "alg": "Ed25519",
+              "keyId": "5LRpM9wpvPfRYuQAC7oNdyaQa6sakpMcnZeR9FS5CgjB",
+              "digest": "3ba513de37bf9c2dda4955d6f8cea67d7236206c4330aa37630ca71f861ec52f",
+              "value": "7f5qCNTMURAVru0l3+8j09QaBB4oKYVHt3K+UM6D4Xg5QB8XcjCLJC7kyQuMcYIJdQ9zgU1fKayP0Db7S1GNAg==",
+              "signedAt": "2026-10-11T12:18:24.928801596Z"
+            }
+          },
+          "agent": {
+            "attested": false,
+            "valid": false,
+            "keyId": "HBJvR9QRu2LRt3kSxYgwEkQmLe2Y13EevSWduNbDHpWk"
+          }
+        }
+      },
+      {
+        "agentId": "3PKx9J7XD1vnPLcjUsBoHHNjvhfnY7p7jtbj1MNFziaZ",
+        "attestation": {
+          "agentId": "3PKx9J7XD1vnPLcjUsBoHHNjvhfnY7p7jtbj1MNFziaZ",
+          "recorded": true,
+          "canonicalForm": "vtessera/attest/v1",
+          "marketplace": {
+            "attested": true,
+            "valid": true,
+            "keyId": "5LRpM9wpvPfRYuQAC7oNdyaQa6sakpMcnZeR9FS5CgjB",
+            "signature": {
+              "alg": "Ed25519",
+              "keyId": "5LRpM9wpvPfRYuQAC7oNdyaQa6sakpMcnZeR9FS5CgjB",
+              "digest": "0dc09dc1c6e7925107394bff8d107d74c54e0060385f1e85cd1e42d159417291",
+              "value": "lmKSUCCUVbm57YtbMTDnmyWFAFRiFyR7xPTYMNs4IB9I4W1Xoo/0CEZOOHOKMtE87Pk43Uf570mpTS+WLnWOAA==",
+              "signedAt": "2026-10-11T12:24:41.375034795Z"
+            }
+          },
+          "agent": {
+            "attested": false,
+            "valid": false,
+            "keyId": "3PKx9J7XD1vnPLcjUsBoHHNjvhfnY7p7jtbj1MNFziaZ"
+          }
+        }
+      },
+      {
+        "agentId": "7gr6qrCXkmyNsznGTHDk44gBW3Hgim3o9kT2wEh5yGVe",
+        "attestation": {
+          "agentId": "7gr6qrCXkmyNsznGTHDk44gBW3Hgim3o9kT2wEh5yGVe",
+          "recorded": true,
+          "canonicalForm": "vtessera/attest/v1",
+          "marketplace": {
+            "attested": true,
+            "valid": true,
+            "keyId": "5LRpM9wpvPfRYuQAC7oNdyaQa6sakpMcnZeR9FS5CgjB",
+            "signature": {
+              "alg": "Ed25519",
+              "keyId": "5LRpM9wpvPfRYuQAC7oNdyaQa6sakpMcnZeR9FS5CgjB",
+              "digest": "166e8e3fc4eea9feea6467bc0caf3045f870f75acaff333535157520c45c8e0b",
+              "value": "/uedfRtDpawlGr3R+SiCNuQecDAlsVBPSC7sypqb+5n009mVUURynEmbP6kD5bl2H5retaRadOa8uyV6pYc7BQ==",
+              "signedAt": "2026-10-11T12:26:16.601451408Z"
+            }
+          },
+          "agent": {
+            "attested": false,
+            "valid": false,
+            "keyId": "7gr6qrCXkmyNsznGTHDk44gBW3Hgim3o9kT2wEh5yGVe"
           }
         }
       }
