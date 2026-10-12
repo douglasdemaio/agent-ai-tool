@@ -1,5 +1,5 @@
 {
-  "fetchedAt": "2026-10-11T12:50:01.97528449Z",
+  "fetchedAt": "2026-10-12T15:25:08.405473056Z",
   "response": {
     "agents": [
       {
@@ -197,7 +197,7 @@
         },
         "status": "active",
         "createdAt": "2026-10-11T09:46:20.162662198Z",
-        "updatedAt": "2026-10-11T09:46:20.162662198Z"
+        "updatedAt": "2026-10-12T09:46:20.077587281Z"
       },
       {
         "id": "BDqy52yhVGFKok86gnvzk4XpNt4XdJbv531WjEKNeEHG",
@@ -219,7 +219,7 @@
         },
         "status": "active",
         "createdAt": "2026-10-11T09:46:20.174293664Z",
-        "updatedAt": "2026-10-11T09:46:20.174293664Z"
+        "updatedAt": "2026-10-12T09:46:20.09560472Z"
       },
       {
         "id": "BUPjzsubsaigRMEmNV7N5tHSmXEejaWgjkUMbc27dL7T",
@@ -241,7 +241,7 @@
         },
         "status": "active",
         "createdAt": "2026-10-11T09:46:20.18611952Z",
-        "updatedAt": "2026-10-11T09:46:20.18611952Z"
+        "updatedAt": "2026-10-12T09:46:20.109541797Z"
       },
       {
         "id": "2BKYAYb1Lbdq8Syj6agUq3qdP3UEgqZeJPrNDs3Ax739",
@@ -263,7 +263,7 @@
         },
         "status": "active",
         "createdAt": "2026-10-11T09:46:20.197417515Z",
-        "updatedAt": "2026-10-11T09:46:20.197417515Z"
+        "updatedAt": "2026-10-12T09:46:20.123280853Z"
       },
       {
         "id": "7WKpE32hgRv5eyMSE3gSsCBNksk7sQVQBGdMFBQpHjcj",
@@ -285,7 +285,7 @@
         },
         "status": "active",
         "createdAt": "2026-10-11T09:46:20.212510182Z",
-        "updatedAt": "2026-10-11T09:46:20.212510182Z"
+        "updatedAt": "2026-10-12T09:46:20.13798193Z"
       },
       {
         "id": "5rk1SfDoprogv7E2GenQXN9eBayJZR2zyFBELsHcnZPF",
@@ -307,7 +307,7 @@
         },
         "status": "active",
         "createdAt": "2026-10-11T09:46:20.224180868Z",
-        "updatedAt": "2026-10-11T09:46:20.224180868Z"
+        "updatedAt": "2026-10-12T09:46:20.151068736Z"
       },
       {
         "id": "3HJBVJcFqqfAaELwrh6NSeSS8or2s1yVLZqchmrwwTYB",
@@ -329,7 +329,7 @@
         },
         "status": "active",
         "createdAt": "2026-10-11T09:46:20.235628393Z",
-        "updatedAt": "2026-10-11T09:46:20.235628393Z"
+        "updatedAt": "2026-10-12T09:46:20.165563173Z"
       },
       {
         "id": "5Ja5q8eiDUdDx9nzsw5pvupTkst5xtUkZpE2A1tU9om8",
@@ -351,7 +351,7 @@
         },
         "status": "active",
         "createdAt": "2026-10-11T09:46:20.247110349Z",
-        "updatedAt": "2026-10-11T09:46:20.247110349Z"
+        "updatedAt": "2026-10-12T09:46:20.17872052Z"
       },
       {
         "id": "2BnhkNdDaRtvVQxTpGSGnsuxKYg3AeGq8uMj232iipwk",
@@ -418,7 +418,7 @@
         },
         "status": "active",
         "createdAt": "2026-10-11T10:12:18.586745165Z",
-        "updatedAt": "2026-10-11T12:25:55.594989499Z"
+        "updatedAt": "2026-10-11T17:53:01.03154055Z"
       },
       {
         "id": "BsRztSPD6dZZXVWz1gax8CKvTJMZWcoHu28wj9HRU4Jf",

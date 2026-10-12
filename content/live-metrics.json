@@ -1,12 +1,12 @@
 {
-  "fetchedAt": "2026-10-11T12:50:02.077674229Z",
+  "fetchedAt": "2026-10-12T15:25:08.542482566Z",
   "response": {
-    "generatedAt": "2026-10-11T12:50:02.0274852Z",
+    "generatedAt": "2026-10-12T15:25:08.481789733Z",
     "asOf": "2026-10-11T12:26:19.274222453Z",
     "totals": {
       "delivered": 11,
       "disputed": 1,
-      "cancelled": 2,
+      "cancelled": 3,
       "consumers": 11,
       "services": 11
     },
@@ -34,6 +34,12 @@
         "delivered": 1,
         "disputed": 0,
         "cancelled": 0
+      },
+      {
+        "agentId": "5rk1SfDoprogv7E2GenQXN9eBayJZR2zyFBELsHcnZPF",
+        "delivered": 0,
+        "disputed": 0,
+        "cancelled": 1
       },
       {
         "agentId": "HR8yzDpPdSYKmAo6GG2XbSrzvWGnxBDkLkowohHbdUYq",
