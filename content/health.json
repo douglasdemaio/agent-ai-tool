@@ -1,15 +1,17 @@
 {
-  "checkedAt": "2026-10-13T14:21:40.197011968Z",
+  "checkedAt": "2026-10-14T05:01:50.139699123Z",
   "endpoints": {
     "mcp-registry https://registry.modelcontextprotocol.io/v0.1/servers": {
       "url": "https://registry.modelcontextprotocol.io/v0.1/servers",
-      "alive": true,
+      "alive": false,
       "attempts": [
-        0,
-        0,
+        2,
+        2,
         0
       ],
-      "response_ms": 266
+      "detail": "Get \"https://registry.modelcontextprotocol.io/v0.1/servers\": context deadline exceeded",
+      "last_alive_at": "2026-10-13T14:21:40.197011968Z",
+      "response_ms": 15243
     },
     "models-dev https://models.dev/api.json": {
       "url": "https://models.dev/api.json",
@@ -19,7 +21,7 @@
         0,
         0
       ],
-      "response_ms": 209
+      "response_ms": 374
     },
     "openrouter https://openrouter.ai/api/v1/models": {
       "url": "https://openrouter.ai/api/v1/models",
@@ -29,7 +31,7 @@
         0,
         0
       ],
-      "response_ms": 56
+      "response_ms": 50
     },
     "vtessera https://vtessera-mcp.fly.dev/mcp": {
       "url": "https://vtessera-mcp.fly.dev/mcp",
@@ -39,7 +41,7 @@
         0,
         0
       ],
-      "response_ms": 239
+      "response_ms": 232
     },
     "vtessera https://vtessera.fly.dev/.well-known/agent-card.json": {
       "url": "https://vtessera.fly.dev/.well-known/agent-card.json",
@@ -49,7 +51,7 @@
         0,
         0
       ],
-      "response_ms": 161
+      "response_ms": 243
     }
   }
 }
