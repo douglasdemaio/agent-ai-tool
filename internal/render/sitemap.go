@@ -41,6 +41,22 @@ func (s Site) sitemap(views []entryView) []byte {
 		Loc:     s.canonical(""),
 		LastMod: newest.UTC().Format(time.RFC3339),
 	})
+	// The gallery follows delivered trades, so its lastmod is the newest receipt
+	// rather than the build time: receipts arrive between directory edits, and a
+	// lastmod that moved on every rebuild would tell crawlers the page changed
+	// when it did not.
+	if s.Receipts != nil && len(s.Receipts.Receipts) > 0 {
+		var newestReceipt time.Time
+		for _, r := range s.Receipts.Receipts {
+			if r.IssuedAt.After(newestReceipt) {
+				newestReceipt = r.IssuedAt
+			}
+		}
+		set.URLs = append(set.URLs, sitemapURL{
+			Loc:     s.canonical("trades"),
+			LastMod: newestReceipt.UTC().Format(time.RFC3339),
+		})
+	}
 	for _, v := range views {
 		set.URLs = append(set.URLs, sitemapURL{
 			Loc:     s.canonical(v.Entry.Slug),

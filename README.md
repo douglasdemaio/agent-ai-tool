@@ -296,6 +296,46 @@ only a rule about what the directory is willing to claim about it.
 No analytics are collected here: no page views, referrers, IPs, or user agents,
 and no third-party scripts.
 
+## Delivered trades
+
+`/trades/` is the gallery of what the marketplace has actually settled. It reads
+the public `GET /v1/receipts` listing — newest first, the receipt's delivered
+trade as a compact JWS — and **re-derives every signature while the page is
+built**, so a reader sees the receipts checked rather than a claim that they
+were. `llms.txt` points at both the listing and the page.
+
+The key is `/healthz`'s `verificationKeys`, not the `verificationKey` each
+receipt names. That field is inside the same response as the receipt, so a key
+and a signature that arrive together prove only that whoever wrote the response
+can sign; the keyring is fetched separately and the header's `kid` must be a
+member of it. A `kid` the marketplace never published is refused, not trusted.
+An older `/healthz` with no keyring falls back to the single key it does publish,
+so a rotation that predates the keyring still verifies.
+
+The verdicts reuse the same three states as the verification block:
+
+| State | Means |
+|---|---|
+| `verified` | the bytes match the signature, under a published key |
+| `invalid` | a key in the keyring signed it and the bytes do not match |
+| `unavailable` | it could not be checked — no keyring, or an unreadable token |
+
+`invalid` and `unavailable` are kept apart for the same reason they are in the
+verification block: a marketplace mid-rotation must not read as a tampered
+receipt. The claims of a receipt that did not verify are not shown as fact; only
+a verified row prints the amount, mint, parties and settlement. The
+marketplace's own `valid` flag is ignored — this page computes its own.
+
+**Test activity is labelled here too.** A trade either of this repository's probe
+agents was party to is our own test traffic, and the page says so rather than
+letting the listing read as outside use; `live.IsProbeTrade` uses the same
+curated key list as the metrics banner.
+
+The snapshot is `content/live-receipts.json`. The endpoint is newer than the rest
+of the live surface, so a build that cannot fetch it and finds no snapshot omits
+the section rather than failing — `/trades/` then says there was nothing to
+check, which is a statement about the build and not about vtessera.
+
 ## Endpoint health
 
 The directory's claim is that these are endpoints an agent can call, so
@@ -548,7 +588,7 @@ owner had agreed to something they never saw.
 ## Discovery
 
 The generator emits `robots.txt`, `sitemap.xml`, `llms.txt`, `agents.json`,
-`/.well-known/agent-card.json`, and per-entry JSON-LD.
+`/.well-known/agent-card.json`, the `/trades/` gallery, and per-entry JSON-LD.
 
 `robots.txt` allows retrieval and answer engines and disallows bulk training
 crawlers, with each named group verified against vendor documentation. Under

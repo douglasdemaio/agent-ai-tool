@@ -159,10 +159,11 @@ func (c config) run(client *http.Client) error {
 	agentsCache := filepath.Join(c.cacheDir, "live-vtessera.json")
 	metricsCache := filepath.Join(c.cacheDir, "live-metrics.json")
 	healthCache := filepath.Join(c.cacheDir, "live-health.json")
+	receiptsCache := filepath.Join(c.cacheDir, "live-receipts.json")
 	reportsCache := filepath.Join(c.cacheDir, "live-attestations.json")
 
 	if c.refresh {
-		return c.refreshSnapshots(ctx, client, agentsCache, metricsCache, healthCache, reportsCache)
+		return c.refreshSnapshots(ctx, client, agentsCache, metricsCache, healthCache, receiptsCache, reportsCache)
 	}
 
 	if c.check {
@@ -188,6 +189,13 @@ func (c config) run(client *http.Client) error {
 	// signature checked against a key from the same response would verify anything.
 	marketplaceHealth := live.Load(ctx, c.baseURL, "/healthz", healthCache, client, live.ValidateHealth)
 	report(marketplaceHealth, "healthz")
+
+	// The receipts a delivered trade produced, checked against the key above
+	// rather than against the key each receipt names. Fetched after health for
+	// the same reason the reports are: a signature checked against a key from the
+	// same response would verify anything.
+	receipts := live.Load(ctx, c.baseURL, "/v1/receipts", receiptsCache, client, live.ValidateReceipts)
+	report(receipts, "receipts")
 
 	var feed []live.Agent
 	if agents.Available() {
@@ -281,6 +289,15 @@ func (c config) run(client *http.Client) error {
 		merged := response.Normalized()
 		site.Metrics = &merged
 	}
+	if receipts.Available() {
+		var response live.ReceiptsResponse
+		if err := json.Unmarshal(receipts.Response, &response); err != nil {
+			return fmt.Errorf("decoding the receipts feed: %w", err)
+		}
+		merged := response.Normalized()
+		site.Receipts = &merged
+		site.ReceiptsFromCache = receipts.FromCache
+	}
 
 	if err := site.Render(c.outDir); err != nil {
 		return err
@@ -364,7 +381,7 @@ func (c config) planCommit() error {
 	return nil
 }
 
-func (c config) refreshSnapshots(ctx context.Context, client *http.Client, agentsCache, metricsCache, healthCache, reportsCache string) error {
+func (c config) refreshSnapshots(ctx context.Context, client *http.Client, agentsCache, metricsCache, healthCache, receiptsCache, reportsCache string) error {
 	if c.baseURL == "" {
 		return fmt.Errorf("-refresh needs -base-url or VTESSERA_BASE_URL; refusing to write empty snapshots")
 	}
@@ -380,6 +397,10 @@ func (c config) refreshSnapshots(ctx context.Context, client *http.Client, agent
 		return fmt.Errorf("refreshing %s: %w", healthCache, err)
 	}
 	log.Printf("wrote %s", healthCache)
+	if err := live.Refresh(ctx, c.baseURL, "/v1/receipts", receiptsCache, client, live.ValidateReceipts); err != nil {
+		return fmt.Errorf("refreshing %s: %w", receiptsCache, err)
+	}
+	log.Printf("wrote %s", receiptsCache)
 
 	// The report feed is written last and from the agent feed just fetched, so a
 	// snapshot can never describe an agent the committed feed does not have. A
