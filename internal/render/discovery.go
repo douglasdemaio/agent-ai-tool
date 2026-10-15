@@ -517,6 +517,24 @@ func (s Site) llms(views []entryView) string {
 		fmt.Fprintf(&b, "Recorded across the vtessera marketplace: %d delivered, %d disputed,\n", s.Metrics.Totals.Delivered, s.Metrics.Totals.Disputed)
 		fmt.Fprintf(&b, "%d cancelled, across %d distinct consumers and %d distinct services in use.\n", s.Metrics.Totals.Cancelled, s.Metrics.Totals.Consumers, s.Metrics.Totals.Services)
 	}
+	if s.Receipts != nil && len(s.Receipts.Receipts) > 0 {
+		r := s.receiptsBlock()
+		b.WriteString("\n## Delivered trades\n\n")
+		b.WriteString("Every trade vtessera settles produces a signed receipt. The listing at\n")
+		b.WriteString("https://vtessera.fly.dev/v1/receipts\n")
+		b.WriteString("carries them newest first; each is a compact JWS you can verify\n")
+		b.WriteString("yourself against the `verification_keys` in /healthz.\n\n")
+		fmt.Fprintf(&b, "%s/trades/ renders the same listing with each signature re-derived at\n", s.canonical(""))
+		fmt.Fprintf(&b, "build time: %d of %d verified. ", r.Verified, r.Count)
+		if r.Invalid > 0 {
+			fmt.Fprintf(&b, "%d did not verify and are marked there.\n", r.Invalid)
+		} else {
+			b.WriteString("None failed.\n")
+		}
+		if r.AllTests {
+			b.WriteString("Every listed trade is this project's own test activity; there is no\noutside usage yet.\n")
+		}
+	}
 	return b.String()
 }
 

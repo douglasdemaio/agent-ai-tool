@@ -68,6 +68,20 @@ const seedHealth = `{"status":"ok","version":"0.0.0-test",
 const seedAttestation = `{"agentId":"%s","recorded":false,"canonicalForm":"vtessera/attest/v1",
   "marketplace":{"attested":false},"agent":{"attested":false}}`
 
+// seedReceipts is a listing with one delivered trade. The JWS is structurally a
+// compact JWS but signs nothing, so the gallery must report it as not verified
+// rather than count it; a stub that produced a valid signature here would be
+// asserting the opposite of what the check is for. The signing key is the test
+// key in seedHealth, which nothing in this stub holds.
+const seedReceipts = `{"count":1,"truncated":false,
+  "verificationKey":"FETM34yAtPJhazZKnGu5N4bRHgugrydTBV9BAvzd7F8a",
+  "signingAlgorithm":"EdDSA","keyEncoding":"base58",
+  "receipts":[{"tradeId":"trade-1","jws":"eyJhbGciOiJFZERTQSIsImtpZCI6IkZFVE0zNHlBdFBKaGF6WktuR3U1TjRiUkhndWdyeWRUQlY5QkF2emQ3RjhhIn0.e30.AA",
+    "verificationKey":"FETM34yAtPJhazZKnGu5N4bRHgugrydTBV9BAvzd7F8a","valid":true,
+    "claims":{"trade":{"tradeId":"summarizer-1","buyer":"summarizer","seller":"translator","amount":"1000000","mint":"USDC","mode":"offchain","state":"delivered","recordedAt":"2026-09-27T00:00:00Z"},
+      "settlement":{"mode":"offchain"}},
+    "issuedAt":"2026-09-27T00:00:00Z"}]}`
+
 func stubService(t *testing.T) *httptest.Server {
 	t.Helper()
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -79,6 +93,8 @@ func stubService(t *testing.T) *httptest.Server {
 			_, _ = w.Write([]byte(seedMetrics))
 		case "/healthz":
 			_, _ = w.Write([]byte(seedHealth))
+		case "/v1/receipts":
+			_, _ = w.Write([]byte(seedReceipts))
 		case "/v1/agents/summarizer/attestation", "/v1/agents/translator/attestation":
 			id := strings.TrimSuffix(strings.TrimPrefix(r.URL.Path, "/v1/agents/"), "/attestation")
 			_, _ = w.Write([]byte(fmt.Sprintf(seedAttestation, id)))
@@ -257,7 +273,7 @@ func TestRefreshWritesSnapshotsThatTheBuildThenConsumes(t *testing.T) {
 	if err := generate(t, dir, srv.Client(), srv.URL, "-refresh"); err != nil {
 		t.Fatalf("refresh: %v", err)
 	}
-	for _, rel := range []string{"content/live-vtessera.json", "content/live-metrics.json"} {
+	for _, rel := range []string{"content/live-vtessera.json", "content/live-metrics.json", "content/live-receipts.json"} {
 		if _, err := os.Stat(filepath.Join(dir, rel)); err != nil {
 			t.Fatalf("refresh did not write %s: %v", rel, err)
 		}

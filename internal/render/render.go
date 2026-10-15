@@ -74,6 +74,13 @@ type Site struct {
 	ReportsFromCache     bool
 	ReportsFetchedAt     time.Time
 	ReportsErr           error
+
+	// Receipts is the marketplace's public listing of delivered trades' signed
+	// receipts, and the gallery re-derives every signature on it. Nil means the
+	// listing was never consulted or answered nothing; the gallery section is then
+	// absent rather than empty.
+	Receipts          *live.ReceiptsResponse
+	ReceiptsFromCache bool
 }
 
 // verificationKey is the marketplace's published key, or empty when there is
@@ -85,6 +92,25 @@ func (s Site) verificationKey() string {
 		return ""
 	}
 	return s.Marketplace.VerificationKey
+}
+
+// verificationKeys is the marketplace's published keyring, current first, from
+// /healthz rather than from the receipts listing. A receipt issued before a
+// rotation was signed by a retired key, and the keyring is what makes it still
+// verifiable; the listing's own copy is not trusted for the same reason its
+// receipts are not. An older /healthz carries no keyring, and the current key is
+// then the only one this build will accept.
+func (s Site) verificationKeys() []string {
+	if s.Marketplace == nil {
+		return nil
+	}
+	if len(s.Marketplace.VerificationKeys) > 0 {
+		return s.Marketplace.VerificationKeys
+	}
+	if s.Marketplace.VerificationKey == "" {
+		return nil
+	}
+	return []string{s.Marketplace.VerificationKey}
 }
 
 // VerifyAgents re-derives every signature over every agent card, using this
@@ -319,6 +345,52 @@ func (v verification) RetiredKeys() []string {
 	return v.Keys[1:]
 }
 
+// receiptView is one delivered trade as the gallery renders it: the receipt's
+// signed claims beside this directory's own verdict on the signature, which is
+// the only verdict shown.
+type receiptView struct {
+	live.ReceiptVerdict
+	// Test marks a trade one of this repository's own agents was party to. The
+	// gallery is about whether the receipts verify, not about who traded, but a
+	// page that showed our test traffic as outside usage would repeat the claim
+	// the metrics banner takes care not to make.
+	Test bool
+}
+
+// State is the one-word verdict the template renders. "invalid" is a signature
+// that was checked and failed; "unavailable" is one that could not be checked at
+// all, which is a fact about the keyring rather than about the receipt.
+func (r receiptView) State() string {
+	switch {
+	case r.Valid:
+		return "verified"
+	case r.Checked:
+		return "invalid"
+	default:
+		return "unavailable"
+	}
+}
+
+func (r receiptView) Class() string { return r.State() }
+
+// receiptsBlock is the gallery's computed state, assembled once per render so the
+// headline and the rows cannot disagree.
+type receiptsBlock struct {
+	// Available distinguishes a listing that answered from one that was never
+	// consulted. A nil Receipts and an empty listing both render no rows, and
+	// only one of them means the marketplace has no delivered trades.
+	Available bool
+	Views     []receiptView
+	Verified  int
+	Invalid   int
+	Truncated bool
+	Count     int
+	// AllTests is true when every listed receipt verified and every one is our
+	// own test traffic. It is false for an empty listing, which says nothing.
+	AllTests  bool
+	FromCache bool
+}
+
 type pageData struct {
 	Site        Site
 	Title       string
@@ -326,10 +398,13 @@ type pageData struct {
 	Canonical   string
 	Views       []entryView
 	View        *entryView
-	// Verification is the same block every entry page carries, hoisted here for
-	// the index. It is computed once per render, so the two surfaces cannot
-	// disagree about what was checked.
+	// Verification is the block rendered on the verification page and summarised
+	// on the index and entry pages. It is computed once per render, so no surface
+	// can disagree about what was checked.
 	Verification verification
+	// Receipts is the verified-trades gallery, computed once per render and
+	// rendered only on the trades page.
+	Receipts receiptsBlock
 	// BadgedCount lets the templates drop the "prefer a delivered count"
 	// instruction when no entry has one, rather than telling an agent to rank
 	// on a field the build produced no values for.
@@ -582,6 +657,43 @@ func (s Site) verificationBlock() verification {
 	return block
 }
 
+// receiptsBlock re-derives every published receipt's signature and counts the
+// verdicts. The marketplace's own valid flag is not read; a gallery that showed
+// it would be displaying the marketplace's assessment of the marketplace's work.
+func (s Site) receiptsBlock() receiptsBlock {
+	block := receiptsBlock{FromCache: s.ReceiptsFromCache}
+	if s.Receipts == nil {
+		return block
+	}
+	block.Available = true
+	block.Count = s.Receipts.Count
+	block.Truncated = s.Receipts.Truncated
+	keys := s.verificationKeys()
+	allTests := len(s.Receipts.Receipts) > 0
+	for _, receipt := range s.Receipts.Receipts {
+		view := receiptView{
+			ReceiptVerdict: live.VerifyReceipt(receipt, keys),
+			Test:           live.IsProbeTrade(receipt.Claims),
+		}
+		switch {
+		case view.Valid:
+			block.Verified++
+		default:
+			block.Invalid++
+			// A receipt that did not verify, or could not be checked, is enough
+			// to stop the page calling the whole listing our test activity: an
+			// unverified receipt is not evidence of a test trade's content.
+			allTests = false
+		}
+		if !view.Test {
+			allTests = false
+		}
+		block.Views = append(block.Views, view)
+	}
+	block.AllTests = allTests
+	return block
+}
+
 func errText(err error) string {
 	if err == nil {
 		return ""
@@ -725,7 +837,12 @@ func (s Site) Render(outDir string) error {
 		return err
 	}
 
-	base := pageData{Site: s, Year: s.GeneratedAt.UTC().Year(), Verification: s.verificationBlock()}
+	base := pageData{
+		Site:         s,
+		Year:         s.GeneratedAt.UTC().Year(),
+		Verification: s.verificationBlock(),
+		Receipts:     s.receiptsBlock(),
+	}
 
 	home := base
 	home.Title = s.Domain
@@ -746,6 +863,17 @@ func (s Site) Render(outDir string) error {
 		if err := writePage(tmpl, filepath.Join(outDir, views[i].Entry.Slug, "index.html"), "entry.html", page); err != nil {
 			return err
 		}
+	}
+
+	// The gallery re-derives every published receipt's signature at build time
+	// and shows the verdict, so a reader can watch the marketplace's delivered
+	// trades be checked rather than take the marketplace's word that they were.
+	trades := base
+	trades.Title = "Delivered trades"
+	trades.Description = "Delivered trades on vtessera, each signed receipt re-verified at build time against the marketplace's published key."
+	trades.Canonical = s.canonical("trades")
+	if err := writePage(tmpl, filepath.Join(outDir, "trades", "index.html"), "trades.html", trades); err != nil {
+		return err
 	}
 
 	notFound := base

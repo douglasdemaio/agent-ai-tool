@@ -58,6 +58,7 @@ func TestRenderProducesTheDiscoverySurface(t *testing.T) {
 	for _, rel := range []string{
 		"index.html", "404.html", "robots.txt", "sitemap.xml", "llms.txt",
 		"agents.json", "CNAME", ".well-known/agent-card.json", "vtessera/index.html",
+		"trades/index.html",
 	} {
 		if _, err := os.Stat(filepath.Join(out, rel)); err != nil {
 			t.Errorf("missing %s: %v", rel, err)

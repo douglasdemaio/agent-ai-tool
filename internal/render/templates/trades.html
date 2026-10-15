@@ -1,0 +1,53 @@
+{{define "trades.html"}}{{template "head" .}}
+{{template "banner" .}}
+<main id="main" class="wrap">
+  <p class="crumbs"><a href="/">Directory</a> / Delivered trades</p>
+  <h1>Delivered trades</h1>
+  <p class="lede">Every trade vtessera has settled produces a signed receipt. This page fetches the public listing and <strong>re-derives each signature while the page is built</strong>, against the key the marketplace publishes at <code>/healthz</code> — not the key each receipt names for itself. A row counts as verified here only if the bytes verify.</p>
+
+  {{$r := .Receipts}}
+  {{if not $r.Available}}
+  <p class="empty">The marketplace did not answer with a receipts listing when this page was built, so there is nothing here to check. This is a gap in this page, not a claim about vtessera.</p>
+  {{else if not $r.Views}}
+  <p class="empty">The marketplace answered with no delivered trades yet. Nothing is shown here until a trade settles.</p>
+  {{else}}
+  <section id="summary">
+    <h2>{{$r.Verified}} of {{$r.Count}} signatures re-verified</h2>
+    <p class="entry-summary">
+      Read from <code>/v1/receipts</code> and checked against the marketplace's published key
+      {{if $r.FromCache}}from the committed snapshot{{else}}live from vtessera{{end}}.
+      {{if $r.Truncated}}The listing is capped, so newer trades are shown rather than every one on record.{{else}}That is every delivered trade in the listing.{{end}}
+      {{if $r.Invalid}}<strong>{{$r.Invalid}} did not verify</strong> and are marked below; treat those as not proven.{{end}}
+    </p>
+    {{if $r.AllTests}}<p class="entry-summary">Every trade below is this project's own test activity. There is no outside usage yet.</p>{{end}}
+  </section>
+
+  <table class="verified">
+    <caption>One row per delivered trade. The signature is checked against <code>kid</code> in the receipt's JWS header, and <code>kid</code> must be a key the marketplace published.</caption>
+    <thead><tr><th>Trade</th><th>Amount</th><th>Settlement</th><th>Signature</th></tr></thead>
+    <tbody>
+    {{range $r.Views}}
+      <tr>
+        <th scope="row">
+          {{with .Claims}}{{with .Trade.Description}}{{.}}{{else}}trade{{end}}{{else}}trade{{end}}
+          {{if .Test}}<span class="badge" title="One party is one of this project's test accounts">test</span>{{end}}
+          <span class="entry-meta">{{.TradeID}}</span>
+          {{with .Claims}}<span class="entry-meta">{{.Trade.Buyer}} &rarr; {{.Trade.Seller}}</span>{{end}}
+        </th>
+        <td>{{with .Claims}}{{.Trade.Amount}} <span class="entry-meta">{{.Trade.Mint}}</span>{{else}}<span class="entry-meta">&mdash;</span>{{end}}</td>
+        <td>{{with .Claims}}{{.Settlement.Mode}}{{if .Settlement.Cluster}} &middot; {{.Settlement.Cluster}}{{end}} <span class="entry-meta">ledger #{{.Settlement.LedgerSequence}}</span>{{else}}<span class="entry-meta">&mdash;</span>{{end}}</td>
+        <td>
+          <span class="state state-{{.Class}}">{{.State}}</span>
+          {{if .KeyID}}<span class="entry-meta">signed by {{.KeyID}}</span>{{end}}
+          {{with .Reason}}<span class="entry-meta">{{.}}</span>{{end}}
+          {{with .Claims}}<span class="entry-meta">{{verify .Trade.RecordedAt}}</span>{{end}}
+        </td>
+      </tr>
+    {{end}}
+    </tbody>
+  </table>
+  <p class="entry-summary">This page shows what it checked. To check a receipt yourself, fetch <code>/healthz</code> for <code>verificationKeys</code> and verify the JWS with any Ed25519 library — see <a href="/vtessera#verification">the vtessera entry</a> for the longhand steps.</p>
+  {{end}}
+</main>
+{{template "foot" .}}
+{{end}}
