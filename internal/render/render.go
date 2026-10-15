@@ -252,11 +252,23 @@ type entryView struct {
 	// confirming it still describes reality. The health check proves an
 	// endpoint answers; it cannot prove the summary is still true.
 	ReviewDue bool
-	// Verification is the marketplace's signed provenance, shown on every entry
-	// page rather than only on the marketplace's own. A reader arriving at some
-	// other service has no reason to know a marketplace exists, so a claim that
-	// only appears on one page of four is a claim most readers never see.
+	// Verification is the marketplace's signed provenance. It is rendered once,
+	// on the verification page, and every entry page links to it rather than
+	// repeating the same table: the verdicts are about the marketplace, not about
+	// any one listing, and a table copied onto four pages invites a reader to
+	// believe each listing was checked separately.
 	Verification verification
+	// HealthState is what this build observed about the entry's own endpoint:
+	// "up", "down", or "unknown", the same three words agents.json publishes.
+	HealthState string
+	// ResponseMS is the entry's median response time at the last sweep, or nil
+	// when none was measured. The page prints the same number the file carries.
+	ResponseMS *int
+	// Record is this entry's own object from agents.json, embedded on its page so
+	// a reader can act on one listing without fetching the whole file. It is the
+	// projection itself rather than a hand-written copy, so the page and the
+	// machine surface cannot disagree.
+	Record jsonEntry
 }
 
 // verification is what this directory checked, and how it checked it. It exists
@@ -302,8 +314,9 @@ type verification struct {
 	ProbeUnchecked   int
 }
 
-// Summary is the one-line count for the index page, where the per-agent detail
-// would be a wall of text nobody came for.
+// Summary is the one-line count the index and entry pages print where they link
+// to the verification page, so a reader gets the gist without the per-agent
+// table.
 func (v verification) Summary() string {
 	switch {
 	case !v.Known:
@@ -733,6 +746,9 @@ func (s Site) resolve() ([]entryView, error) {
 		// as would flag the marketplace as overdue the moment its stub aged out.
 		view.ReviewDue = view.Entry.ReviewDue(s.GeneratedAt)
 		view.Verification = block
+		view.HealthState = s.statusFor(view.Entry)
+		view.ResponseMS = s.responseMS(view.Entry)
+		view.Record = s.jsonEntryFor(view)
 		views = append(views, view)
 	}
 
@@ -765,7 +781,9 @@ func (s Site) resolve() ([]entryView, error) {
 		}
 		view.ReviewDue = view.Entry.ReviewDue(s.GeneratedAt)
 		view.Verification = block
-		view.Verification = block
+		view.HealthState = s.statusFor(view.Entry)
+		view.ResponseMS = s.responseMS(view.Entry)
+		view.Record = s.jsonEntryFor(view)
 		views = append(views, view)
 	}
 	return views, nil
@@ -873,6 +891,19 @@ func (s Site) Render(outDir string) error {
 	trades.Description = "Delivered trades on vtessera, each signed receipt re-verified at build time against the marketplace's published key."
 	trades.Canonical = s.canonical("trades")
 	if err := writePage(tmpl, filepath.Join(outDir, "trades", "index.html"), "trades.html", trades); err != nil {
+		return err
+	}
+
+	// The verification block lives here and only here. It is about the
+	// marketplace and the cards registered with it, not about any one listing, so
+	// repeating it on every entry page told a reader that each listing had been
+	// checked on its own. Entry pages carry a link instead.
+	verify := base
+	verify.Title = "Verification"
+	verify.Description = "What this directory checked, and how: the marketplace's published key, the two signatures on every registered card, and the capability lists, each re-derived at build time rather than copied from what the marketplace says about itself."
+	verify.Canonical = s.canonical("verify")
+	verify.Views = views
+	if err := writePage(tmpl, filepath.Join(outDir, "verify", "index.html"), "verify.html", verify); err != nil {
 		return err
 	}
 
