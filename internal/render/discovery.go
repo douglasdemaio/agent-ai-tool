@@ -117,44 +117,51 @@ type jsonEntry struct {
 	Specs *content.Specs `json:"specs,omitempty"`
 }
 
+// jsonEntryFor projects one rendered view into the shape agents.json publishes.
+// It is the one place that mapping lives, so an entry page can embed the same
+// record and the two surfaces cannot drift apart.
+func (s Site) jsonEntryFor(v entryView) jsonEntry {
+	entry := jsonEntry{
+		Slug:         v.Entry.Slug,
+		Name:         v.Entry.Name,
+		Summary:      v.Entry.Summary,
+		URL:          v.Entry.URL,
+		AgentCardURL: v.Entry.AgentCardURL,
+		Category:     v.Entry.Category,
+		Access:       v.Entry.Access,
+		Source:       v.Entry.Source,
+		LastVerified: v.Entry.LastVerified,
+		LastChecked:  v.LastChecked,
+		Status:       s.statusFor(v.Entry),
+		LastOK:       v.LastChecked,
+		ResponseMs:   s.responseMS(v.Entry),
+		Page:         s.canonical(v.Entry.Slug),
+		HowToCall:    v.Entry.HowToCall,
+		Specs:        v.Entry.Specs,
+	}
+	// The endpoints as rendered, not as filed. An agent reading this file
+	// must not be handed a URL the site itself has just failed to reach;
+	// a withheld one is reported by the flags below instead.
+	if !v.Unreachable {
+		entry.MCPEndpointURL = v.MCPEndpoint
+		entry.APIURL = v.APIEndpoint
+	}
+	if v.Unreachable {
+		entry.EndpointDown = true
+		entry.EndpointReason = v.EndpointDetail
+		entry.EndpointLastOK = v.LastAlive
+	}
+	if v.Usage != nil {
+		delivered := v.Usage.Delivered
+		entry.Delivered = &delivered
+	}
+	return entry
+}
+
 func (s Site) jsonEntries(views []entryView) []jsonEntry {
 	out := make([]jsonEntry, 0, len(views))
 	for _, v := range views {
-		entry := jsonEntry{
-			Slug:         v.Entry.Slug,
-			Name:         v.Entry.Name,
-			Summary:      v.Entry.Summary,
-			URL:          v.Entry.URL,
-			AgentCardURL: v.Entry.AgentCardURL,
-			Category:     v.Entry.Category,
-			Access:       v.Entry.Access,
-			Source:       v.Entry.Source,
-			LastVerified: v.Entry.LastVerified,
-			LastChecked:  v.LastChecked,
-			Status:       s.statusFor(v.Entry),
-			LastOK:       v.LastChecked,
-			ResponseMs:   s.responseMS(v.Entry),
-			Page:         s.canonical(v.Entry.Slug),
-			HowToCall:    v.Entry.HowToCall,
-			Specs:        v.Entry.Specs,
-		}
-		// The endpoints as rendered, not as filed. An agent reading this file
-		// must not be handed a URL the site itself has just failed to reach;
-		// a withheld one is reported by the flags below instead.
-		if !v.Unreachable {
-			entry.MCPEndpointURL = v.MCPEndpoint
-			entry.APIURL = v.APIEndpoint
-		}
-		if v.Unreachable {
-			entry.EndpointDown = true
-			entry.EndpointReason = v.EndpointDetail
-			entry.EndpointLastOK = v.LastAlive
-		}
-		if v.Usage != nil {
-			delivered := v.Usage.Delivered
-			entry.Delivered = &delivered
-		}
-		out = append(out, entry)
+		out = append(out, s.jsonEntryFor(v))
 	}
 	return out
 }
@@ -364,6 +371,10 @@ func (s Site) llms(views []entryView) string {
 	b.WriteString("entries added, removed or changed and the fields that moved. It records\n")
 	b.WriteString("listing changes only: a health verdict is already live in the `status`\n")
 	b.WriteString("field below, so a record here means the directory itself moved.\n\n")
+	fmt.Fprintf(&b, "What was checked, and how, is written out at %sverify/: the\n", s.canonical(""))
+	b.WriteString("marketplace's published key, the two signatures on every registered card,\n")
+	b.WriteString("and the capability lists, each re-derived at build time. The machine form\n")
+	b.WriteString("is the `verification` object in agents.json.\n\n")
 	// The field glossary. agents.json is the machine surface and llms.txt is
 	// the prose one, but one reader sees both: naming the fields here means an
 	// agent that found the file from this page does not have to guess which

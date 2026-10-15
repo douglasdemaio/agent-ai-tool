@@ -314,6 +314,37 @@ code {
   color: var(--muted);
 }
 
+/* Endpoint health. A second vocabulary from the signature states above, kept on
+   purpose: "up" is a fact about reachability and "verified" is a fact about a
+   signature, and folding them into one set of colours would invite a healthy
+   endpoint to read as a trusted one. Up is calm, down is the alarm, and unknown
+   is deliberately as quiet as unsigned: a listing nobody has checked must not
+   look like a failure. */
+.state-up { color: var(--ok); }
+.state-down {
+  background: var(--warn-bg);
+  color: var(--warn-line);
+  font-weight: 600;
+}
+.state-unknown { color: var(--muted); }
+
+/* The per-entry machine-readable block. Collapsed by default because a page is
+   read by a person first; when opened it is a copy of the entry's own record
+   from agents.json, so the two surfaces cannot drift. */
+details.record { margin: 1rem 0; }
+details.record summary { cursor: pointer; color: var(--muted); font-size: 0.92rem; }
+details.record pre {
+  overflow-x: auto;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 0.9rem 1rem;
+  font-size: 0.82rem;
+  line-height: 1.5;
+}
+details.record code { border: 0; background: none; padding: 0; }
+
+
 table.verified {
   width: 100%;
   border-collapse: collapse;

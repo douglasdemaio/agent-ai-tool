@@ -47,7 +47,7 @@
   {{if $v.Known}}
   <section id="verification">
     <h2>Checked, not asserted</h2>
-    <p class="entry-summary">{{$v.Summary}}. Every verdict here is computed while this site is built, by re-deriving the signed bytes and checking them against the marketplace's published key <code>{{$v.Key}}</code>. None of it is copied from what the marketplace says about itself. <a href="/vtessera#verification">See the per-agent detail</a>.</p>
+    <p class="entry-summary">{{$v.Summary}}. Every verdict is computed while this site is built, by re-deriving the signed bytes and checking them against the marketplace's published key <code>{{$v.Key}}</code>. None of it is copied from what the marketplace says about itself. <a href="/verify/">See what was verified</a>.</p>
     {{if .Receipts.Available}}<p class="entry-summary">The same check is run over every delivered trade's signed receipt on <a href="/trades/">Delivered trades</a>.</p>{{end}}
   </section>
   {{end}}

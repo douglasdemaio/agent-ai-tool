@@ -20,7 +20,7 @@ type sitemapURL struct {
 func (s Site) sitemap(views []entryView) []byte {
 	set := urlSet{
 		Xmlns: "http://www.sitemaps.org/schemas/sitemap/0.9",
-		URLs:  make([]sitemapURL, 0, len(views)+1),
+		URLs:  make([]sitemapURL, 0, len(views)+3),
 	}
 	// The index lastmod is the newest entry last_verified, not the build time.
 	// The site is rebuilt for reasons that do not change the directory (a live
@@ -57,6 +57,11 @@ func (s Site) sitemap(views []entryView) []byte {
 			LastMod: newestReceipt.UTC().Format(time.RFC3339),
 		})
 	}
+	// The verification page carries the same verdicts the entries link to. Its
+	// lastmod follows the index's rather than the build time, and is deliberately
+	// not driven by a health check: a change in what was checked is a change in
+	// the listings, and those are already dated by the entries above.
+	set.URLs = append(set.URLs, sitemapURL{Loc: s.canonical("verify"), LastMod: newest.UTC().Format(time.RFC3339)})
 	for _, v := range views {
 		set.URLs = append(set.URLs, sitemapURL{
 			Loc:     s.canonical(v.Entry.Slug),

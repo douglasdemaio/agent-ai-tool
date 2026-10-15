@@ -3,6 +3,7 @@ package render
 import (
 	"encoding/json"
 	"errors"
+	"html"
 	"os"
 	"path/filepath"
 	"strings"
@@ -104,13 +105,30 @@ func TestAFixtureCardVerifiesAgainstTheMarketplaceAndTheAgent(t *testing.T) {
 	}
 }
 
-func TestEveryEntryPageCarriesTheSameVerificationBlock(t *testing.T) {
-	// The block is on every page on purpose: a reader who lands on some other
-	// service has no reason to go looking for a marketplace page, so a claim
-	// published on one page of four is a claim most readers never see.
+func TestTheVerificationBlockLivesOnOnePageAndEntriesLinkToIt(t *testing.T) {
+	// The block is about the marketplace and the cards registered with it, not
+	// about any one listing. Rendering it on every entry page told a reader that
+	// each listing had been checked on its own, which was never true, so it is
+	// rendered once at /verify/ and every entry links to it.
 	f := loadFixture(t)
 	at := time.Date(2026, 10, 6, 2, 0, 0, 0, time.UTC)
 	out := renderToDir(t, f.site(t, at, nil, nil))
+
+	verify, err := os.ReadFile(filepath.Join(out, "verify", "index.html"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, want := range []string{
+		f.VerificationKey,
+		f.Agent.ID,
+		"state-verified",
+		"never probed",
+		"mainnet-beta",
+	} {
+		if !strings.Contains(string(verify), want) {
+			t.Errorf("the verification page does not contain %q", want)
+		}
+	}
 
 	for _, slug := range []string{"vtessera", "other"} {
 		body, err := os.ReadFile(filepath.Join(out, slug, "index.html"))
@@ -118,21 +136,11 @@ func TestEveryEntryPageCarriesTheSameVerificationBlock(t *testing.T) {
 			t.Fatalf("%s: %v", slug, err)
 		}
 		page := string(body)
-		for _, want := range []string{
-			`id="verification"`,
-			f.VerificationKey,
-			f.Agent.ID,
-			"summarizer",
-			"state-verified",
-			"never probed",
-			"mainnet-beta",
-		} {
-			if !strings.Contains(page, want) {
-				t.Errorf("%s page does not contain %q", slug, want)
-			}
+		if !strings.Contains(page, `href="/verify/"`) {
+			t.Errorf("%s page does not link to the verification page", slug)
 		}
-		if got := strings.Count(page, `id="verification"`); got != 1 {
-			t.Errorf("%s page renders the block %d times", slug, got)
+		if strings.Contains(page, `id="verification"`) || strings.Contains(page, "state-verified") {
+			t.Errorf("%s page still embeds the verification block", slug)
 		}
 	}
 }
@@ -143,7 +151,7 @@ func TestAPageSaysInvalidWhenTheCardNoLongerMatchesItsSignature(t *testing.T) {
 	out := renderToDir(t, f.site(t, at, func(a *live.Agent) {
 		a.Card.Capabilities = append(a.Card.Capabilities, "admin")
 	}, nil))
-	body, err := os.ReadFile(filepath.Join(out, "vtessera", "index.html"))
+	body, err := os.ReadFile(filepath.Join(out, "verify", "index.html"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -166,7 +174,7 @@ func TestNoPublishedKeyMeansNothingIsCalledVerified(t *testing.T) {
 	s.Marketplace = nil
 	out := renderToDir(t, s)
 
-	body, err := os.ReadFile(filepath.Join(out, "vtessera", "index.html"))
+	body, err := os.ReadFile(filepath.Join(out, "verify", "index.html"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -187,7 +195,7 @@ func TestAPassedProbeIsOnlyPublishedAsVerifiedOnceItsSignatureChecksOut(t *testi
 		AgentID: f.Agent.ID, Attestation: f.Attestation, Probe: &f.Probe,
 	}}}
 	out := renderToDir(t, f.site(t, at, nil, signed))
-	body, err := os.ReadFile(filepath.Join(out, "vtessera", "index.html"))
+	body, err := os.ReadFile(filepath.Join(out, "verify", "index.html"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -203,7 +211,7 @@ func TestAPassedProbeIsOnlyPublishedAsVerifiedOnceItsSignatureChecksOut(t *testi
 		AgentID: f.Agent.ID, Attestation: f.Attestation, Probe: &edited,
 	}}}
 	out = renderToDir(t, f.site(t, at, nil, tampered))
-	body, err = os.ReadFile(filepath.Join(out, "vtessera", "index.html"))
+	body, err = os.ReadFile(filepath.Join(out, "verify", "index.html"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -349,7 +357,7 @@ func TestThePageDoesNotBlameTheMarketplaceForCardsItPredates(t *testing.T) {
 	}
 
 	out := renderToDir(t, s)
-	body, err := os.ReadFile(filepath.Join(out, "vtessera", "index.html"))
+	body, err := os.ReadFile(filepath.Join(out, "verify", "index.html"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -368,5 +376,96 @@ func TestThePageDoesNotBlameTheMarketplaceForCardsItPredates(t *testing.T) {
 	}
 	if !strings.Contains(page, "0 verified by the marketplace") {
 		t.Error("the counts changed; this test is asserting about a page that moved")
+	}
+}
+
+func TestAnEntryPageEmbedsTheSameRecordAgentsJSONPublishes(t *testing.T) {
+	// The page's machine-readable block exists so an agent can act on one listing
+	// without fetching agents.json, so it has to be the same object. Both come
+	// from one projection, and this pins that they cannot drift.
+	f := loadFixture(t)
+	at := time.Date(2026, 10, 6, 2, 0, 0, 0, time.UTC)
+	out := renderToDir(t, f.site(t, at, nil, nil))
+
+	page := read(t, out, "other/index.html")
+	const open = "<pre><code>"
+	i := strings.Index(page, open)
+	if i < 0 {
+		t.Fatal("the entry page carries no machine-readable block")
+	}
+	rest := page[i+len(open):]
+	j := strings.Index(rest, "</code></pre>")
+	if j < 0 {
+		t.Fatal("the machine-readable block is not closed")
+	}
+	// html/template escapes the JSON's quotes and angle brackets for the
+	// document; unescape so it can be compared as JSON.
+	block := html.UnescapeString(rest[:j])
+
+	var embedded map[string]any
+	if err := json.Unmarshal([]byte(block), &embedded); err != nil {
+		t.Fatalf("the embedded block is not JSON: %v\n%s", err, block)
+	}
+
+	var payload struct {
+		Agents []map[string]any `json:"agents"`
+	}
+	if err := json.Unmarshal([]byte(read(t, out, "agents.json")), &payload); err != nil {
+		t.Fatal(err)
+	}
+	var filed map[string]any
+	for _, a := range payload.Agents {
+		if a["slug"] == "other" {
+			filed = a
+		}
+	}
+	if filed == nil {
+		t.Fatal("agents.json has no entry for other")
+	}
+	want, _ := json.Marshal(filed)
+	got, _ := json.Marshal(embedded)
+	if string(got) != string(want) {
+		t.Errorf("the embedded record differs from agents.json:\n got: %s\nwant: %s", got, want)
+	}
+}
+
+func TestTheHealthVerdictIsStyledApartFromTheSignatureStates(t *testing.T) {
+	// Up, down and unknown are a separate vocabulary from the signature states,
+	// and the whole point of separate classes is that a reader can tell a
+	// reachable endpoint from a verified signature without reading the words.
+	checked := time.Date(2026, 9, 28, 0, 0, 0, 0, time.UTC)
+
+	e := entry("vtessera", "A marketplace.")
+	e.MCPEndpointURL = strptr("https://vtessera.example.com/mcp")
+	up := site(t, e)
+	up.HealthCheckedAt = &checked
+	up.EndpointResponseMS = map[string]int{"vtessera": 42}
+	page := read(t, renderTo(t, up), "vtessera/index.html")
+	for _, want := range []string{
+		`class="state state-up"`,
+		"42 ms",
+	} {
+		if !strings.Contains(page, want) {
+			t.Errorf("an up entry's page does not contain %q", want)
+		}
+	}
+
+	down := read(t, renderTo(t, deadEndpointSite(t)), "vtessera/index.html")
+	if !strings.Contains(down, "state-down") {
+		t.Error("a withheld endpoint is not styled as down")
+	}
+
+	never := site(t, entry("vtessera", "A marketplace."))
+	if page := read(t, renderTo(t, never), "vtessera/index.html"); !strings.Contains(page, "state-unknown") {
+		t.Error("an unchecked entry is not styled as unknown")
+	}
+}
+
+func TestTheVerificationPageIsInTheSitemap(t *testing.T) {
+	f := loadFixture(t)
+	at := time.Date(2026, 10, 6, 2, 0, 0, 0, time.UTC)
+	out := renderToDir(t, f.site(t, at, nil, nil))
+	if body := read(t, out, "sitemap.xml"); !strings.Contains(body, "<loc>https://example.test/verify/</loc>") {
+		t.Error("the sitemap does not list the verification page")
 	}
 }

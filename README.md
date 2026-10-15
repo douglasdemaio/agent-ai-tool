@@ -214,11 +214,13 @@ together. They cannot disagree, which is also asserted directly in
 
 ## Verification
 
-Every entry page carries a **Checked by this page** block, and `agents.json`
-carries the same verdicts under `verification`. The block appears on every page
-rather than only on the marketplace's own: a reader who arrives at some other
-service has no reason to go looking for a marketplace page, so a claim published
-on one page of four is a claim most readers never see.
+The verdicts live on one page, `/verify/`, and `agents.json` carries the same
+verdicts under `verification`. Every entry page links to it rather than embedding
+it: the block is about the marketplace and the cards registered with it, not about
+any one listing, so a table copied onto every entry page told a reader that each
+listing had been checked on its own, which was never true. Each entry page still
+carries what was observed about that entry's own endpoint — its health, when it
+was last checked, and the response time — plus its own record from `agents.json`.
 
 Nothing in the block is copied from what the marketplace says about itself. The
 build fetches `GET /healthz` for the marketplace's `verificationKey`, then for
