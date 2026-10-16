@@ -1,5 +1,5 @@
 {
-  "fetchedAt": "2026-10-14T11:52:01.135379508Z",
+  "fetchedAt": "2026-10-16T12:03:40.352401641Z",
   "response": {
     "agents": [
       {
@@ -187,9 +187,9 @@
             "signature": {
               "alg": "Ed25519",
               "keyId": "5LRpM9wpvPfRYuQAC7oNdyaQa6sakpMcnZeR9FS5CgjB",
-              "digest": "eb5b7ad5ffd4015a235dd5c663f70e48d2e63b3fb356be54940b880afb5e9cfa",
-              "value": "lFIXTGcV5PYU2reTzy0z+KRfkuYV3VC6bewnNpxhKRhNrFG02unQhaRDRfWxxWcL8UFCjS41W4gA7rc1lrfeAQ==",
-              "signedAt": "2026-10-14T09:46:19.587895615Z"
+              "digest": "24fd1ae7708e0bc7722d9c6a0d3da126cb2d463e692a5b1939a37d3dd17dd5c1",
+              "value": "DrrFeC/F3qvo31f4Oph+LbGgQTnuIrQcTA62LcP6+y4Vc9Dv4EEfIwN5UsxpUaNwLpUMBB4vOW3m9Ll8BGkUCA==",
+              "signedAt": "2026-10-16T04:53:34.613987468Z"
             }
           },
           "agent": {
@@ -212,9 +212,9 @@
             "signature": {
               "alg": "Ed25519",
               "keyId": "5LRpM9wpvPfRYuQAC7oNdyaQa6sakpMcnZeR9FS5CgjB",
-              "digest": "098454507f0ccdfffb05d7b45450e12e642b5d57aaceb07c0127bec3e9b4ebb0",
-              "value": "wveR1JFS3D4dNy2ZRgg1pY67w+NsOB+FQuQqnLwJidiZcWT36LisUl3B8eub1hPCO6AjQGEANC7dbifVQmGVAA==",
-              "signedAt": "2026-10-14T09:46:19.603065403Z"
+              "digest": "f6d2bd409fd755fa8bad724ed8dfcd132f964d52080842aed5724ad7b9b6034c",
+              "value": "TpW56UyPDBECPk/zZKq2bAPHTTnAfG0+mDw5uKqkv/OUcDsWu9amWGWT7eBsSKwVzHBLJ4rIisIuzs/JPKHdCw==",
+              "signedAt": "2026-10-16T04:53:34.628340585Z"
             }
           },
           "agent": {
@@ -237,9 +237,9 @@
             "signature": {
               "alg": "Ed25519",
               "keyId": "5LRpM9wpvPfRYuQAC7oNdyaQa6sakpMcnZeR9FS5CgjB",
-              "digest": "0e5e01d389ac2838b2f6714f7491fe2006caec9ac16c2c387d1d302e4ae1cc36",
-              "value": "6ISV7KQ9pBTTFyuqaEAj8i17KXCr/HDs/hXMLs4QUFHcuIAz7cCkRskIExzFx+UzgPw2Qwx2fDhJNZvheYXuAA==",
-              "signedAt": "2026-10-14T09:46:19.616873749Z"
+              "digest": "71a914a63d9f0497226e5d4ddd0f976dfce227e38ddfad02d5465e3d9f40926e",
+              "value": "0qDsRtt769OsLw+BY/etpWPLrRqUPtFOQgMd9yGLhO3z2KTJPCagkZcUY6I/DFEZdoKOi4Bs0zPG3DcrDglhDg==",
+              "signedAt": "2026-10-16T04:53:34.642368762Z"
             }
           },
           "agent": {
@@ -262,9 +262,9 @@
             "signature": {
               "alg": "Ed25519",
               "keyId": "5LRpM9wpvPfRYuQAC7oNdyaQa6sakpMcnZeR9FS5CgjB",
-              "digest": "16d320bef0d29e9ba25528b08d54fd78a8b1fbf9f42aa09d6b9c306d001747a5",
-              "value": "Tr0Sh3BrVaFbygOIcrxZfoigEaBlCSBtsCPoep94y82/zWGl/p8fLCaE4SKt55etKiqYLrGk83A7zMdE4MAoCw==",
-              "signedAt": "2026-10-14T09:46:19.630763706Z"
+              "digest": "b1fdb25a43fd8aec8b52c376fa35db6302324755cb2dc53be53c4d70d8be8052",
+              "value": "oD7NFFIDhc6fMz1x676UdiXJFrBocDAP8dyEJaPwp9YJDFwjt7vasDyi55KwAZhSoT0N/ZPIFFtZUycQOVHtAQ==",
+              "signedAt": "2026-10-16T04:53:34.657435399Z"
             }
           },
           "agent": {
@@ -287,9 +287,9 @@
             "signature": {
               "alg": "Ed25519",
               "keyId": "5LRpM9wpvPfRYuQAC7oNdyaQa6sakpMcnZeR9FS5CgjB",
-              "digest": "c0ce5488c54cdc8c93cd8ef8c998dfa373bbe993aea0a4e762f6dcf079211439",
-              "value": "M4WFqJVFXQjMqRB4B1gCDRysfQvicUHGrHDSYEbEXjZj3hlgrAsV2E9JoC5ocKjQm2y+jw5ubggF3JzgwzA4DQ==",
-              "signedAt": "2026-10-14T09:46:19.644728283Z"
+              "digest": "8497311856390b456edd4d5e9224303df54b86e82f28aef3d5d3fd94613e5e38",
+              "value": "2b3j1YZZ9cZynKsfmug8vbcQhSgvA4cNgL+b8bjVZ5Bv/HcumMgGPva1NyKcTSfDebn2DlTJWoc+Gsu0/77EDA==",
+              "signedAt": "2026-10-16T04:53:34.670725675Z"
             }
           },
           "agent": {
@@ -312,9 +312,9 @@
             "signature": {
               "alg": "Ed25519",
               "keyId": "5LRpM9wpvPfRYuQAC7oNdyaQa6sakpMcnZeR9FS5CgjB",
-              "digest": "9daf22ac1b1fa03e8317e41ec316518fb3955079c61ba1d1a58d40bd3c7f6aad",
-              "value": "vDnf4Z9L6xqbFlWZ4thgvxsVNIt+4H2MaWYgCRyz9F9/IC5WJlHXVLEotVSv8W4q1zBlnyQNCV9OVALX5Nd7CQ==",
-              "signedAt": "2026-10-14T09:46:19.657857879Z"
+              "digest": "cbdf2c473ae64b4a3084dde5da209b55adca6030163afef810551b4c8798df32",
+              "value": "r1kq31lQ4IMewuOOGFV1wqpRNHWmI/Qonrw2mhIPtHIl3E/QWsH4ixunRBsKNl7HFlB3w/aaU3IyuS0X56FfCA==",
+              "signedAt": "2026-10-14T21:46:19.629225376Z"
             }
           },
           "agent": {
@@ -337,9 +337,9 @@
             "signature": {
               "alg": "Ed25519",
               "keyId": "5LRpM9wpvPfRYuQAC7oNdyaQa6sakpMcnZeR9FS5CgjB",
-              "digest": "84d7e41df691ac56a72f3d058cf5b93a0938c2824a6df82aff40d35be7a81ad8",
-              "value": "Yh5b8nEPm1u4fXRt7EPIYvqZzONwMmld0jBc7sKUmUHHOFnyVOhZK2LZzVApAtBbWu46gP1PYpSxrdYj/pnMCQ==",
-              "signedAt": "2026-10-14T09:46:19.670444945Z"
+              "digest": "231a573b91d60a0ebdb1e4492740222b5c2608d680077f909d341ce8b430139c",
+              "value": "bQBMxc4azB4Sj25ymB9a9fcohu5U2DZlxYqNjvFcYtyJBTR7O7pXSqjsmjkEWLopFwWYTgrQzO2N7b/qyfzoBA==",
+              "signedAt": "2026-10-16T04:53:34.684463992Z"
             }
           },
           "agent": {
@@ -362,9 +362,9 @@
             "signature": {
               "alg": "Ed25519",
               "keyId": "5LRpM9wpvPfRYuQAC7oNdyaQa6sakpMcnZeR9FS5CgjB",
-              "digest": "294649042d569506486ba2c4d39451e12da9bf9c5ff175b2ee7d7e24e58de3f0",
-              "value": "14YJQT9Vei6nXxtv7TVHZ9mzcLPuaMyEkYdnEtUmaIqLaShFlK3uMpzzfLATe7U7LhzlEU7d1MDOPbJxGJKdCw==",
-              "signedAt": "2026-10-14T09:46:19.684000081Z"
+              "digest": "a9e03dd275382af3c03b6075c4ad702007fc655b4f1fe9b834c8132631512dd4",
+              "value": "DMvIv2COFGdAkByqp1FIbfXBsjxgWiI3v/75du7DmmkM7RM/YbmjHkGIqJXBrm59fysIri0BBVYYGaUGsvWABw==",
+              "signedAt": "2026-10-16T04:53:34.697025018Z"
             }
           },
           "agent": {
@@ -437,9 +437,9 @@
             "signature": {
               "alg": "Ed25519",
               "keyId": "5LRpM9wpvPfRYuQAC7oNdyaQa6sakpMcnZeR9FS5CgjB",
-              "digest": "780738ae3657c2f8a9ec1d544a9492bc903f82106bbcad9b8a630e94b09b460c",
-              "value": "0ovIoYb9MTq6CGXSck2QMLpAQzFtvY5J1/bDqTh90AD9MUCANyRlPzd+DjVPLsUJPodUzu6tZKBjUiHmqMajAw==",
-              "signedAt": "2026-10-11T17:53:01.03154055Z"
+              "digest": "60550b551ff919080cb77a4eeb068e76d1f56d0679f8d7115f5e49fcae876d7f",
+              "value": "fWIZ9ngq3XNQE1qIt2tqZW7dy/sRi8CVuHU9hv/1dAos1UwoiX44HjF/2FgpKrUHfYZfLRKY9puGmpFj1KxlBA==",
+              "signedAt": "2026-10-15T04:52:14.609245774Z"
             }
           },
           "agent": {
@@ -671,6 +671,206 @@
             "attested": false,
             "valid": false,
             "keyId": "7gr6qrCXkmyNsznGTHDk44gBW3Hgim3o9kT2wEh5yGVe"
+          }
+        }
+      },
+      {
+        "agentId": "2zQwzZcT7YqdtB9bmJsQu1uW9jXKPAkV1cAJ1ziYNKdJ",
+        "attestation": {
+          "agentId": "2zQwzZcT7YqdtB9bmJsQu1uW9jXKPAkV1cAJ1ziYNKdJ",
+          "recorded": true,
+          "canonicalForm": "vtessera/attest/v1",
+          "marketplace": {
+            "attested": true,
+            "valid": true,
+            "keyId": "5LRpM9wpvPfRYuQAC7oNdyaQa6sakpMcnZeR9FS5CgjB",
+            "signature": {
+              "alg": "Ed25519",
+              "keyId": "5LRpM9wpvPfRYuQAC7oNdyaQa6sakpMcnZeR9FS5CgjB",
+              "digest": "a362a62a83a09358b7fc5689dc081115e278844665102374d132ca1d8a7deb4a",
+              "value": "nazI+EER88T3ADq3ULON7+RxwxfqruPbAZvNQzRdcp8cCRCh+e6k6gLs56tUCMDiqy8wECqJp3WsSs3Dh+JeAA==",
+              "signedAt": "2026-10-15T01:43:24.840779768Z"
+            }
+          },
+          "agent": {
+            "attested": false,
+            "valid": false,
+            "keyId": "2zQwzZcT7YqdtB9bmJsQu1uW9jXKPAkV1cAJ1ziYNKdJ"
+          }
+        }
+      },
+      {
+        "agentId": "mMWeNs8uo8TVcgsXRrYPLGqxd8RwjhxvsrNQS33K4vk",
+        "attestation": {
+          "agentId": "mMWeNs8uo8TVcgsXRrYPLGqxd8RwjhxvsrNQS33K4vk",
+          "recorded": true,
+          "canonicalForm": "vtessera/attest/v1",
+          "marketplace": {
+            "attested": true,
+            "valid": true,
+            "keyId": "5LRpM9wpvPfRYuQAC7oNdyaQa6sakpMcnZeR9FS5CgjB",
+            "signature": {
+              "alg": "Ed25519",
+              "keyId": "5LRpM9wpvPfRYuQAC7oNdyaQa6sakpMcnZeR9FS5CgjB",
+              "digest": "717b2962f1ccc279b70776dba9e22d246aca982dd9c4c4fb301a26543134ef04",
+              "value": "QeP9D3VevkZWDSmIi1/OsgWGlFvQ2qqwFxpbL3wQlIRmxc42ATc3YSJnM2UrIRKtJWkwsbI46lHw00PhO/AWDQ==",
+              "signedAt": "2026-10-15T01:43:29.539087398Z"
+            }
+          },
+          "agent": {
+            "attested": false,
+            "valid": false,
+            "keyId": "mMWeNs8uo8TVcgsXRrYPLGqxd8RwjhxvsrNQS33K4vk"
+          }
+        }
+      },
+      {
+        "agentId": "3MA3YmEJFDL2S5QTzf92WAxU56N3Qxwv7yxGXbaDHwwa",
+        "attestation": {
+          "agentId": "3MA3YmEJFDL2S5QTzf92WAxU56N3Qxwv7yxGXbaDHwwa",
+          "recorded": true,
+          "canonicalForm": "vtessera/attest/v1",
+          "marketplace": {
+            "attested": true,
+            "valid": true,
+            "keyId": "5LRpM9wpvPfRYuQAC7oNdyaQa6sakpMcnZeR9FS5CgjB",
+            "signature": {
+              "alg": "Ed25519",
+              "keyId": "5LRpM9wpvPfRYuQAC7oNdyaQa6sakpMcnZeR9FS5CgjB",
+              "digest": "90d43b468c39dd2e788feb8c9099985f6d59ccf3276cef5c0a71365b83f3f326",
+              "value": "nQJ7/MWv0t3kLNVHrroH3py6VXcxyZr97RuWtVt4NQnPwAQxvN388QipHLUfsQXsU+SCAzyLrkG41UCd5j10CA==",
+              "signedAt": "2026-10-15T01:44:18.273573794Z"
+            }
+          },
+          "agent": {
+            "attested": false,
+            "valid": false,
+            "keyId": "3MA3YmEJFDL2S5QTzf92WAxU56N3Qxwv7yxGXbaDHwwa"
+          }
+        }
+      },
+      {
+        "agentId": "Gapb2rBUgYj13WxkQwzUA8HdHpNkzBT1QFEGirEErQsq",
+        "attestation": {
+          "agentId": "Gapb2rBUgYj13WxkQwzUA8HdHpNkzBT1QFEGirEErQsq",
+          "recorded": true,
+          "canonicalForm": "vtessera/attest/v1",
+          "marketplace": {
+            "attested": true,
+            "valid": true,
+            "keyId": "5LRpM9wpvPfRYuQAC7oNdyaQa6sakpMcnZeR9FS5CgjB",
+            "signature": {
+              "alg": "Ed25519",
+              "keyId": "5LRpM9wpvPfRYuQAC7oNdyaQa6sakpMcnZeR9FS5CgjB",
+              "digest": "5fb17bbe83e786d59ab7d57ce599b36f2f5f3a33abc2df310418a34aefb6b53f",
+              "value": "PDIr1E/l7SLWkmd95pbR/xL6okXyRr9Q8REJ5j7Qw/VJfWeNYaBuy42Zj+bi3KBShwSsDNold9xB0nkXzG05Dg==",
+              "signedAt": "2026-10-15T01:44:18.434148721Z"
+            }
+          },
+          "agent": {
+            "attested": false,
+            "valid": false,
+            "keyId": "Gapb2rBUgYj13WxkQwzUA8HdHpNkzBT1QFEGirEErQsq"
+          }
+        }
+      },
+      {
+        "agentId": "AdjpgpqFPrhMQqHREfJRBzi4S7rFVELpwnoSCDNKf7KW",
+        "attestation": {
+          "agentId": "AdjpgpqFPrhMQqHREfJRBzi4S7rFVELpwnoSCDNKf7KW",
+          "recorded": true,
+          "canonicalForm": "vtessera/attest/v1",
+          "marketplace": {
+            "attested": true,
+            "valid": true,
+            "keyId": "5LRpM9wpvPfRYuQAC7oNdyaQa6sakpMcnZeR9FS5CgjB",
+            "signature": {
+              "alg": "Ed25519",
+              "keyId": "5LRpM9wpvPfRYuQAC7oNdyaQa6sakpMcnZeR9FS5CgjB",
+              "digest": "203f9075198fba81c267165cb5cb6cecaf525b5f864a2aeb29b984e404dc9250",
+              "value": "8cZS517b0hSuCG6AS/zykm8fjDAJrukwbBhvhxTzIyD4GHGNfWg4xbxQ8SV9Dusw/kTVgWIfZsn+Br4oxJC8CQ==",
+              "signedAt": "2026-10-15T02:38:32.231814307Z"
+            }
+          },
+          "agent": {
+            "attested": false,
+            "valid": false,
+            "keyId": "AdjpgpqFPrhMQqHREfJRBzi4S7rFVELpwnoSCDNKf7KW"
+          }
+        }
+      },
+      {
+        "agentId": "4j828QWHZry47j7ThWhmic48mquJqLtw33524Q6FfaPN",
+        "attestation": {
+          "agentId": "4j828QWHZry47j7ThWhmic48mquJqLtw33524Q6FfaPN",
+          "recorded": true,
+          "canonicalForm": "vtessera/attest/v1",
+          "marketplace": {
+            "attested": true,
+            "valid": true,
+            "keyId": "5LRpM9wpvPfRYuQAC7oNdyaQa6sakpMcnZeR9FS5CgjB",
+            "signature": {
+              "alg": "Ed25519",
+              "keyId": "5LRpM9wpvPfRYuQAC7oNdyaQa6sakpMcnZeR9FS5CgjB",
+              "digest": "234fad5d04c3a6d5068edde97054d4434b015ca458336086e94edbf2f5486d98",
+              "value": "AVQmLTDaklo5IIexgAz5952gTcFSOdWKv3NGiwtb8ExBXjxBp9xhwnd18yrP99POCuCXEX/ocsv41c7xafIaBg==",
+              "signedAt": "2026-10-15T02:48:01.803457043Z"
+            }
+          },
+          "agent": {
+            "attested": false,
+            "valid": false,
+            "keyId": "4j828QWHZry47j7ThWhmic48mquJqLtw33524Q6FfaPN"
+          }
+        }
+      },
+      {
+        "agentId": "EtYFMuixu1ESuG87rXk91nB9pGXGLPFRDyXSSmj2rQC1",
+        "attestation": {
+          "agentId": "EtYFMuixu1ESuG87rXk91nB9pGXGLPFRDyXSSmj2rQC1",
+          "recorded": true,
+          "canonicalForm": "vtessera/attest/v1",
+          "marketplace": {
+            "attested": true,
+            "valid": true,
+            "keyId": "5LRpM9wpvPfRYuQAC7oNdyaQa6sakpMcnZeR9FS5CgjB",
+            "signature": {
+              "alg": "Ed25519",
+              "keyId": "5LRpM9wpvPfRYuQAC7oNdyaQa6sakpMcnZeR9FS5CgjB",
+              "digest": "50ac27a56cfb4215891e7c669ac5922adb54c9bf532a925504d0e8d108c55981",
+              "value": "ZfLvDVFAkVf+p7RKnQQgwJcXknktAmEDprLyDts2q39w15H3wNkVL5AQ6DSIXhSRyNDAKF1em5+ntsc+ZN4+AA==",
+              "signedAt": "2026-10-15T02:38:42.660860646Z"
+            }
+          },
+          "agent": {
+            "attested": false,
+            "valid": false,
+            "keyId": "EtYFMuixu1ESuG87rXk91nB9pGXGLPFRDyXSSmj2rQC1"
+          }
+        }
+      },
+      {
+        "agentId": "BitjMoWYwm4ZYs8Xqj4KdPmWPMPqRWqbjQxoVtu8uyx2",
+        "attestation": {
+          "agentId": "BitjMoWYwm4ZYs8Xqj4KdPmWPMPqRWqbjQxoVtu8uyx2",
+          "recorded": true,
+          "canonicalForm": "vtessera/attest/v1",
+          "marketplace": {
+            "attested": true,
+            "valid": true,
+            "keyId": "5LRpM9wpvPfRYuQAC7oNdyaQa6sakpMcnZeR9FS5CgjB",
+            "signature": {
+              "alg": "Ed25519",
+              "keyId": "5LRpM9wpvPfRYuQAC7oNdyaQa6sakpMcnZeR9FS5CgjB",
+              "digest": "0f9b3a469203c94ee5a946f46cac0509e0a59a2fbb7ef36ffc80e05024b5fcff",
+              "value": "P8SBJ9rFufhxIpEimXOKw5pUc5Eaz9P8ckjuhpdkmPfqZrEfdZ83XD1Y5TWeukpxEtkkH3vKlpK7DuHBlCzCDA==",
+              "signedAt": "2026-10-15T02:48:01.741365523Z"
+            }
+          },
+          "agent": {
+            "attested": false,
+            "valid": false,
+            "keyId": "BitjMoWYwm4ZYs8Xqj4KdPmWPMPqRWqbjQxoVtu8uyx2"
           }
         }
       }

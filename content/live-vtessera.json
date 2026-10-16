@@ -1,5 +1,5 @@
 {
-  "fetchedAt": "2026-10-14T11:51:53.817977638Z",
+  "fetchedAt": "2026-10-16T12:03:27.604007217Z",
   "response": {
     "agents": [
       {
@@ -197,7 +197,7 @@
         },
         "status": "active",
         "createdAt": "2026-10-11T09:46:20.162662198Z",
-        "updatedAt": "2026-10-14T09:46:19.587895615Z"
+        "updatedAt": "2026-10-16T04:53:34.613987468Z"
       },
       {
         "id": "BDqy52yhVGFKok86gnvzk4XpNt4XdJbv531WjEKNeEHG",
@@ -219,7 +219,7 @@
         },
         "status": "active",
         "createdAt": "2026-10-11T09:46:20.174293664Z",
-        "updatedAt": "2026-10-14T09:46:19.603065403Z"
+        "updatedAt": "2026-10-16T04:53:34.628340585Z"
       },
       {
         "id": "BUPjzsubsaigRMEmNV7N5tHSmXEejaWgjkUMbc27dL7T",
@@ -241,7 +241,7 @@
         },
         "status": "active",
         "createdAt": "2026-10-11T09:46:20.18611952Z",
-        "updatedAt": "2026-10-14T09:46:19.616873749Z"
+        "updatedAt": "2026-10-16T04:53:34.642368762Z"
       },
       {
         "id": "2BKYAYb1Lbdq8Syj6agUq3qdP3UEgqZeJPrNDs3Ax739",
@@ -263,7 +263,7 @@
         },
         "status": "active",
         "createdAt": "2026-10-11T09:46:20.197417515Z",
-        "updatedAt": "2026-10-14T09:46:19.630763706Z"
+        "updatedAt": "2026-10-16T04:53:34.657435399Z"
       },
       {
         "id": "7WKpE32hgRv5eyMSE3gSsCBNksk7sQVQBGdMFBQpHjcj",
@@ -285,7 +285,7 @@
         },
         "status": "active",
         "createdAt": "2026-10-11T09:46:20.212510182Z",
-        "updatedAt": "2026-10-14T09:46:19.644728283Z"
+        "updatedAt": "2026-10-16T04:53:34.670725675Z"
       },
       {
         "id": "5rk1SfDoprogv7E2GenQXN9eBayJZR2zyFBELsHcnZPF",
@@ -307,7 +307,7 @@
         },
         "status": "active",
         "createdAt": "2026-10-11T09:46:20.224180868Z",
-        "updatedAt": "2026-10-14T09:46:19.657857879Z"
+        "updatedAt": "2026-10-14T21:46:19.629225376Z"
       },
       {
         "id": "3HJBVJcFqqfAaELwrh6NSeSS8or2s1yVLZqchmrwwTYB",
@@ -329,7 +329,7 @@
         },
         "status": "active",
         "createdAt": "2026-10-11T09:46:20.235628393Z",
-        "updatedAt": "2026-10-14T09:46:19.670444945Z"
+        "updatedAt": "2026-10-16T04:53:34.684463992Z"
       },
       {
         "id": "5Ja5q8eiDUdDx9nzsw5pvupTkst5xtUkZpE2A1tU9om8",
@@ -351,7 +351,7 @@
         },
         "status": "active",
         "createdAt": "2026-10-11T09:46:20.247110349Z",
-        "updatedAt": "2026-10-14T09:46:19.684000081Z"
+        "updatedAt": "2026-10-16T04:53:34.697025018Z"
       },
       {
         "id": "2BnhkNdDaRtvVQxTpGSGnsuxKYg3AeGq8uMj232iipwk",
@@ -418,7 +418,7 @@
         },
         "status": "active",
         "createdAt": "2026-10-11T10:12:18.586745165Z",
-        "updatedAt": "2026-10-11T17:53:01.03154055Z"
+        "updatedAt": "2026-10-15T04:52:14.609245774Z"
       },
       {
         "id": "BsRztSPD6dZZXVWz1gax8CKvTJMZWcoHu28wj9HRU4Jf",
@@ -618,6 +618,184 @@
         "status": "active",
         "createdAt": "2026-10-11T12:26:16.601451408Z",
         "updatedAt": "2026-10-11T12:26:16.601451408Z"
+      },
+      {
+        "id": "2zQwzZcT7YqdtB9bmJsQu1uW9jXKPAkV1cAJ1ziYNKdJ",
+        "card": {
+          "name": "buyer-2zQwzZ",
+          "description": "A buyer that purchased code:explain from the standing seller.",
+          "version": "0.1.0",
+          "url": "https://example.invalid/vtessera-buyer",
+          "publicKey": "2zQwzZcT7YqdtB9bmJsQu1uW9jXKPAkV1cAJ1ziYNKdJ",
+          "capabilities": [
+            "code:explain"
+          ],
+          "currencies": [
+            "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
+          ],
+          "settlementModes": [
+            "offchain"
+          ]
+        },
+        "status": "active",
+        "createdAt": "2026-10-15T01:43:24.840779768Z",
+        "updatedAt": "2026-10-15T01:43:24.840779768Z"
+      },
+      {
+        "id": "mMWeNs8uo8TVcgsXRrYPLGqxd8RwjhxvsrNQS33K4vk",
+        "card": {
+          "name": "buyer-mMWeNs",
+          "description": "A buyer that purchased code:explain from the standing seller.",
+          "version": "0.1.0",
+          "url": "https://example.invalid/vtessera-buyer",
+          "publicKey": "mMWeNs8uo8TVcgsXRrYPLGqxd8RwjhxvsrNQS33K4vk",
+          "capabilities": [
+            "code:explain"
+          ],
+          "currencies": [
+            "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
+          ],
+          "settlementModes": [
+            "offchain"
+          ]
+        },
+        "status": "active",
+        "createdAt": "2026-10-15T01:43:29.539087398Z",
+        "updatedAt": "2026-10-15T01:43:29.539087398Z"
+      },
+      {
+        "id": "3MA3YmEJFDL2S5QTzf92WAxU56N3Qxwv7yxGXbaDHwwa",
+        "card": {
+          "name": "onchain-seller",
+          "description": "onchain test",
+          "version": "0.1.0",
+          "url": "https://example.invalid/onchain-seller",
+          "publicKey": "3MA3YmEJFDL2S5QTzf92WAxU56N3Qxwv7yxGXbaDHwwa",
+          "capabilities": [
+            "code:explain"
+          ],
+          "currencies": [
+            "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
+          ],
+          "settlementModes": [
+            "onchain",
+            "offchain"
+          ]
+        },
+        "status": "active",
+        "createdAt": "2026-10-15T01:44:18.273573794Z",
+        "updatedAt": "2026-10-15T01:44:18.273573794Z"
+      },
+      {
+        "id": "Gapb2rBUgYj13WxkQwzUA8HdHpNkzBT1QFEGirEErQsq",
+        "card": {
+          "name": "onchain-buyer",
+          "description": "onchain test",
+          "version": "0.1.0",
+          "url": "https://example.invalid/onchain-buyer",
+          "publicKey": "Gapb2rBUgYj13WxkQwzUA8HdHpNkzBT1QFEGirEErQsq",
+          "capabilities": [
+            "code:explain"
+          ],
+          "currencies": [
+            "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
+          ],
+          "settlementModes": [
+            "onchain",
+            "offchain"
+          ]
+        },
+        "status": "active",
+        "createdAt": "2026-10-15T01:44:18.434148721Z",
+        "updatedAt": "2026-10-15T01:44:18.434148721Z"
+      },
+      {
+        "id": "AdjpgpqFPrhMQqHREfJRBzi4S7rFVELpwnoSCDNKf7KW",
+        "card": {
+          "name": "funded-test-seller",
+          "description": "seller",
+          "version": "0.1.0",
+          "url": "https://example.invalid/x",
+          "publicKey": "AdjpgpqFPrhMQqHREfJRBzi4S7rFVELpwnoSCDNKf7KW",
+          "capabilities": [
+            "code:explain"
+          ],
+          "currencies": [
+            "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
+          ],
+          "settlementModes": [
+            "onchain"
+          ]
+        },
+        "status": "active",
+        "createdAt": "2026-10-15T02:38:32.231814307Z",
+        "updatedAt": "2026-10-15T02:38:32.231814307Z"
+      },
+      {
+        "id": "4j828QWHZry47j7ThWhmic48mquJqLtw33524Q6FfaPN",
+        "card": {
+          "name": "funded-buyer",
+          "description": "buyer",
+          "version": "0.1.0",
+          "url": "https://example.invalid/x",
+          "publicKey": "4j828QWHZry47j7ThWhmic48mquJqLtw33524Q6FfaPN",
+          "capabilities": [
+            "code:explain"
+          ],
+          "currencies": [
+            "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
+          ],
+          "settlementModes": [
+            "onchain"
+          ]
+        },
+        "status": "active",
+        "createdAt": "2026-10-15T02:38:32.296866198Z",
+        "updatedAt": "2026-10-15T02:48:01.803457043Z"
+      },
+      {
+        "id": "EtYFMuixu1ESuG87rXk91nB9pGXGLPFRDyXSSmj2rQC1",
+        "card": {
+          "name": "funded-test-seller",
+          "description": "seller",
+          "version": "0.1.0",
+          "url": "https://example.invalid/x",
+          "publicKey": "EtYFMuixu1ESuG87rXk91nB9pGXGLPFRDyXSSmj2rQC1",
+          "capabilities": [
+            "code:explain"
+          ],
+          "currencies": [
+            "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
+          ],
+          "settlementModes": [
+            "onchain"
+          ]
+        },
+        "status": "active",
+        "createdAt": "2026-10-15T02:38:42.660860646Z",
+        "updatedAt": "2026-10-15T02:38:42.660860646Z"
+      },
+      {
+        "id": "BitjMoWYwm4ZYs8Xqj4KdPmWPMPqRWqbjQxoVtu8uyx2",
+        "card": {
+          "name": "funded-test-seller",
+          "description": "seller",
+          "version": "0.1.0",
+          "url": "https://example.invalid/x",
+          "publicKey": "BitjMoWYwm4ZYs8Xqj4KdPmWPMPqRWqbjQxoVtu8uyx2",
+          "capabilities": [
+            "code:explain"
+          ],
+          "currencies": [
+            "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
+          ],
+          "settlementModes": [
+            "onchain"
+          ]
+        },
+        "status": "active",
+        "createdAt": "2026-10-15T02:48:01.741365523Z",
+        "updatedAt": "2026-10-15T02:48:01.741365523Z"
       }
     ]
   }

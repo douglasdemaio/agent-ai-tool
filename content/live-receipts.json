@@ -1,0 +1,438 @@
+{
+  "fetchedAt": "2026-10-16T12:03:28.15073737Z",
+  "response": {
+    "count": 13,
+    "genesis": "0000000000000000000000000000000000000000000000000000000000000000",
+    "keyEncoding": "base58",
+    "receipts": [
+      {
+        "tradeId": "ebef554e-67a0-405f-a461-6598dc8e52c2",
+        "jws": "eyJhbGciOiJFZERTQSIsImtpZCI6IjVMUnBNOXdwdlBmUll1UUFDN29OZHlhUWE2c2FrcE1jblplUjlGUzVDZ2pCIiwidHlwIjoiSldUIn0.eyJpc3MiOiJ2dGVzc2VyYSIsInN1YiI6ImViZWY1NTRlLTY3YTAtNDA1Zi1hNDYxLTY1OThkYzhlNTJjMiIsIm5iZiI6MTc5MjAzMjQ4NywiaWF0IjoxNzkyMDMyNDg3LCJqdGkiOiIyM2Y3MGJmNy1iZWVmLTQ3MjEtOTRhYy1iZmIwNTU1YzRkZjEiLCJ2dCI6MSwidHJhZGUiOnsidHJhZGVJZCI6ImViZWY1NTRlLTY3YTAtNDA1Zi1hNDYxLTY1OThkYzhlNTJjMiIsIm9mZmVySWQiOiIyMGEwZWVkOC03OTRhLTQ4NmUtYTc1Ny1mNWE3YWQ1YTNlNWYiLCJidXllciI6IjRqODI4UVdIWnJ5NDdqN1RoV2htaWM0OG1xdUpxTHR3MzM1MjRRNkZmYVBOIiwic2VsbGVyIjoiQml0ak1vV1l3bTRaWXM4WHFqNEtkUG1XUE1QcVJXcWJqUXhvVnR1OHV5eDIiLCJkZXNjcmlwdGlvbiI6Im9uY2hhaW4gZnVuZGVkIHRlc3QiLCJhbW91bnQiOiIwLjEwIiwibWludCI6IkVQakZXZGQ1QXVmcVNTcWVNMnFOMXh6eWJhcEM4RzR3RUdHa1p3eVREdDF2IiwibW9kZSI6Im9uY2hhaW4iLCJzdGF0ZSI6InNldHRsZWQiLCJyZWNvcmRlZEF0IjoiMjAyNi0xMC0xNVQwMjo0ODowNy4wMDYzNDYyNTRaIn0sInNldHRsZW1lbnQiOnsibW9kZSI6Im9uY2hhaW4iLCJzaWduYXR1cmUiOiI5eHVmTThOYVdTcnJiQncxcTZhOFF3QmdHSDZjWFl3d1lTNWFxbXFOSFRWWGZZdGp3RlZ2c0hoU1NxWE5YNnV5Z1N2YXI4WnNKbWlIUHJQdk4zWlZ1ZG4iLCJsZWRnZXJTZXF1ZW5jZSI6MTMsImxlZGdlckVudHJ5SGFzaCI6ImUwNWUxY2NmYmQzNjdhMTU3MmIyMTNlNzY2YmUzYmFmZDRhZjdlZjUwMTE2OWJhYmRmN2MxNTdhYTM5MWQwY2YiLCJjbHVzdGVyIjoibWFpbm5ldC1iZXRhIn19.fYZgzPdet0OaxNd6Gjtlk3BrW-5hUzmTXMtIbz8B8TRrXYmgZP7yduGm-AhtbBdkRIXdGaYTxB8Ow73nUHYTBg",
+        "verificationKey": "5LRpM9wpvPfRYuQAC7oNdyaQa6sakpMcnZeR9FS5CgjB",
+        "valid": true,
+        "claims": {
+          "iss": "vtessera",
+          "sub": "ebef554e-67a0-405f-a461-6598dc8e52c2",
+          "nbf": 1792032487,
+          "iat": 1792032487,
+          "jti": "23f70bf7-beef-4721-94ac-bfb0555c4df1",
+          "vt": 1,
+          "trade": {
+            "tradeId": "ebef554e-67a0-405f-a461-6598dc8e52c2",
+            "offerId": "20a0eed8-794a-486e-a757-f5a7ad5a3e5f",
+            "buyer": "4j828QWHZry47j7ThWhmic48mquJqLtw33524Q6FfaPN",
+            "seller": "BitjMoWYwm4ZYs8Xqj4KdPmWPMPqRWqbjQxoVtu8uyx2",
+            "description": "onchain funded test",
+            "amount": "0.10",
+            "mint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+            "mode": "onchain",
+            "state": "settled",
+            "recordedAt": "2026-10-15T02:48:07.006346254Z"
+          },
+          "settlement": {
+            "mode": "onchain",
+            "signature": "9xufM8NaWSrrbBw1q6a8QwBgGH6cXYwwYS5aqmqNHTVXfYtjwFVvsHhSSqXNX6uygSvar8ZsJmiHPrPvN3ZVudn",
+            "ledgerSequence": 13,
+            "ledgerEntryHash": "e05e1ccfbd367a1572b213e766be3bafd4af7ef501169babdf7c157aa391d0cf",
+            "cluster": "mainnet-beta"
+          }
+        },
+        "issuedAt": "2026-10-15T02:48:07.006346254Z"
+      },
+      {
+        "tradeId": "9edef8c1-7eaa-42a4-b9b8-e84e0aaa8c65",
+        "jws": "eyJhbGciOiJFZERTQSIsImtpZCI6IjVMUnBNOXdwdlBmUll1UUFDN29OZHlhUWE2c2FrcE1jblplUjlGUzVDZ2pCIiwidHlwIjoiSldUIn0.eyJpc3MiOiJ2dGVzc2VyYSIsInN1YiI6IjllZGVmOGMxLTdlYWEtNDJhNC1iOWI4LWU4NGUwYWFhOGM2NSIsIm5iZiI6MTc5MjAzMTkyNiwiaWF0IjoxNzkyMDMxOTI2LCJqdGkiOiI4OTRkNDI2NC1hNmYxLTQwODctYmNjYi0zNTg2MWVjYzU5MzMiLCJ2dCI6MSwidHJhZGUiOnsidHJhZGVJZCI6IjllZGVmOGMxLTdlYWEtNDJhNC1iOWI4LWU4NGUwYWFhOGM2NSIsIm9mZmVySWQiOiJhZDRlMzI5MS03NTBiLTQ4NDYtYjA0MS0xNjFhZTBiYmQxOTEiLCJidXllciI6IjRqODI4UVdIWnJ5NDdqN1RoV2htaWM0OG1xdUpxTHR3MzM1MjRRNkZmYVBOIiwic2VsbGVyIjoiRXRZRk11aXh1MUVTdUc4N3JYazkxbkI5cEdYR0xQRlJEeVhTU21qMnJRQzEiLCJkZXNjcmlwdGlvbiI6Im9uY2hhaW4gZnVuZGVkIHRlc3QiLCJhbW91bnQiOiIwLjEwIiwibWludCI6IkVQakZXZGQ1QXVmcVNTcWVNMnFOMXh6eWJhcEM4RzR3RUdHa1p3eVREdDF2IiwibW9kZSI6Im9uY2hhaW4iLCJzdGF0ZSI6InNldHRsZWQiLCJyZWNvcmRlZEF0IjoiMjAyNi0xMC0xNVQwMjozODo0Ni4xMjU3MzY0NDdaIn0sInNldHRsZW1lbnQiOnsibW9kZSI6Im9uY2hhaW4iLCJzaWduYXR1cmUiOiI0VDM1ODY1QzRRR0R4ajNrQW9LZnR5Qzh4eWQ3NHNnRVk4eld3TEQxUGtOTDJnVkxOM3VjWnR1eldLaWh3eFVURzl0WlU2cTVudEJqaG9aQ3VlOXhqdXg1IiwibGVkZ2VyU2VxdWVuY2UiOjEyLCJsZWRnZXJFbnRyeUhhc2giOiI0N2UxOWY3ZTJmZjI4MDYwNGEyZmZmZmFkMDU3MDcwZjgzNWRjNzVhNWU1YTNiOWZjODYzOGQ3NzM2OWFmYzU2IiwiY2x1c3RlciI6Im1haW5uZXQtYmV0YSJ9fQ.OrY5ny5gUhGXMDdTosWy0rJ9Lh_-p_pYIN0FXzrfgaA9V_U9Y29G2W3t1lQmFvp1NDzo1z_oBJX1FJtGR3L_CQ",
+        "verificationKey": "5LRpM9wpvPfRYuQAC7oNdyaQa6sakpMcnZeR9FS5CgjB",
+        "valid": true,
+        "claims": {
+          "iss": "vtessera",
+          "sub": "9edef8c1-7eaa-42a4-b9b8-e84e0aaa8c65",
+          "nbf": 1792031926,
+          "iat": 1792031926,
+          "jti": "894d4264-a6f1-4087-bccb-35861ecc5933",
+          "vt": 1,
+          "trade": {
+            "tradeId": "9edef8c1-7eaa-42a4-b9b8-e84e0aaa8c65",
+            "offerId": "ad4e3291-750b-4846-b041-161ae0bbd191",
+            "buyer": "4j828QWHZry47j7ThWhmic48mquJqLtw33524Q6FfaPN",
+            "seller": "EtYFMuixu1ESuG87rXk91nB9pGXGLPFRDyXSSmj2rQC1",
+            "description": "onchain funded test",
+            "amount": "0.10",
+            "mint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+            "mode": "onchain",
+            "state": "settled",
+            "recordedAt": "2026-10-15T02:38:46.125736447Z"
+          },
+          "settlement": {
+            "mode": "onchain",
+            "signature": "4T35865C4QGDxj3kAoKftyC8xyd74sgEY8zWwLD1PkNL2gVLN3ucZtuzWKihwxUTG9tZU6q5ntBjhoZCue9xjux5",
+            "ledgerSequence": 12,
+            "ledgerEntryHash": "47e19f7e2ff280604a2ffffad057070f835dc75a5e5a3b9fc8638d77369afc56",
+            "cluster": "mainnet-beta"
+          }
+        },
+        "issuedAt": "2026-10-15T02:38:46.125736447Z"
+      },
+      {
+        "tradeId": "933f14ae-c630-4eca-815e-3be55ab85669",
+        "jws": "eyJhbGciOiJFZERTQSIsImtpZCI6IjVMUnBNOXdwdlBmUll1UUFDN29OZHlhUWE2c2FrcE1jblplUjlGUzVDZ2pCIiwidHlwIjoiSldUIn0.eyJpc3MiOiJ2dGVzc2VyYSIsInN1YiI6IjkzM2YxNGFlLWM2MzAtNGVjYS04MTVlLTNiZTU1YWI4NTY2OSIsIm5iZiI6MTc5MTcyMTU3OSwiaWF0IjoxNzkxNzIxNTc5LCJqdGkiOiI3ODRhMDBhZS03ZjdlLTQyYWQtYWYxMC1iNmY4YjQ3ODg4YzAiLCJ2dCI6MSwidHJhZGUiOnsidHJhZGVJZCI6IjkzM2YxNGFlLWM2MzAtNGVjYS04MTVlLTNiZTU1YWI4NTY2OSIsIm9mZmVySWQiOiIzMGEyNDI5YS05OTBhLTRmZDEtODU0OC1mYTMwOTdkN2FkMzAiLCJidXllciI6IjdncjZxckNYa215TnN6bkdUSERrNDRnQlczSGdpbTNvOWtUMndFaDV5R1ZlIiwic2VsbGVyIjoiM1hDTmhkY2JZb20xVmdpaTlKNlljNWdjQVZmenNiaG42WHFQTEtZZjJ0QW8iLCJkZXNjcmlwdGlvbiI6IkV4cGxhaW4gYSBmdW5jdGlvbiBvciBmaWxlIGluIHBsYWluIGxhbmd1YWdlLiIsImFtb3VudCI6IjAuMTAiLCJtaW50IjoiRVBqRldkZDVBdWZxU1NxZU0ycU4xeHp5YmFwQzhHNHdFR0drWnd5VER0MXYiLCJtb2RlIjoib2ZmY2hhaW4iLCJzdGF0ZSI6InJlY29yZGVkIiwicmVjb3JkZWRBdCI6IjIwMjYtMTAtMTFUMTI6MjY6MTkuMjc0MjIyNDUzWiJ9LCJzZXR0bGVtZW50Ijp7Im1vZGUiOiJvZmZjaGFpbiIsImxlZGdlclNlcXVlbmNlIjoxMSwibGVkZ2VyRW50cnlIYXNoIjoiNTgxNDRmYTkxYWI1ODYyYTQyZjlkYzFiMWIxYTg1ZmMyY2EzMzllMTQ5ZmJhM2Y5OWNhNzE3OTQ5ZDY5NTAwOCJ9fQ.98boBA1djeCJvqBsyW_Vr1ZEMseOeGYWPrtoK9pNxYCr-WsB6_llZXZCY4OqIgbnOOJIY6vaIp6E8BUS1CwVBg",
+        "verificationKey": "5LRpM9wpvPfRYuQAC7oNdyaQa6sakpMcnZeR9FS5CgjB",
+        "valid": true,
+        "claims": {
+          "iss": "vtessera",
+          "sub": "933f14ae-c630-4eca-815e-3be55ab85669",
+          "nbf": 1791721579,
+          "iat": 1791721579,
+          "jti": "784a00ae-7f7e-42ad-af10-b6f8b47888c0",
+          "vt": 1,
+          "trade": {
+            "tradeId": "933f14ae-c630-4eca-815e-3be55ab85669",
+            "offerId": "30a2429a-990a-4fd1-8548-fa3097d7ad30",
+            "buyer": "7gr6qrCXkmyNsznGTHDk44gBW3Hgim3o9kT2wEh5yGVe",
+            "seller": "3XCNhdcbYom1Vgii9J6Yc5gcAVfzsbhn6XqPLKYf2tAo",
+            "description": "Explain a function or file in plain language.",
+            "amount": "0.10",
+            "mint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+            "mode": "offchain",
+            "state": "recorded",
+            "recordedAt": "2026-10-11T12:26:19.274222453Z"
+          },
+          "settlement": {
+            "mode": "offchain",
+            "ledgerSequence": 11,
+            "ledgerEntryHash": "58144fa91ab5862a42f9dc1b1b1a85fc2ca339e149fba3f99ca717949d695008"
+          }
+        },
+        "issuedAt": "2026-10-11T12:26:19.274222453Z"
+      },
+      {
+        "tradeId": "233b9ff1-bb7a-49fa-8fc6-a4bc7e13bc7a",
+        "jws": "eyJhbGciOiJFZERTQSIsImtpZCI6IjVMUnBNOXdwdlBmUll1UUFDN29OZHlhUWE2c2FrcE1jblplUjlGUzVDZ2pCIiwidHlwIjoiSldUIn0.eyJpc3MiOiJ2dGVzc2VyYSIsInN1YiI6IjIzM2I5ZmYxLWJiN2EtNDlmYS04ZmM2LWE0YmM3ZTEzYmM3YSIsIm5iZiI6MTc5MTcyMTQ4NCwiaWF0IjoxNzkxNzIxNDg0LCJqdGkiOiJkMDY2ZDMzZS1iNDhmLTQ3YmItOGQ2ZS04NjA1MmNjMDFjZjgiLCJ2dCI6MSwidHJhZGUiOnsidHJhZGVJZCI6IjIzM2I5ZmYxLWJiN2EtNDlmYS04ZmM2LWE0YmM3ZTEzYmM3YSIsIm9mZmVySWQiOiJiOTJhN2U5Ny03YjY4LTRjMmItODIyYi02MjZjYmRmMzUwZmIiLCJidXllciI6IjNQS3g5SjdYRDF2blBMY2pVc0JvSEhOanZoZm5ZN3A3anRiajFNTkZ6aWFaIiwic2VsbGVyIjoiM1hDTmhkY2JZb20xVmdpaTlKNlljNWdjQVZmenNiaG42WHFQTEtZZjJ0QW8iLCJkZXNjcmlwdGlvbiI6IkV4cGxhaW4gYSBmdW5jdGlvbiBvciBmaWxlIGluIHBsYWluIGxhbmd1YWdlLiIsImFtb3VudCI6IjAuMTAiLCJtaW50IjoiRVBqRldkZDVBdWZxU1NxZU0ycU4xeHp5YmFwQzhHNHdFR0drWnd5VER0MXYiLCJtb2RlIjoib2ZmY2hhaW4iLCJzdGF0ZSI6InJlY29yZGVkIiwicmVjb3JkZWRBdCI6IjIwMjYtMTAtMTFUMTI6MjQ6NDQuNTQ0MTQxNDE2WiJ9LCJzZXR0bGVtZW50Ijp7Im1vZGUiOiJvZmZjaGFpbiIsImxlZGdlclNlcXVlbmNlIjoxMCwibGVkZ2VyRW50cnlIYXNoIjoiMjVjMDE5N2ZiNGEwMTMxYTRiYTIyNTc1MjE5MzYxNjUxYmRhM2RjYTRlOWVjZTg0M2EzNzU0ZjVmZjQyMzM1NCJ9fQ.HcBuQ4jyFjGC-wFXW7ReDaCprGke9Nj3R7y1t7p8zJTEcX4agJ4yEJS1Vl0VOw71kTIdCymoXGIc9SB0CcdJDw",
+        "verificationKey": "5LRpM9wpvPfRYuQAC7oNdyaQa6sakpMcnZeR9FS5CgjB",
+        "valid": true,
+        "claims": {
+          "iss": "vtessera",
+          "sub": "233b9ff1-bb7a-49fa-8fc6-a4bc7e13bc7a",
+          "nbf": 1791721484,
+          "iat": 1791721484,
+          "jti": "d066d33e-b48f-47bb-8d6e-86052cc01cf8",
+          "vt": 1,
+          "trade": {
+            "tradeId": "233b9ff1-bb7a-49fa-8fc6-a4bc7e13bc7a",
+            "offerId": "b92a7e97-7b68-4c2b-822b-626cbdf350fb",
+            "buyer": "3PKx9J7XD1vnPLcjUsBoHHNjvhfnY7p7jtbj1MNFziaZ",
+            "seller": "3XCNhdcbYom1Vgii9J6Yc5gcAVfzsbhn6XqPLKYf2tAo",
+            "description": "Explain a function or file in plain language.",
+            "amount": "0.10",
+            "mint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+            "mode": "offchain",
+            "state": "recorded",
+            "recordedAt": "2026-10-11T12:24:44.544141416Z"
+          },
+          "settlement": {
+            "mode": "offchain",
+            "ledgerSequence": 10,
+            "ledgerEntryHash": "25c0197fb4a0131a4ba22575219361651bda3dca4e9ece843a3754f5ff423354"
+          }
+        },
+        "issuedAt": "2026-10-11T12:24:44.544141416Z"
+      },
+      {
+        "tradeId": "67936dec-830b-429e-9ea8-04d7499d17ca",
+        "jws": "eyJhbGciOiJFZERTQSIsImtpZCI6IjVMUnBNOXdwdlBmUll1UUFDN29OZHlhUWE2c2FrcE1jblplUjlGUzVDZ2pCIiwidHlwIjoiSldUIn0.eyJpc3MiOiJ2dGVzc2VyYSIsInN1YiI6IjY3OTM2ZGVjLTgzMGItNDI5ZS05ZWE4LTA0ZDc0OTlkMTdjYSIsIm5iZiI6MTc5MTcyMTEwNywiaWF0IjoxNzkxNzIxMTA3LCJqdGkiOiJiNGNmNTkwNy1mMWQ0LTQ4NzQtODY1OS0xNjczZjQ2YTczY2YiLCJ2dCI6MSwidHJhZGUiOnsidHJhZGVJZCI6IjY3OTM2ZGVjLTgzMGItNDI5ZS05ZWE4LTA0ZDc0OTlkMTdjYSIsIm9mZmVySWQiOiIxNTgyY2U1ZC01ODU3LTRmYzYtYjdkMi05MWJhZjQyNmRjNTgiLCJidXllciI6IkhCSnZSOVFSdTJMUnQza1N4WWd3RWtRbUxlMlkxM0VldlNXZHVOYkRIcFdrIiwic2VsbGVyIjoiM1hDTmhkY2JZb20xVmdpaTlKNlljNWdjQVZmenNiaG42WHFQTEtZZjJ0QW8iLCJkZXNjcmlwdGlvbiI6IkV4cGxhaW4gYSBmdW5jdGlvbiBvciBmaWxlIGluIHBsYWluIGxhbmd1YWdlLiIsImFtb3VudCI6IjAuMTAiLCJtaW50IjoiRVBqRldkZDVBdWZxU1NxZU0ycU4xeHp5YmFwQzhHNHdFR0drWnd5VER0MXYiLCJtb2RlIjoib2ZmY2hhaW4iLCJzdGF0ZSI6InJlY29yZGVkIiwicmVjb3JkZWRBdCI6IjIwMjYtMTAtMTFUMTI6MTg6MjcuOTk0OTE5Nzk4WiJ9LCJzZXR0bGVtZW50Ijp7Im1vZGUiOiJvZmZjaGFpbiIsImxlZGdlclNlcXVlbmNlIjo5LCJsZWRnZXJFbnRyeUhhc2giOiJmMGFiYmQ2NzNmNDc3ODU3ODc1ZDMzMDllMmRhZWYyOWYzOGI2M2Y0MTYyYWE2NWQyZWEzZGY3MDE2Y2ZhYzc2In19.Gc2PmqLXzcOUmIYGrSjTAhk2peBwHavx3M_UGGRROWd2EBAZ93WEKaEP-BkKoQGUZfbI7fG100wP9EbXDEGfDg",
+        "verificationKey": "5LRpM9wpvPfRYuQAC7oNdyaQa6sakpMcnZeR9FS5CgjB",
+        "valid": true,
+        "claims": {
+          "iss": "vtessera",
+          "sub": "67936dec-830b-429e-9ea8-04d7499d17ca",
+          "nbf": 1791721107,
+          "iat": 1791721107,
+          "jti": "b4cf5907-f1d4-4874-8659-1673f46a73cf",
+          "vt": 1,
+          "trade": {
+            "tradeId": "67936dec-830b-429e-9ea8-04d7499d17ca",
+            "offerId": "1582ce5d-5857-4fc6-b7d2-91baf426dc58",
+            "buyer": "HBJvR9QRu2LRt3kSxYgwEkQmLe2Y13EevSWduNbDHpWk",
+            "seller": "3XCNhdcbYom1Vgii9J6Yc5gcAVfzsbhn6XqPLKYf2tAo",
+            "description": "Explain a function or file in plain language.",
+            "amount": "0.10",
+            "mint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+            "mode": "offchain",
+            "state": "recorded",
+            "recordedAt": "2026-10-11T12:18:27.994919798Z"
+          },
+          "settlement": {
+            "mode": "offchain",
+            "ledgerSequence": 9,
+            "ledgerEntryHash": "f0abbd673f477857875d3309e2daef29f38b63f4162aa65d2ea3df7016cfac76"
+          }
+        },
+        "issuedAt": "2026-10-11T12:18:27.994919798Z"
+      },
+      {
+        "tradeId": "907f5925-30bc-4617-bf15-f0a242c4fb43",
+        "jws": "eyJhbGciOiJFZERTQSIsImtpZCI6IjVMUnBNOXdwdlBmUll1UUFDN29OZHlhUWE2c2FrcE1jblplUjlGUzVDZ2pCIiwidHlwIjoiSldUIn0.eyJpc3MiOiJ2dGVzc2VyYSIsInN1YiI6IjkwN2Y1OTI1LTMwYmMtNDYxNy1iZjE1LWYwYTI0MmM0ZmI0MyIsIm5iZiI6MTc5MTcyMDk2MSwiaWF0IjoxNzkxNzIwOTYxLCJqdGkiOiJhZWJhODQ1YS05YTgyLTQyMTYtOGVkOS0zZjgzZTI2ZjZkOTUiLCJ2dCI6MSwidHJhZGUiOnsidHJhZGVJZCI6IjkwN2Y1OTI1LTMwYmMtNDYxNy1iZjE1LWYwYTI0MmM0ZmI0MyIsIm9mZmVySWQiOiJlNmQwZjhhMC03ZGMxLTQxNmMtODYzMi04ZTZkNWU0ZDliM2YiLCJidXllciI6IkY2dmEyNFhTeGVLMlh5NkVwQjJGR2tUU1RiQjlwcWdxNktNcEFZdnc0bTdQIiwic2VsbGVyIjoiM1hDTmhkY2JZb20xVmdpaTlKNlljNWdjQVZmenNiaG42WHFQTEtZZjJ0QW8iLCJkZXNjcmlwdGlvbiI6IkV4cGxhaW4gYSBmdW5jdGlvbiBvciBmaWxlIGluIHBsYWluIGxhbmd1YWdlLiIsImFtb3VudCI6IjAuMTAiLCJtaW50IjoiRVBqRldkZDVBdWZxU1NxZU0ycU4xeHp5YmFwQzhHNHdFR0drWnd5VER0MXYiLCJtb2RlIjoib2ZmY2hhaW4iLCJzdGF0ZSI6InJlY29yZGVkIiwicmVjb3JkZWRBdCI6IjIwMjYtMTAtMTFUMTI6MTY6MDEuNTY5OTgzMDE4WiJ9LCJzZXR0bGVtZW50Ijp7Im1vZGUiOiJvZmZjaGFpbiIsImxlZGdlclNlcXVlbmNlIjo4LCJsZWRnZXJFbnRyeUhhc2giOiIwYzM4M2Q2YzM0OGI2ZDg3MGFhZTBmZDU2NDY3ZmNkN2RiZTViZDliNjQ5MDhiZDBmOWQ2ZDExNTQ2MDE5MjI5In19.Gs5HOK-eC3XgirieOnFf52aH74xYERD71_K-wuR6HHoFVL8TsISkQF-fdZXLR1gGYmZveYmCCH-l11B8x_pkBQ",
+        "verificationKey": "5LRpM9wpvPfRYuQAC7oNdyaQa6sakpMcnZeR9FS5CgjB",
+        "valid": true,
+        "claims": {
+          "iss": "vtessera",
+          "sub": "907f5925-30bc-4617-bf15-f0a242c4fb43",
+          "nbf": 1791720961,
+          "iat": 1791720961,
+          "jti": "aeba845a-9a82-4216-8ed9-3f83e26f6d95",
+          "vt": 1,
+          "trade": {
+            "tradeId": "907f5925-30bc-4617-bf15-f0a242c4fb43",
+            "offerId": "e6d0f8a0-7dc1-416c-8632-8e6d5e4d9b3f",
+            "buyer": "F6va24XSxeK2Xy6EpB2FGkTSTbB9pqgq6KMpAYvw4m7P",
+            "seller": "3XCNhdcbYom1Vgii9J6Yc5gcAVfzsbhn6XqPLKYf2tAo",
+            "description": "Explain a function or file in plain language.",
+            "amount": "0.10",
+            "mint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+            "mode": "offchain",
+            "state": "recorded",
+            "recordedAt": "2026-10-11T12:16:01.569983018Z"
+          },
+          "settlement": {
+            "mode": "offchain",
+            "ledgerSequence": 8,
+            "ledgerEntryHash": "0c383d6c348b6d870aae0fd56467fcd7dbe5bd9b64908bd0f9d6d11546019229"
+          }
+        },
+        "issuedAt": "2026-10-11T12:16:01.569983018Z"
+      },
+      {
+        "tradeId": "726e4bc6-54a2-4c50-b799-9ba9f7fc2837",
+        "jws": "eyJhbGciOiJFZERTQSIsImtpZCI6IjVMUnBNOXdwdlBmUll1UUFDN29OZHlhUWE2c2FrcE1jblplUjlGUzVDZ2pCIiwidHlwIjoiSldUIn0.eyJpc3MiOiJ2dGVzc2VyYSIsInN1YiI6IjcyNmU0YmM2LTU0YTItNGM1MC1iNzk5LTliYTlmN2ZjMjgzNyIsIm5iZiI6MTc5MTcxODE3NSwiaWF0IjoxNzkxNzE4MTc1LCJqdGkiOiI2M2JhYTVlMy02MmRjLTQ0ZWEtODk1My1hODMwYzg1YmE4NGEiLCJ2dCI6MSwidHJhZGUiOnsidHJhZGVJZCI6IjcyNmU0YmM2LTU0YTItNGM1MC1iNzk5LTliYTlmN2ZjMjgzNyIsIm9mZmVySWQiOiIxMzFiYjBiMi1mZWIyLTQ2NjctYmNmYy1mYTg4ZTJiZTRiZjgiLCJidXllciI6IjV2V2RZU21jTkpub2oyUE04TGZMUnZudml1am5RQ1QxRXU4Q3N3Nkp6ZmhzIiwic2VsbGVyIjoiM1hDTmhkY2JZb20xVmdpaTlKNlljNWdjQVZmenNiaG42WHFQTEtZZjJ0QW8iLCJkZXNjcmlwdGlvbiI6IkV4cGxhaW4gYSBmdW5jdGlvbiBvciBmaWxlIGluIHBsYWluIGxhbmd1YWdlLiIsImFtb3VudCI6IjAuMTAiLCJtaW50IjoiRVBqRldkZDVBdWZxU1NxZU0ycU4xeHp5YmFwQzhHNHdFR0drWnd5VER0MXYiLCJtb2RlIjoib25jaGFpbiIsInN0YXRlIjoic2V0dGxlZCIsInJlY29yZGVkQXQiOiIyMDI2LTEwLTExVDExOjI5OjM1LjA4NDU1NjkxWiJ9LCJzZXR0bGVtZW50Ijp7Im1vZGUiOiJvbmNoYWluIiwic2lnbmF0dXJlIjoiZkJ1eFkxYnlaQ01hNkNNWVdrRVBxMzE0ZWZ1cHdNaXRwM1I1WE1BMzRmVUxGeFcyOERmUHhHcmNYMlJNTEpCbkU0MXlCTU5ldzR5S0ozQkdGVnNFalZiIiwibGVkZ2VyU2VxdWVuY2UiOjcsImxlZGdlckVudHJ5SGFzaCI6IjI0OGYwYzY5MWUyZWNlOGNmMjg5MDU2YjEyZjQ0YTkyMzM4ODQ5NDkwOTUzMDRkY2Y1MTVhYmQ3M2JmM2ZhNmUiLCJjbHVzdGVyIjoibWFpbm5ldC1iZXRhIn19.YJCLhpJeRKEcejOfKUysWwX1YHd9Nsh4Dd5pZqkB6y0JsaiA80JVgzE-c0-9ryJJivaIMHpe94Zk2_aYR0HlDA",
+        "verificationKey": "5LRpM9wpvPfRYuQAC7oNdyaQa6sakpMcnZeR9FS5CgjB",
+        "valid": true,
+        "claims": {
+          "iss": "vtessera",
+          "sub": "726e4bc6-54a2-4c50-b799-9ba9f7fc2837",
+          "nbf": 1791718175,
+          "iat": 1791718175,
+          "jti": "63baa5e3-62dc-44ea-8953-a830c85ba84a",
+          "vt": 1,
+          "trade": {
+            "tradeId": "726e4bc6-54a2-4c50-b799-9ba9f7fc2837",
+            "offerId": "131bb0b2-feb2-4667-bcfc-fa88e2be4bf8",
+            "buyer": "5vWdYSmcNJnoj2PM8LfLRvnviujnQCT1Eu8Csw6Jzfhs",
+            "seller": "3XCNhdcbYom1Vgii9J6Yc5gcAVfzsbhn6XqPLKYf2tAo",
+            "description": "Explain a function or file in plain language.",
+            "amount": "0.10",
+            "mint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+            "mode": "onchain",
+            "state": "settled",
+            "recordedAt": "2026-10-11T11:29:35.08455691Z"
+          },
+          "settlement": {
+            "mode": "onchain",
+            "signature": "fBuxY1byZCMa6CMYWkEPq314efupwMitp3R5XMA34fULFxW28DfPxGrcX2RMLJBnE41yBMNew4yKJ3BGFVsEjVb",
+            "ledgerSequence": 7,
+            "ledgerEntryHash": "248f0c691e2ece8cf289056b12f44a9233884949095304dcf515abd73bf3fa6e",
+            "cluster": "mainnet-beta"
+          }
+        },
+        "issuedAt": "2026-10-11T11:29:35.08455691Z"
+      },
+      {
+        "tradeId": "3f4fcb8c-bd8b-4b7d-b6c9-c4e27f6d1f31",
+        "jws": "eyJhbGciOiJFZERTQSIsImtpZCI6IjVMUnBNOXdwdlBmUll1UUFDN29OZHlhUWE2c2FrcE1jblplUjlGUzVDZ2pCIiwidHlwIjoiSldUIn0.eyJpc3MiOiJ2dGVzc2VyYSIsInN1YiI6IjNmNGZjYjhjLWJkOGItNGI3ZC1iNmM5LWM0ZTI3ZjZkMWYzMSIsIm5iZiI6MTc5MTcxMzkzMCwiaWF0IjoxNzkxNzEzOTMwLCJqdGkiOiI2ZTU3YTU1Zi04MDBlLTQyNzAtOTg4MS1hYTdhNjJjNDJmYjciLCJ2dCI6MSwidHJhZGUiOnsidHJhZGVJZCI6IjNmNGZjYjhjLWJkOGItNGI3ZC1iNmM5LWM0ZTI3ZjZkMWYzMSIsIm9mZmVySWQiOiI1Mjk0NDYwMS05NDM5LTRlMjEtODQ4OC0zMzA0ZjRkOGU0YTUiLCJidXllciI6IjNHVlJNVWpyazlROVFIYzdtSE5kcXJRZHRjaXU3Z1k1ZGE1YVdVcHRxUkE3Iiwic2VsbGVyIjoiM1hDTmhkY2JZb20xVmdpaTlKNlljNWdjQVZmenNiaG42WHFQTEtZZjJ0QW8iLCJkZXNjcmlwdGlvbiI6IkV4cGxhaW4gYSBmdW5jdGlvbiBvciBmaWxlIGluIHBsYWluIGxhbmd1YWdlLiIsImFtb3VudCI6IjAuMTAiLCJtaW50IjoiRVBqRldkZDVBdWZxU1NxZU0ycU4xeHp5YmFwQzhHNHdFR0drWnd5VER0MXYiLCJtb2RlIjoib2ZmY2hhaW4iLCJzdGF0ZSI6InJlY29yZGVkIiwicmVjb3JkZWRBdCI6IjIwMjYtMTAtMTFUMTA6MTg6NTAuODUwOTEwNTk4WiJ9LCJzZXR0bGVtZW50Ijp7Im1vZGUiOiJvZmZjaGFpbiIsImxlZGdlclNlcXVlbmNlIjo2LCJsZWRnZXJFbnRyeUhhc2giOiI2NjczMWI3MGI2MjAyNzMyMDdmYzQ0MzA3ZDc5NzA4NmRiZWVjZThlZWIwMzMzOWJlN2Q1OTA2MWNlZDFjOTcxIn19.VukGDmhzx8ucAaZQAUyva0bGi1ByaYXOzDNcuDj-X5oP6jJyMhgIT5lBdw_MSgbLaseKar1en3v9WHE68tpPBQ",
+        "verificationKey": "5LRpM9wpvPfRYuQAC7oNdyaQa6sakpMcnZeR9FS5CgjB",
+        "valid": true,
+        "claims": {
+          "iss": "vtessera",
+          "sub": "3f4fcb8c-bd8b-4b7d-b6c9-c4e27f6d1f31",
+          "nbf": 1791713930,
+          "iat": 1791713930,
+          "jti": "6e57a55f-800e-4270-9881-aa7a62c42fb7",
+          "vt": 1,
+          "trade": {
+            "tradeId": "3f4fcb8c-bd8b-4b7d-b6c9-c4e27f6d1f31",
+            "offerId": "52944601-9439-4e21-8488-3304f4d8e4a5",
+            "buyer": "3GVRMUjrk9Q9QHc7mHNdqrQdtciu7gY5da5aWUptqRA7",
+            "seller": "3XCNhdcbYom1Vgii9J6Yc5gcAVfzsbhn6XqPLKYf2tAo",
+            "description": "Explain a function or file in plain language.",
+            "amount": "0.10",
+            "mint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+            "mode": "offchain",
+            "state": "recorded",
+            "recordedAt": "2026-10-11T10:18:50.850910598Z"
+          },
+          "settlement": {
+            "mode": "offchain",
+            "ledgerSequence": 6,
+            "ledgerEntryHash": "66731b70b620273207fc44307d797086dbeece8eeb03339be7d59061ced1c971"
+          }
+        },
+        "issuedAt": "2026-10-11T10:18:50.850910598Z"
+      },
+      {
+        "tradeId": "8337014a-50a1-4e6d-a97c-95191214d8bf",
+        "jws": "eyJhbGciOiJFZERTQSIsImtpZCI6IjVMUnBNOXdwdlBmUll1UUFDN29OZHlhUWE2c2FrcE1jblplUjlGUzVDZ2pCIiwidHlwIjoiSldUIn0.eyJpc3MiOiJ2dGVzc2VyYSIsInN1YiI6IjgzMzcwMTRhLTUwYTEtNGU2ZC1hOTdjLTk1MTkxMjE0ZDhiZiIsIm5iZiI6MTc5MTcxMzYyNiwiaWF0IjoxNzkxNzEzNjI2LCJqdGkiOiI1MTgyN2RjYi00NDZkLTRlMWMtYjJkMC1jMmRiYWNiY2E3ZTEiLCJ2dCI6MSwidHJhZGUiOnsidHJhZGVJZCI6IjgzMzcwMTRhLTUwYTEtNGU2ZC1hOTdjLTk1MTkxMjE0ZDhiZiIsIm9mZmVySWQiOiI0MmZkNzM3ZC1mNjZhLTQxOWEtOWUxNC1mZTRkYzZjYTU0YzIiLCJidXllciI6IjVUWW15VFdmOG81UlExZ1oyakRnakFnWFB6cXM5RFJjTW54TVQ3a2dBOTJQIiwic2VsbGVyIjoiM1hDTmhkY2JZb20xVmdpaTlKNlljNWdjQVZmenNiaG42WHFQTEtZZjJ0QW8iLCJkZXNjcmlwdGlvbiI6IkV4cGxhaW4gYSBmdW5jdGlvbiBvciBmaWxlIGluIHBsYWluIGxhbmd1YWdlLiIsImFtb3VudCI6IjAuMTAiLCJtaW50IjoiRVBqRldkZDVBdWZxU1NxZU0ycU4xeHp5YmFwQzhHNHdFR0drWnd5VER0MXYiLCJtb2RlIjoib2ZmY2hhaW4iLCJzdGF0ZSI6InJlY29yZGVkIiwicmVjb3JkZWRBdCI6IjIwMjYtMTAtMTFUMTA6MTM6NDYuMzAyOTg1NTA5WiJ9LCJzZXR0bGVtZW50Ijp7Im1vZGUiOiJvZmZjaGFpbiIsImxlZGdlclNlcXVlbmNlIjo1LCJsZWRnZXJFbnRyeUhhc2giOiI2OTgyZmFhYThhZjUwYmI1N2NkMGQzNzdlZmJkNmI1ODlkMjBjNmE4MGVhNTJhZDBmMzVhOTBmZmJiMmM2ZGQ3In19.7244LAfsqgkns9wo1dGAi4prNLaOH-pd74Zv3CHZnh34jIyIct6URgYvYcsMo4SNxRBqLekEovkuVi80dc0UDw",
+        "verificationKey": "5LRpM9wpvPfRYuQAC7oNdyaQa6sakpMcnZeR9FS5CgjB",
+        "valid": true,
+        "claims": {
+          "iss": "vtessera",
+          "sub": "8337014a-50a1-4e6d-a97c-95191214d8bf",
+          "nbf": 1791713626,
+          "iat": 1791713626,
+          "jti": "51827dcb-446d-4e1c-b2d0-c2dbacbca7e1",
+          "vt": 1,
+          "trade": {
+            "tradeId": "8337014a-50a1-4e6d-a97c-95191214d8bf",
+            "offerId": "42fd737d-f66a-419a-9e14-fe4dc6ca54c2",
+            "buyer": "5TYmyTWf8o5RQ1gZ2jDgjAgXPzqs9DRcMnxMT7kgA92P",
+            "seller": "3XCNhdcbYom1Vgii9J6Yc5gcAVfzsbhn6XqPLKYf2tAo",
+            "description": "Explain a function or file in plain language.",
+            "amount": "0.10",
+            "mint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+            "mode": "offchain",
+            "state": "recorded",
+            "recordedAt": "2026-10-11T10:13:46.302985509Z"
+          },
+          "settlement": {
+            "mode": "offchain",
+            "ledgerSequence": 5,
+            "ledgerEntryHash": "6982faaa8af50bb57cd0d377efbd6b589d20c6a80ea52ad0f35a90ffbb2c6dd7"
+          }
+        },
+        "issuedAt": "2026-10-11T10:13:46.302985509Z"
+      },
+      {
+        "tradeId": "2f2c3845-3075-4c01-a070-77321b581f80",
+        "jws": "eyJhbGciOiJFZERTQSIsImtpZCI6IjVMUnBNOXdwdlBmUll1UUFDN29OZHlhUWE2c2FrcE1jblplUjlGUzVDZ2pCIiwidHlwIjoiSldUIn0.eyJpc3MiOiJ2dGVzc2VyYSIsInN1YiI6IjJmMmMzODQ1LTMwNzUtNGMwMS1hMDcwLTc3MzIxYjU4MWY4MCIsIm5iZiI6MTc5MTcxMjQwMCwiaWF0IjoxNzkxNzEyNDAwLCJqdGkiOiJhOTUzZjg3YS1jMGJjLTQwNTktYmNiMi03MjA4NWZkNzk3ZTUiLCJ2dCI6MSwidHJhZGUiOnsidHJhZGVJZCI6IjJmMmMzODQ1LTMwNzUtNGMwMS1hMDcwLTc3MzIxYjU4MWY4MCIsIm9mZmVySWQiOiIyZTQwYjZhZi1hOTQwLTRlMGEtYWUyZC1jMGRmYjk4YTdjY2YiLCJidXllciI6IjVYZ01TY1dWUXg2NDNrQ3BwSlFKelhOM0d5VTN4NjZUTUpVdXpBd2c5QzJ6Iiwic2VsbGVyIjoiMkJuaGtOZERhUnR2VlF4VHBHU0duc3V4S1lnM0FlR3E4dU1qMjMyaWlwd2siLCJkZXNjcmlwdGlvbiI6IkV4cGxhaW4gYSBmdW5jdGlvbiBpbiBwbGFpbiBsYW5ndWFnZS4iLCJhbW91bnQiOiIwLjEwIiwibWludCI6IkVQakZXZGQ1QXVmcVNTcWVNMnFOMXh6eWJhcEM4RzR3RUdHa1p3eVREdDF2IiwibW9kZSI6Im9mZmNoYWluIiwic3RhdGUiOiJyZWNvcmRlZCIsInJlY29yZGVkQXQiOiIyMDI2LTEwLTExVDA5OjUzOjIwLjc2OTU0NjY4OVoifSwic2V0dGxlbWVudCI6eyJtb2RlIjoib2ZmY2hhaW4iLCJsZWRnZXJTZXF1ZW5jZSI6NCwibGVkZ2VyRW50cnlIYXNoIjoiYWYwM2I3ZGU3MWU1ODQxZmEzZDM4OWMyYzJkNzAyNDBiMWZjMzQ0ZGE0YWNkN2EyNWZhYmQwN2UwYTQzYWMxMCJ9fQ.jem8kXKim-uUdNSWUsoglPWtkoKJhDux-EbmoVlmh7thBGssaXisIsF4kG6DJrgN5Md81jSLwn2AGE7AvXSkDA",
+        "verificationKey": "5LRpM9wpvPfRYuQAC7oNdyaQa6sakpMcnZeR9FS5CgjB",
+        "valid": true,
+        "claims": {
+          "iss": "vtessera",
+          "sub": "2f2c3845-3075-4c01-a070-77321b581f80",
+          "nbf": 1791712400,
+          "iat": 1791712400,
+          "jti": "a953f87a-c0bc-4059-bcb2-72085fd797e5",
+          "vt": 1,
+          "trade": {
+            "tradeId": "2f2c3845-3075-4c01-a070-77321b581f80",
+            "offerId": "2e40b6af-a940-4e0a-ae2d-c0dfb98a7ccf",
+            "buyer": "5XgMScWVQx643kCppJQJzXN3GyU3x66TMJUuzAwg9C2z",
+            "seller": "2BnhkNdDaRtvVQxTpGSGnsuxKYg3AeGq8uMj232iipwk",
+            "description": "Explain a function in plain language.",
+            "amount": "0.10",
+            "mint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+            "mode": "offchain",
+            "state": "recorded",
+            "recordedAt": "2026-10-11T09:53:20.769546689Z"
+          },
+          "settlement": {
+            "mode": "offchain",
+            "ledgerSequence": 4,
+            "ledgerEntryHash": "af03b7de71e5841fa3d389c2c2d70240b1fc344da4acd7a25fabd07e0a43ac10"
+          }
+        },
+        "issuedAt": "2026-10-11T09:53:20.769546689Z"
+      },
+      {
+        "tradeId": "b713bd65-793a-4fa4-ae9c-992f9f284aad",
+        "jws": "eyJhbGciOiJFZERTQSIsImtpZCI6IjVMUnBNOXdwdlBmUll1UUFDN29OZHlhUWE2c2FrcE1jblplUjlGUzVDZ2pCIiwidHlwIjoiSldUIn0.eyJpc3MiOiJ2dGVzc2VyYSIsInN1YiI6ImI3MTNiZDY1LTc5M2EtNGZhNC1hZTljLTk5MmY5ZjI4NGFhZCIsIm5iZiI6MTc5MTcwMzMxNiwiaWF0IjoxNzkxNzAzMzE2LCJqdGkiOiJkYzM4MDUyOC05ODdmLTRjNTItYmQ2Yi1iMGUzMGM5ZjRkNzIiLCJ2dCI6MSwidHJhZGUiOnsidHJhZGVJZCI6ImI3MTNiZDY1LTc5M2EtNGZhNC1hZTljLTk5MmY5ZjI4NGFhZCIsIm9mZmVySWQiOiI0NTVmZjQ5NC0yNzk2LTQ1MDgtOTk1OC0xMDM5NTZjZWJmZTQiLCJidXllciI6Ijh0anB2Z0NiOTY5Rm54NVBFckxkZ2JqMWF5bmNGZ010cVhkWFhhczhYYjRQIiwic2VsbGVyIjoiR2hvTjVYUWRCblBIYTFwWnlqQ0pKNlNqZzlOSllMakRXUXlzMlhqdnJnV3oiLCJkZXNjcmlwdGlvbiI6IlN1bW1hcmlzZSBhIGRvY3VtZW50IGluIHRocmVlIHNlbnRlbmNlcy4iLCJhbW91bnQiOiIyLjAwIiwibWludCI6IkVQakZXZGQ1QXVmcVNTcWVNMnFOMXh6eWJhcEM4RzR3RUdHa1p3eVREdDF2IiwibW9kZSI6Im9mZmNoYWluIiwic3RhdGUiOiJyZWNvcmRlZCIsInJlY29yZGVkQXQiOiIyMDI2LTEwLTExVDA3OjIxOjU2Ljg3ODI5NDk4NVoifSwic2V0dGxlbWVudCI6eyJtb2RlIjoib2ZmY2hhaW4iLCJsZWRnZXJTZXF1ZW5jZSI6MywibGVkZ2VyRW50cnlIYXNoIjoiOWViODAwNzVkMmExZTFmYTVhNTVkOTUzNmExNjg2OWFjNjVmNzc5NmE3NGI3OTVmYTBiNTkzMTUxMWQ2OThkZCJ9fQ.JhPcMDNBwzRz4sOS5AO37ZmVHljptNxGnGOM-xo89AVLMedme1D24IPahRrG2cvAUcKbWVkxjOjfEUHFIxtCCw",
+        "verificationKey": "5LRpM9wpvPfRYuQAC7oNdyaQa6sakpMcnZeR9FS5CgjB",
+        "valid": true,
+        "claims": {
+          "iss": "vtessera",
+          "sub": "b713bd65-793a-4fa4-ae9c-992f9f284aad",
+          "nbf": 1791703316,
+          "iat": 1791703316,
+          "jti": "dc380528-987f-4c52-bd6b-b0e30c9f4d72",
+          "vt": 1,
+          "trade": {
+            "tradeId": "b713bd65-793a-4fa4-ae9c-992f9f284aad",
+            "offerId": "455ff494-2796-4508-9958-103956cebfe4",
+            "buyer": "8tjpvgCb969Fnx5PErLdgbj1ayncFgMtqXdXXas8Xb4P",
+            "seller": "GhoN5XQdBnPHa1pZyjCJJ6Sjg9NJYLjDWQys2XjvrgWz",
+            "description": "Summarise a document in three sentences.",
+            "amount": "2.00",
+            "mint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+            "mode": "offchain",
+            "state": "recorded",
+            "recordedAt": "2026-10-11T07:21:56.878294985Z"
+          },
+          "settlement": {
+            "mode": "offchain",
+            "ledgerSequence": 3,
+            "ledgerEntryHash": "9eb80075d2a1e1fa5a55d9536a16869ac65f7796a74b795fa0b5931511d698dd"
+          }
+        },
+        "issuedAt": "2026-10-11T07:21:56.878294985Z"
+      },
+      {
+        "tradeId": "76ab576e-6516-431c-96f6-65967d08adbf",
+        "jws": "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJ2dGVzc2VyYSIsInN1YiI6Ijc2YWI1NzZlLTY1MTYtNDMxYy05NmY2LTY1OTY3ZDA4YWRiZiIsIm5iZiI6MTc5MDcwNzU4OSwiaWF0IjoxNzkwNzA3NTg5LCJqdGkiOiI3YzIyZmI5Mi04OTJhLTRmYzYtYjMzNi1lNTBmZGM1YmEwNTEiLCJ2dCI6MSwidHJhZGUiOnsidHJhZGVJZCI6Ijc2YWI1NzZlLTY1MTYtNDMxYy05NmY2LTY1OTY3ZDA4YWRiZiIsIm9mZmVySWQiOiIyMzFlMjYxMS1iODZhLTQwNDMtYmMwOS1lYThhNGIwODU2ZmQiLCJidXllciI6IjViUEJtVkFDOVl3Ym42QjRhQUMzZ0VkdXdGcTF6SHRSWFJGUHJtaDJaVlF3Iiwic2VsbGVyIjoiQXgxWUNwYzlMMzVUUkFIZ0dONUNValBlM0J4VDZiVnNqcTJ4Y2k1aFBDZ1YiLCJkZXNjcmlwdGlvbiI6IkRpc3B1dGUtd2luZG93IHByb2JlLiIsImFtb3VudCI6IjEuMDAiLCJtaW50IjoiRVBqRldkZDVBdWZxU1NxZU0ycU4xeHp5YmFwQzhHNHdFR0drWnd5VER0MXYiLCJtb2RlIjoib2ZmY2hhaW4iLCJzdGF0ZSI6InJlY29yZGVkIiwicmVjb3JkZWRBdCI6IjIwMjYtMDktMjlUMTg6NDY6MjkuOTE4ODgzMjZaIn0sInNldHRsZW1lbnQiOnsibW9kZSI6Im9mZmNoYWluIiwibGVkZ2VyU2VxdWVuY2UiOjIsImxlZGdlckVudHJ5SGFzaCI6IjVjYjE2ZTFmYTljZTNkYzg3OTFhMWJmNWNiZDk1MTJjOTA1MDcwNWY2ODczYTI3YzQ4NWZkY2VhNGI0YjhhNTMifX0.tvTaRxVJsvRw90VJ-AfA0sEcPBl-h1r6ihc7PTCV8tXgqAm7mnuLqtlWVfQM1083dBkcRhqiV1BuabXnbhm4AA",
+        "verificationKey": "5LRpM9wpvPfRYuQAC7oNdyaQa6sakpMcnZeR9FS5CgjB",
+        "valid": true,
+        "claims": {
+          "iss": "vtessera",
+          "sub": "76ab576e-6516-431c-96f6-65967d08adbf",
+          "nbf": 1790707589,
+          "iat": 1790707589,
+          "jti": "7c22fb92-892a-4fc6-b336-e50fdc5ba051",
+          "vt": 1,
+          "trade": {
+            "tradeId": "76ab576e-6516-431c-96f6-65967d08adbf",
+            "offerId": "231e2611-b86a-4043-bc09-ea8a4b0856fd",
+            "buyer": "5bPBmVAC9Ywbn6B4aAC3gEduwFq1zHtRXRFPrmh2ZVQw",
+            "seller": "Ax1YCpc9L35TRAHgGN5CUjPe3BxT6bVsjq2xci5hPCgV",
+            "description": "Dispute-window probe.",
+            "amount": "1.00",
+            "mint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+            "mode": "offchain",
+            "state": "recorded",
+            "recordedAt": "2026-09-29T18:46:29.91888326Z"
+          },
+          "settlement": {
+            "mode": "offchain",
+            "ledgerSequence": 2,
+            "ledgerEntryHash": "5cb16e1fa9ce3dc8791a1bf5cbd9512c9050705f6873a27c485fdcea4b4b8a53"
+          }
+        },
+        "issuedAt": "2026-09-29T18:46:29.91888326Z"
+      },
+      {
+        "tradeId": "214c0f71-2b7e-411b-a380-c547db165f37",
+        "jws": "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJ2dGVzc2VyYSIsInN1YiI6IjIxNGMwZjcxLTJiN2UtNDExYi1hMzgwLWM1NDdkYjE2NWYzNyIsIm5iZiI6MTc5MDcwNTAzOSwiaWF0IjoxNzkwNzA1MDM5LCJqdGkiOiIwMzRhOGQ3ZC0yZjc4LTQwYjMtYjc4Ny00MzJjOTJkMTBmYzEiLCJ2dCI6MSwidHJhZGUiOnsidHJhZGVJZCI6IjIxNGMwZjcxLTJiN2UtNDExYi1hMzgwLWM1NDdkYjE2NWYzNyIsIm9mZmVySWQiOiI1MDE0ZDU4NC1mY2I2LTRiN2YtYTYyMC1lNzhmNjkxNmE4ZDEiLCJidXllciI6IjU0NWJVSkNYVXdXMkNaclNtdHZxamZGMTY0eXZiOEYxdndxS1E4TTZRcmRvIiwic2VsbGVyIjoiQXgxWUNwYzlMMzVUUkFIZ0dONUNValBlM0J4VDZiVnNqcTJ4Y2k1aFBDZ1YiLCJkZXNjcmlwdGlvbiI6IkxpZmVjeWNsZSBwcm9iZTogc3VtbWFyaXplIGEgc2hvcnQgZG9jdW1lbnQuIiwiYW1vdW50IjoiMi41MCIsIm1pbnQiOiJFUGpGV2RkNUF1ZnFTU3FlTTJxTjF4enliYXBDOEc0d0VHR2tad3lURHQxdiIsIm1vZGUiOiJvZmZjaGFpbiIsInN0YXRlIjoicmVjb3JkZWQiLCJyZWNvcmRlZEF0IjoiMjAyNi0wOS0yOVQxODowMzo1OS44ODcxNTE5OTZaIn0sInNldHRsZW1lbnQiOnsibW9kZSI6Im9mZmNoYWluIiwibGVkZ2VyU2VxdWVuY2UiOjEsImxlZGdlckVudHJ5SGFzaCI6IjdhYmE4NDU4Y2MyODQ0MTgxZDNlZmVkMmZjYWEwZTA5MmU4MzBhMWQwZTNlY2I1NTU1NGM5Y2ViM2Y4YjA4ZTQifX0.YTRDED4qchCaWYUENFfVM1j6lP-Ly6Y0TZGTJAEB_1_EtZe9_tEWtMdj67-TsIsF6z1awnpiksj5Pq4_XmMLCA",
+        "verificationKey": "5LRpM9wpvPfRYuQAC7oNdyaQa6sakpMcnZeR9FS5CgjB",
+        "valid": true,
+        "claims": {
+          "iss": "vtessera",
+          "sub": "214c0f71-2b7e-411b-a380-c547db165f37",
+          "nbf": 1790705039,
+          "iat": 1790705039,
+          "jti": "034a8d7d-2f78-40b3-b787-432c92d10fc1",
+          "vt": 1,
+          "trade": {
+            "tradeId": "214c0f71-2b7e-411b-a380-c547db165f37",
+            "offerId": "5014d584-fcb6-4b7f-a620-e78f6916a8d1",
+            "buyer": "545bUJCXUwW2CZrSmtvqjfF164yvb8F1vwqKQ8M6Qrdo",
+            "seller": "Ax1YCpc9L35TRAHgGN5CUjPe3BxT6bVsjq2xci5hPCgV",
+            "description": "Lifecycle probe: summarize a short document.",
+            "amount": "2.50",
+            "mint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+            "mode": "offchain",
+            "state": "recorded",
+            "recordedAt": "2026-09-29T18:03:59.887151996Z"
+          },
+          "settlement": {
+            "mode": "offchain",
+            "ledgerSequence": 1,
+            "ledgerEntryHash": "7aba8458cc2844181d3efed2fcaa0e092e830a1d0e3ecb55554c9ceb3f8b08e4"
+          }
+        },
+        "issuedAt": "2026-09-29T18:03:59.887151996Z"
+      }
+    ],
+    "signingAlgorithm": "EdDSA",
+    "truncated": false,
+    "verificationKey": "5LRpM9wpvPfRYuQAC7oNdyaQa6sakpMcnZeR9FS5CgjB",
+    "verificationKeys": [
+      "5LRpM9wpvPfRYuQAC7oNdyaQa6sakpMcnZeR9FS5CgjB"
+    ]
+  }
+}
