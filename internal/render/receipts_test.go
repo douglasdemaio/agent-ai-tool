@@ -121,3 +121,69 @@ func TestARetiredKeyStillVerifiesUnderTheKeyring(t *testing.T) {
 		t.Error("a receipt signed by a key in the published keyring should verify")
 	}
 }
+
+// noKeyReceipt is a receipt whose JWS header names no key, the shape the
+// marketplace's earliest receipts have: three base64url parts, EdDSA, no kid. The
+// verifier stops at the missing key, so the signature need not hold.
+func noKeyReceipt(t *testing.T, issued time.Time) *live.ReceiptsResponse {
+	t.Helper()
+	header, err := json.Marshal(map[string]string{"alg": "EdDSA"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	payload, err := json.Marshal(live.ReceiptClaims{
+		Trade: live.ReceiptTrade{TradeID: "trade-old", RecordedAt: issued},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	jws := base64.RawURLEncoding.EncodeToString(header) + "." +
+		base64.RawURLEncoding.EncodeToString(payload) + "." +
+		base64.RawURLEncoding.EncodeToString(make([]byte, ed25519.SignatureSize))
+	return &live.ReceiptsResponse{
+		Count:    1,
+		Receipts: []live.Receipt{{TradeID: "trade-old", JWS: jws, IssuedAt: issued}},
+	}
+}
+
+func TestATradesPageExplainsAReceiptItCouldNotCheck(t *testing.T) {
+	issued := time.Date(2026, 9, 29, 0, 0, 0, 0, time.UTC)
+	s := site(t)
+	s.Marketplace = &live.Health{VerificationKey: "aKey"}
+	s.Receipts = noKeyReceipt(t, issued)
+
+	page := read(t, renderTo(t, s), "trades/index.html")
+	if !strings.Contains(page, "state-unavailable") {
+		t.Error("a receipt whose header names no key should render as unavailable")
+	}
+	if !strings.Contains(page, "that could not be checked") {
+		t.Error("the page should explain the rows it could not check rather than leave the state bare")
+	}
+	if !strings.Contains(page, "names no signing key at all") {
+		t.Error("the explanation should say why the header cannot be checked")
+	}
+	if !strings.Contains(page, "2026-09-29") {
+		t.Error("the explanation should date the earliest receipt it could not check")
+	}
+}
+
+func TestAReceiptThatFailedVerificationIsNotCalledUnavailable(t *testing.T) {
+	receipts, kid, _ := signedReceipt(t, "1000000")
+	// Keep the header naming the published key but replace the signature, so the
+	// verifier runs and the bytes do not hold: checked and failed, not unchecked.
+	parts := strings.Split(receipts.Receipts[0].JWS, ".")
+	receipts.Receipts[0].JWS = parts[0] + "." + parts[1] + "." +
+		base64.RawURLEncoding.EncodeToString(make([]byte, ed25519.SignatureSize))
+
+	s := site(t)
+	s.Marketplace = &live.Health{VerificationKey: kid}
+	s.Receipts = receipts
+
+	page := read(t, renderTo(t, s), "trades/index.html")
+	if !strings.Contains(page, "state-invalid") {
+		t.Error("a signature that was checked and failed should render as invalid")
+	}
+	if strings.Contains(page, "could not be checked") {
+		t.Error("a signature that failed must not be reported as one that could not be checked")
+	}
+}

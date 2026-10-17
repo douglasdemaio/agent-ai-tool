@@ -395,9 +395,23 @@ type receiptsBlock struct {
 	Available bool
 	Views     []receiptView
 	Verified  int
-	Invalid   int
-	Truncated bool
-	Count     int
+	// Invalid is a signature that was checked and failed; Unavailable is one that
+	// was never checked at all. They are counted apart because a page that added
+	// them together would report a receipt it could not read as one that did not
+	// hold, which is the opposite of what the check found.
+	Invalid int
+	// UnavailableSince is the oldest receipt in the listing that could not be
+	// checked, so the note about them can name a date the listing actually shows
+	// rather than one written into the template.
+	UnavailableSince time.Time
+	Unavailable      int
+	// UnavailableNoKey counts the unavailable receipts whose JWS header named no
+	// key at all. The note about the earliest receipts is shown only when it holds
+	// for every unavailable row: one that named a key the keyring does not carry
+	// is a different situation, and calling it an old format would be wrong.
+	UnavailableNoKey int
+	Truncated        bool
+	Count            int
 	// AllTests is true when every listed receipt verified and every one is our
 	// own test traffic. It is false for an empty listing, which says nothing.
 	AllTests  bool
@@ -691,11 +705,23 @@ func (s Site) receiptsBlock() receiptsBlock {
 		switch {
 		case view.Valid:
 			block.Verified++
-		default:
+		case view.Checked:
 			block.Invalid++
-			// A receipt that did not verify, or could not be checked, is enough
-			// to stop the page calling the whole listing our test activity: an
-			// unverified receipt is not evidence of a test trade's content.
+			// A failed signature is no more evidence of a test trade's content
+			// than one that could not be read, so either way the page cannot call
+			// the whole listing our own traffic.
+			allTests = false
+		default:
+			block.Unavailable++
+			if view.KeyID == "" {
+				block.UnavailableNoKey++
+			}
+			if block.UnavailableSince.IsZero() || receipt.IssuedAt.Before(block.UnavailableSince) {
+				block.UnavailableSince = receipt.IssuedAt
+			}
+			// A receipt that could not be checked is enough to stop the page
+			// calling the whole listing our test activity: an unread receipt is
+			// not evidence of a test trade's content.
 			allTests = false
 		}
 		if !view.Test {

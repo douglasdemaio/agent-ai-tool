@@ -18,8 +18,30 @@
       {{if $r.FromCache}}from the committed snapshot{{else}}live from vtessera{{end}}.
       {{if $r.Truncated}}The listing is capped, so newer trades are shown rather than every one on record.{{else}}That is every delivered trade in the listing.{{end}}
       {{if $r.Invalid}}<strong>{{$r.Invalid}} did not verify</strong> and are marked below; treat those as not proven.{{end}}
+      {{if $r.Unavailable}}<strong>{{$r.Unavailable}} could not be checked</strong>, which is not the same as failing; they are explained below.{{end}}
     </p>
     {{if $r.AllTests}}<p class="entry-summary">Every trade below is this project's own test activity. There is no outside usage yet.</p>{{end}}
+
+    {{if $r.Unavailable}}
+    <h3>On the {{$r.Unavailable}} that could not be checked</h3>
+    <p class="entry-summary">
+      A row reads <em>verified</em> or <em>invalid</em> only once its signature has been put through the
+      verifier. The {{$r.Unavailable}} row{{if ne $r.Unavailable 1}}s{{end}} marked <em>unavailable</em>
+      {{if eq $r.Unavailable 1}}was{{else}}were{{end}} not, so nothing is claimed about
+      {{if eq $r.Unavailable 1}}its signature{{else}}those signatures{{end}} either way. A receipt is checked
+      only against a key the marketplace publishes, named by the <code>kid</code> in its JWS header; when
+      this page cannot get a usable key that way, it reports the row as unproven rather than guessing one.
+    </p>
+    {{if eq $r.Unavailable $r.UnavailableNoKey}}
+    <p class="entry-summary">
+      Each names no signing key at all. They are the marketplace's earliest settlements, issued
+      {{verify $r.UnavailableSince}}, from before a receipt carried a <code>kid</code> header — a gap in an
+      early format rather than a broken or forged signature. The bytes were never evaluated, and nothing
+      here says the trade did not happen. To check one, verify its JWS against the key the marketplace
+      publishes at <code>/healthz</code>, the same key a <code>kid</code> would have named.
+    </p>
+    {{end}}
+    {{end}}
   </section>
 
   <table class="verified">
