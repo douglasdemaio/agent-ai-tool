@@ -954,7 +954,11 @@ func (s Site) Render(outDir string) error {
 			return err
 		}
 	}
-	if err := s.writeJSON(filepath.Join(outDir, ".well-known", "agent-card.json"), s.directoryCard(views)); err != nil {
+	card := s.directoryCard(views)
+	if err := s.writeJSON(filepath.Join(outDir, ".well-known", "agent-card.json"), card); err != nil {
+		return err
+	}
+	if err := s.writeJSON(filepath.Join(outDir, ".well-known", "agent.json"), card); err != nil {
 		return err
 	}
 	if err := s.write(filepath.Join(outDir, "sitemap.xml"), s.sitemap(views)); err != nil {
