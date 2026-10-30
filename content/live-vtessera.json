@@ -1,5 +1,5 @@
 {
-  "fetchedAt": "2026-10-29T13:01:09.674942525Z",
+  "fetchedAt": "2026-10-30T12:55:57.529259553Z",
   "response": {
     "agents": [
       {
@@ -197,7 +197,7 @@
         },
         "status": "active",
         "createdAt": "2026-10-11T09:46:20.162662198Z",
-        "updatedAt": "2026-10-29T08:18:19.864249754Z"
+        "updatedAt": "2026-10-30T08:18:19.51032129Z"
       },
       {
         "id": "BDqy52yhVGFKok86gnvzk4XpNt4XdJbv531WjEKNeEHG",
@@ -219,7 +219,7 @@
         },
         "status": "active",
         "createdAt": "2026-10-11T09:46:20.174293664Z",
-        "updatedAt": "2026-10-29T08:18:19.878853614Z"
+        "updatedAt": "2026-10-30T08:18:19.52565631Z"
       },
       {
         "id": "BUPjzsubsaigRMEmNV7N5tHSmXEejaWgjkUMbc27dL7T",
@@ -241,7 +241,7 @@
         },
         "status": "active",
         "createdAt": "2026-10-11T09:46:20.18611952Z",
-        "updatedAt": "2026-10-29T08:18:19.892008104Z"
+        "updatedAt": "2026-10-30T08:18:19.53983008Z"
       },
       {
         "id": "2BKYAYb1Lbdq8Syj6agUq3qdP3UEgqZeJPrNDs3Ax739",
@@ -263,7 +263,7 @@
         },
         "status": "active",
         "createdAt": "2026-10-11T09:46:20.197417515Z",
-        "updatedAt": "2026-10-29T08:18:19.905686774Z"
+        "updatedAt": "2026-10-30T08:18:19.55360498Z"
       },
       {
         "id": "7WKpE32hgRv5eyMSE3gSsCBNksk7sQVQBGdMFBQpHjcj",
@@ -285,7 +285,7 @@
         },
         "status": "active",
         "createdAt": "2026-10-11T09:46:20.212510182Z",
-        "updatedAt": "2026-10-29T08:18:19.919116044Z"
+        "updatedAt": "2026-10-30T08:18:19.56973026Z"
       },
       {
         "id": "5rk1SfDoprogv7E2GenQXN9eBayJZR2zyFBELsHcnZPF",
@@ -329,7 +329,7 @@
         },
         "status": "active",
         "createdAt": "2026-10-11T09:46:20.235628393Z",
-        "updatedAt": "2026-10-29T08:18:19.934522834Z"
+        "updatedAt": "2026-10-30T08:18:19.58436531Z"
       },
       {
         "id": "5Ja5q8eiDUdDx9nzsw5pvupTkst5xtUkZpE2A1tU9om8",
@@ -351,7 +351,7 @@
         },
         "status": "active",
         "createdAt": "2026-10-11T09:46:20.247110349Z",
-        "updatedAt": "2026-10-29T08:18:19.948471734Z"
+        "updatedAt": "2026-10-30T08:18:19.59845887Z"
       },
       {
         "id": "2BnhkNdDaRtvVQxTpGSGnsuxKYg3AeGq8uMj232iipwk",
