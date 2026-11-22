@@ -1,5 +1,5 @@
 {
-  "checkedAt": "2026-11-21T19:26:16.299016331Z",
+  "checkedAt": "2026-11-22T19:48:49.618446868Z",
   "endpoints": {
     "mcp-registry https://registry.modelcontextprotocol.io/v0.1/servers": {
       "url": "https://registry.modelcontextprotocol.io/v0.1/servers",
@@ -9,7 +9,7 @@
         0,
         0
       ],
-      "response_ms": 137
+      "response_ms": 14
     },
     "models-dev https://models.dev/api.json": {
       "url": "https://models.dev/api.json",
@@ -19,7 +19,7 @@
         0,
         0
       ],
-      "response_ms": 178
+      "response_ms": 246
     },
     "openrouter https://openrouter.ai/api/v1/models": {
       "url": "https://openrouter.ai/api/v1/models",
@@ -29,7 +29,7 @@
         0,
         0
       ],
-      "response_ms": 46
+      "response_ms": 48
     },
     "vtessera https://vtessera-mcp.fly.dev/mcp": {
       "url": "https://vtessera-mcp.fly.dev/mcp",
@@ -50,7 +50,7 @@
         0,
         0
       ],
-      "response_ms": 257
+      "response_ms": 110
     }
   }
 }
